@@ -1,0 +1,21 @@
+Start
+* main calls GetPipeline()
+* main adds buffer (file) to Pipeline
+* main calls ui.Setup()
+  * setup creates view (with Pipeline)
+    * View calls SetPipeline
+      * Adds itself as Event Handler
+        * Pipeline triggers Update event directly after
+  * Setup asdds Panels
+  * sets up Screen
+  * windows resize
+* Start goes into EventLoop
+
+Resize Event
+* Window.Resize() ruft Resize Methode von View auf
+  * View setzt Groessen neu und Refreshed ScreenBuffer
+* Window.Render() ruft alle Render Methoden der enthaltenen Komponenten auf
+* term.Synch()
+
+
+
