@@ -2,6 +2,7 @@ package ui
 
 import (
 	//"fmt"
+	"fmt"
 	"log"
 
 	//"github.com/claude42/infiltrator/model"
@@ -10,7 +11,10 @@ import (
 	"github.com/gdamore/tcell/v2"
 )
 
+const textEntryPanelDefaultName = "This should not be seen here"
+
 type TextEntryPanel struct {
+	name  string
 	y     int
 	width int
 	input Input
@@ -19,7 +23,7 @@ type TextEntryPanel struct {
 }
 
 func NewTextEntryPanel() *TextEntryPanel {
-	t := &TextEntryPanel{}
+	t := &TextEntryPanel{name: textEntryPanelDefaultName}
 	t.input = NewInputField()
 
 	return t
@@ -56,7 +60,8 @@ func (p *TextEntryPanel) determinePanelStyle() tcell.Style {
 }
 
 func (p *TextEntryPanel) renderHeadline(style tcell.Style) {
-	x := renderText(0, p.y, "─ Should not be seen here ", style)
+	headline := fmt.Sprintf("─ %s ", p.name)
+	x := renderText(0, p.y, headline, style)
 	fillChars(x, p.y, '─', style)
 }
 

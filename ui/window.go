@@ -1,6 +1,7 @@
 package ui
 
 import (
+	"fmt"
 	"log"
 
 	"github.com/claude42/infiltrator/model"
@@ -38,10 +39,6 @@ func Setup(pipeline *model.Pipeline) *Window {
 	window.SetView(NewView(pipeline))
 	k := NewKeywordPanel()
 	window.AddPanel(k)
-
-	/*t := NewTextEntryPanel()
-	t.SetContent("hurz")
-	window.AddPanel(t)*/
 	window.PanelsOpen = true
 
 	setupScreen()
@@ -95,9 +92,25 @@ func (w *Window) EventLoop(quit chan<- struct{}) {
 					return
 				}
 			case tcell.KeyBacktab:
-				w.switchPanel(-1)
+				err := w.switchPanel(-1)
+				if err != nil {
+					screen.Beep()
+				}
 			case tcell.KeyTab:
-				w.switchPanel(1)
+				err := w.switchPanel(1)
+				if err != nil {
+					screen.Beep()
+				}
+			case tcell.KeyCtrlP:
+				err := w.AddPanel(NewKeywordPanel())
+				if err != nil {
+					screen.Beep()
+				}
+			case tcell.KeyCtrlO:
+				err := w.RemovePanel(w.activePanel)
+				if err != nil {
+					screen.Beep()
+				}
 			case tcell.KeyEscape, tcell.KeyCtrlC:
 				close(quit)
 				return
@@ -152,9 +165,41 @@ func (w *Window) totalPanelHeight() int {
 	return totalPanelHeight
 }
 
-func (w *Window) AddPanel(newPanel Panel) {
+func (w *Window) AddPanel(newPanel Panel) error {
+	// TODO: return error if total height of panels would exceed screen height
 	w.BottomPanels = append(w.BottomPanels, newPanel)
 	w.SetActivePanel(len(w.BottomPanels) - 1)
+
+	// resize() doesn't sound right here but will actually recalculate where
+	// the panels should be placed and how big they are.
+	w.resize()
+	w.Render()
+	return nil
+}
+
+func (w *Window) RemovePanel(pos int) error {
+	if pos < 0 || pos >= len(w.BottomPanels) {
+		log.Fatalf("Spurios panel number %d", pos)
+	}
+
+	if len(w.BottomPanels) == 1 {
+		return fmt.Errorf("cannot remove last panel")
+	}
+
+	var newActivePanel int
+	if pos > 0 {
+		newActivePanel = pos - 1
+	} else {
+		newActivePanel = 0
+	}
+
+	w.SetActivePanel(newActivePanel)
+	w.BottomPanels = append(w.BottomPanels[:pos], w.BottomPanels[pos+1:]...)
+
+	w.resize()
+	w.Render()
+
+	return nil
 }
 
 func (w *Window) SetActivePanel(pos int) {
@@ -173,15 +218,20 @@ func (w *Window) SetActivePanel(pos int) {
 	// w.Render()
 }
 
-func (w *Window) switchPanel(offset int) {
+func (w *Window) switchPanel(offset int) error {
 	newPanelIndex := w.activePanel + offset
 
 	if newPanelIndex < 0 || newPanelIndex >= len(w.BottomPanels) {
-		screen.Beep()
-		return
+		return fmt.Errorf("no panel at index %d", newPanelIndex)
 	}
 
 	w.SetActivePanel(newPanelIndex)
+	// It would probably be more natural to call render within the SetActivePanel()
+	// (or even the individual SetActive() methods of the panels and InputFields),
+	// but this way we avoid unnecessary redraws when switching panels.
+	w.Render()
+
+	return nil
 }
 
 func (w *Window) SetView(v *View) {

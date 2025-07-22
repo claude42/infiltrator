@@ -9,6 +9,8 @@ import (
 	//"github.com/gdamore/tcell/v2"
 )
 
+const keywordPanelDefaultName = "Keyword"
+
 type KeywordPanel struct {
 	filter model.Filter
 	TextEntryPanel
@@ -21,6 +23,7 @@ func NewKeywordPanel() *KeywordPanel {
 	model.GetPipeline().AddFilter(filter)
 	k.filter = filter
 	k.TextEntryPanel = *NewTextEntryPanel()
+	k.TextEntryPanel.name = keywordPanelDefaultName
 	k.input.SetReceiver(filter)
 	log.Println(".")
 
