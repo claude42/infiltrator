@@ -84,9 +84,7 @@ func (p *Pipeline) GetLine(line int) (Line, error) {
 		return Line{}, err
 	}
 
-	readLine, err := filter.GetLine(line)
-	log.Printf("P.Getline %s", readLine.Str)
-	return readLine, err
+	return filter.GetLine(line)
 }
 
 func (p *Pipeline) Size() (int, int, error) {
@@ -129,20 +127,21 @@ func (p *Pipeline) RefreshScreenBuffer(startLine, viewHeight int) {
 		line, err := p.GetLine(lineNo)
 		lineNo++
 		if errors.Is(err, ErrLineDidNotMatch) {
-			log.Printf("Pipeline.refresh ErrLineDidNotMatch")
-			continue
+			log.Fatalf("shoult not happen anymore")
 		} else if errors.Is(err, ErrOutOfBounds) {
-			log.Printf("Pipeline.refresh ErrOutOfBounds")
 			break
 		} else if err != nil {
 			log.Fatalf("fuck me")
 		}
-		p.screenBuffer[y] = line
-		y++
+
+		if line.Status != LineHidden {
+			p.screenBuffer[y] = line
+			y++
+		}
 	}
 
 	for ; y < viewHeight; y++ {
-		p.screenBuffer[y] = Line{-1, "", []uint8{}}
+		p.screenBuffer[y] = Line{-1, LineWithoutStatus, "", []uint8{}}
 	}
 
 	p.screenBufferClean = true

@@ -9,9 +9,17 @@ package model
 
 //"github.com/gdamore/tcell/v2"
 
+const (
+	LineWithoutStatus int = iota
+	LineMatched
+	LineDimmed
+	LineHidden
+)
+
 type Line struct {
-	No  int
-	Str string
+	No     int
+	Status int
+	Str    string
 	// each byt in ColorIndex is a color index for each byte in Str
 	ColorIndex []uint8
 }

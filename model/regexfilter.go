@@ -11,10 +11,6 @@ func RegexFilterFuncFactory(key string) (func(input string) (string, [][]int, er
 	}
 
 	return func(input string) (string, [][]int, error) {
-		if key == "" {
-			return input, [][]int{}, nil
-		}
-
 		indeces := re.FindAllStringIndex(input, -1)
 		if indeces == nil {
 			return "", indeces, ErrLineDidNotMatch

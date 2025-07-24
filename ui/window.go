@@ -38,7 +38,7 @@ func Setup(pipeline *model.Pipeline) *Window {
 
 	window.SetView(NewView(pipeline))
 
-	panel := NewPanel(TypeRegex)
+	panel := NewPanel(TypeRegex, model.FilterHide)
 	window.AddPanel(panel)
 	window.PanelsOpen = true
 
@@ -92,7 +92,7 @@ func (w *Window) EventLoop(quit chan<- struct{}) {
 				}
 				continue
 			case tcell.KeyCtrlP:
-				err := w.AddPanel(NewPanel(TypeKeyword))
+				err := w.AddPanel(NewPanel(TypeKeyword, model.FilterHide))
 				if err != nil {
 					screen.Beep()
 				}

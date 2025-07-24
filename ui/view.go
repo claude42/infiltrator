@@ -61,8 +61,15 @@ func (v *View) renderLine(line model.Line, y int) {
 
 	for x := start; x < v.viewWidth; x++ {
 		var r rune = ' '
-		style := DefStyle
 		var lineXPos = v.curX + x - start
+		var style tcell.Style
+
+		switch line.Status {
+		case model.LineWithoutStatus, model.LineMatched:
+			style = ViewStyle
+		case model.LineDimmed:
+			style = ViewDimmedStyle
+		}
 
 		if v.curX+x < len(str)+start {
 			r = rune(str[lineXPos])
@@ -92,8 +99,17 @@ func (v *View) renderLineNumber(line model.Line, y int) int {
 	str := fmt.Sprintf("%*d ", util.CountDigits(length-1), line.No)
 
 	var x int
+	var style tcell.Style
+	switch line.Status {
+	case model.LineWithoutStatus, model.LineMatched:
+		style = ViewLineNumberStyle
+	case model.LineDimmed:
+		style = ViewDimmedLineNumberStyle
+		// case model.LineHidden:
+		// todo
+	}
 	for x = 0; x < v.viewWidth && x < len(str); x++ {
-		screen.SetContent(x, y, rune(str[x]), nil, LineNumberStyle)
+		screen.SetContent(x, y, rune(str[x]), nil, style)
 	}
 
 	return x

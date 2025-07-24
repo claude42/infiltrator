@@ -19,10 +19,10 @@ const (
 const keywordPanelDefaultName = "Keyword"
 const regexPanelDefaultName = "Regex"
 
-func setupNewTextEntryPanel(fn model.StringFilterFuncFactory, name string) *TextEntryPanel {
+func setupNewTextEntryPanel(fn model.StringFilterFuncFactory, name string, mode int) *TextEntryPanel {
 	p := NewTextEntryPanel()
 	p.SetName(name)
-	filter := model.NewStringFilter(fn)
+	filter := model.NewStringFilter(fn, mode)
 	model.GetPipeline().AddFilter(filter)
 	p.SetFilter(filter)
 	p.SetReceiver(filter)
@@ -33,13 +33,13 @@ func setupNewTextEntryPanel(fn model.StringFilterFuncFactory, name string) *Text
 	return p
 }
 
-func NewPanel(panelType int) Panel {
+func NewPanel(panelType int, mode int) Panel {
 	switch panelType {
 	case TypeKeyword:
-		return setupNewTextEntryPanel(model.DefaultStringFilterFuncFactory, keywordPanelDefaultName)
+		return setupNewTextEntryPanel(model.DefaultStringFilterFuncFactory, keywordPanelDefaultName, mode)
 		// return createNewKeywordPanel()
 	case TypeRegex:
-		return setupNewTextEntryPanel(model.RegexFilterFuncFactory, regexPanelDefaultName)
+		return setupNewTextEntryPanel(model.RegexFilterFuncFactory, regexPanelDefaultName, mode)
 		// return createNewRegexPanel()
 	/*case Glob:
 		return NewGlobPanel()

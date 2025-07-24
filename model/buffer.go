@@ -52,7 +52,7 @@ func (b *Buffer) readFromFile(filePath string) error {
 	y := 0
 	for scanner.Scan() {
 		text := scanner.Text()
-		newLine := Line{y, text, make([]uint8, len(text))}
+		newLine := Line{y, LineWithoutStatus, text, make([]uint8, len(text))}
 		if len(newLine.Str) != len(newLine.ColorIndex) {
 			log.Panicf("Line length mismatch: %d != %d", len(newLine.Str), len(newLine.ColorIndex))
 		}
@@ -71,9 +71,10 @@ func (b *Buffer) readFromFile(filePath string) error {
 func (b *Buffer) GetLine(line int) (Line, error) {
 	if line < 0 || line >= len(b.lines) {
 		log.Println("ErrOutOfBounds")
-		return Line{}, ErrOutOfBounds
+		return Line{Str: "ErrOutOfBounds"}, ErrOutOfBounds
 	}
 	b.decolorizeLine(b.lines[line])
+	b.lines[line].Status = LineWithoutStatus
 	return b.lines[line], nil
 }
 
