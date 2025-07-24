@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"log"
 
-	//"github.com/claude42/infiltrator/model"
+	"github.com/claude42/infiltrator/model"
 	//"github.com/claude42/infiltrator/util"
 
 	"github.com/gdamore/tcell/v2"
@@ -14,10 +14,12 @@ import (
 const textEntryPanelDefaultName = "This should not be seen here"
 
 type TextEntryPanel struct {
-	name  string
-	y     int
-	width int
-	input Input
+	name       string
+	y          int
+	width      int
+	input      Input
+	colorIndex uint8
+	filter     model.Filter
 
 	ComponentImpl
 }
@@ -29,7 +31,7 @@ func NewTextEntryPanel() *TextEntryPanel {
 	return t
 }
 
-func (p *TextEntryPanel) GetHeight() int {
+func (p *TextEntryPanel) Height() int {
 	return 2
 }
 
@@ -44,18 +46,29 @@ func (p *TextEntryPanel) Render(updateScreen bool) {
 	style := p.determinePanelStyle()
 	p.renderHeadline(style)
 	p.renderContent(style)
-	p.input.Render(updateScreen)
+	if p.input != nil {
+		p.input.Render(updateScreen)
+	}
 
 	if updateScreen {
 		screen.Show()
 	}
 }
 
+func (p *TextEntryPanel) SetColorIndex(colorIndex uint8) {
+	p.colorIndex = colorIndex
+	if p.filter != nil {
+		p.filter.SetColorIndex(colorIndex)
+	}
+}
+
 func (p *TextEntryPanel) determinePanelStyle() tcell.Style {
+	style := tcell.StyleDefault.Background(FilterColors[p.colorIndex])
+
 	if p.IsActive() {
-		return ActivePanelStyle
+		return style.Bold(true)
 	} else {
-		return PanelStyle
+		return style
 	}
 }
 
@@ -70,16 +83,42 @@ func (p *TextEntryPanel) renderContent(style tcell.Style) {
 }
 
 func (p *TextEntryPanel) SetContent(content string) {
-	log.Println(".")
+	if p.input == nil {
+		log.Panicln("TextEntryPanel.SetContent() called without input field!")
+		return
+	}
 	p.input.SetContent(content)
-	log.Println(".")
+
 }
 
 func (p *TextEntryPanel) HandleEvent(ev tcell.Event) bool {
+	if p.input == nil {
+		return false
+	}
 	return p.input.HandleEvent(ev)
 }
 
 func (p *TextEntryPanel) SetActive(active bool) {
 	p.ComponentImpl.SetActive(active)
 	p.input.SetActive(active)
+}
+
+func (p *TextEntryPanel) SetName(name string) {
+	p.name = name
+}
+
+func (p *TextEntryPanel) SetFilter(filter model.Filter) {
+	p.filter = filter
+}
+
+func (p *TextEntryPanel) Filter() model.Filter {
+	return p.filter
+}
+
+func (p *TextEntryPanel) SetReceiver(receiver model.UpdatedTextReceiver) {
+	if p.input == nil {
+		log.Panicln("TextEntryPanel.SetReceiver() called without input field!")
+		return
+	}
+	p.input.SetReceiver(receiver)
 }

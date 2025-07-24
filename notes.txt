@@ -18,4 +18,17 @@ Resize Event
 * term.Synch()
 
 
+Potentielle Filter
+* keyword filter
+* regex filter
+* glob filter
+* host filter
+* date filter
+* facility filter
 
+
+
+
+
+TODO
+* Double check log.Fatal() vs log.Panic()

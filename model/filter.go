@@ -12,11 +12,13 @@ import (
 )
 
 type Filter interface {
+	SetKey(key string) error
 	GetLine(line int) (Line, error)
 	Source() (Filter, error)
 	SetSource(source Filter)
 	Size() (int, int, error)
 	SetEventHandler(eventHandler tcell.EventHandler)
+	SetColorIndex(colorIndex uint8)
 
 	tcell.EventHandler
 }

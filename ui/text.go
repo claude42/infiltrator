@@ -23,19 +23,6 @@ func renderText(x int, y int, text string, style tcell.Style) int {
 	return renderRunes(x, y, []rune(text), style)
 }
 
-/*func renderText(x int, y int, text string, style tcell.Style) int {
-    maxWidth, _ := screen.Size()
-    for _, r := range []rune(text) {
-	if x  >= maxWidth {
-	    break
-	}
-	screen.SetContent(x, y, r, nil, style)
-	x++
-    }
-
-    return x
-}*/
-
 func drawChars(x int, y int, width int, r rune, style tcell.Style) int {
 	screenWidth, _ := screen.Size()
 	i := 0

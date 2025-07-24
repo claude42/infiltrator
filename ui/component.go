@@ -3,6 +3,8 @@ package ui
 type Component interface {
 	SetActive(active bool)
 	IsActive() bool
+	Resize(x, y, width, height int)
+	Render(updateScreen bool)
 }
 
 type ComponentImpl struct {

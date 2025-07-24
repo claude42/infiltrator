@@ -12,7 +12,7 @@ import (
 type Input interface {
 	SetContent(content string)
 	SetReceiver(receiver model.UpdatedTextReceiver)
-	ResizableRenderer
+	Component
 	tcell.EventHandler
 
 	Component

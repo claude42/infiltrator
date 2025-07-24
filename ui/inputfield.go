@@ -1,7 +1,7 @@
 package ui
 
 import (
-	"log"
+	// "log"
 
 	"github.com/claude42/infiltrator/model"
 	"github.com/claude42/infiltrator/util"
@@ -10,16 +10,18 @@ import (
 )
 
 type InputField struct {
-	x, y, width int
-	cursor      int
-	content     []rune
-	receiver    model.UpdatedTextReceiver
+	x, y, width  int
+	cursor       int
+	content      []rune
+	receiver     model.UpdatedTextReceiver
+	inputCorrect bool
 
 	ComponentImpl
 }
 
 func NewInputField() *InputField {
 	i := &InputField{}
+	i.inputCorrect = true
 
 	return i
 }
@@ -27,6 +29,7 @@ func NewInputField() *InputField {
 func NewInputFieldWithReceiver(receiver model.UpdatedTextReceiver) *InputField {
 	i := &InputField{}
 	i.receiver = receiver
+	i.inputCorrect = true
 
 	return i
 }
@@ -53,6 +56,9 @@ func (i *InputField) Render(updateScreen bool) {
 		style = ActiveTextInputStyle
 	} else {
 		style = TextInputStyle
+	}
+	if !i.inputCorrect {
+		style = style.Italic(true)
 	}
 
 	x := renderRunes(i.x, i.y, i.content, style)
@@ -142,12 +148,15 @@ func (i *InputField) SetReceiver(receiver model.UpdatedTextReceiver) {
 }
 
 func (i *InputField) updateReceiver() {
-	log.Println(".")
 	if i.receiver == nil {
 		return
 	}
-	log.Println(".")
 
-	i.receiver.UpdateText(string(i.content))
-	log.Println(".")
+	err := i.receiver.UpdateText(string(i.content))
+	// in case new inputCorrect state is different from previous
+	if (err == nil) != i.inputCorrect {
+		i.inputCorrect = (err == nil)
+		screen.Beep()
+		i.Render(true)
+	}
 }

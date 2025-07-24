@@ -1,5 +1,5 @@
 package model
 
 type UpdatedTextReceiver interface {
-	UpdateText(text string)
+	UpdateText(text string) error
 }

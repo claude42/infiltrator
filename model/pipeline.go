@@ -29,26 +29,48 @@ func GetPipeline() *Pipeline {
 }
 
 func (p *Pipeline) AddFilter(f Filter) {
-	log.Printf("Pipeline.AddFilter")
 	var last Filter
 
 	// add pipeline as eventhandler of the new filter
 	f.SetEventHandler(p)
 
 	if len(p.filters) > 0 {
-		log.Printf("Adding to existing filters")
 		// remove pipeline itself as the event handler of previous
 		// filter, instead add new filter as event handler
 		last = p.filters[len(p.filters)-1]
 		last.SetEventHandler(f)
 		f.SetSource(last)
-	} else {
-		log.Printf("No other filters yet")
 	}
 	p.filters = append(p.filters, f)
 }
 
-func (p *Pipeline) GetOutputFilter() (Filter, error) {
+func (p *Pipeline) RemoveFilter(f Filter) error {
+	if len(p.filters) <= 2 {
+		return fmt.Errorf("at least one buffer and one filter required")
+	}
+	for i, filter := range p.filters {
+		if filter == f {
+			if i == 0 {
+				log.Panicln("Cannot remove buffer from pipeline")
+			}
+			p.filters = append(p.filters[:i], p.filters[i+1:]...)
+			if i < len(p.filters) {
+				// set next filter as event handler of previous filter
+				p.filters[i-1].SetEventHandler(p.filters[i])
+				p.filters[i].SetSource(p.filters[i-1])
+			} else {
+				// set pipeline as event handler of last filter
+				p.filters[i-1].SetEventHandler(p)
+			}
+			p.screenBufferClean = false
+			return nil
+		}
+	}
+	log.Panicln("Filter not found in pipeline")
+	return fmt.Errorf("Filter not found in pipeline")
+}
+
+func (p *Pipeline) OutputFilter() (Filter, error) {
 	if len(p.filters) == 0 {
 		return nil, fmt.Errorf("pipeline empty")
 	}
@@ -57,7 +79,7 @@ func (p *Pipeline) GetOutputFilter() (Filter, error) {
 }
 
 func (p *Pipeline) GetLine(line int) (Line, error) {
-	filter, err := p.GetOutputFilter()
+	filter, err := p.OutputFilter()
 	if err != nil {
 		return Line{}, err
 	}
@@ -68,7 +90,7 @@ func (p *Pipeline) GetLine(line int) (Line, error) {
 }
 
 func (p *Pipeline) Size() (int, int, error) {
-	filter, err := p.GetOutputFilter()
+	filter, err := p.OutputFilter()
 	if err != nil {
 		return 0, 0, err
 	}
@@ -120,7 +142,7 @@ func (p *Pipeline) RefreshScreenBuffer(startLine, viewHeight int) {
 	}
 
 	for ; y < viewHeight; y++ {
-		p.screenBuffer[y] = Line{-1, ""}
+		p.screenBuffer[y] = Line{-1, "", []uint8{}}
 	}
 
 	p.screenBufferClean = true

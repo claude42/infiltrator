@@ -37,11 +37,10 @@ func (v *View) SetPipeline(pipeline *model.Pipeline) {
 }
 
 func (v *View) Render(updateScreen bool) {
-	log.Println("View.Render")
 	screenBuffer := v.pipeline.ScreenBuffer(v.curY, v.viewHeight)
 	// if the first line on the screen doesn't match, adjust curY, so
 	// e.g. the next cursor down will have an effect
-	v.curY = screenBuffer[0].No
+	v.curY = util.IntMax(screenBuffer[0].No, 0)
 
 	for y := 0; y < v.viewHeight; y++ {
 		v.renderLine(screenBuffer[y], y)
@@ -61,26 +60,33 @@ func (v *View) renderLine(line model.Line, y int) {
 	}
 
 	for x := start; x < v.viewWidth; x++ {
-		var r rune
-		if v.curX+x < len(str) {
-			r = rune(str[v.curX+x-start])
-		} else {
-			r = ' '
+		var r rune = ' '
+		style := DefStyle
+		var lineXPos = v.curX + x - start
+
+		if v.curX+x < len(str)+start {
+			r = rune(str[lineXPos])
+
+			// in case we're on the last screen column, render an inverse '>'
+			if x == v.viewWidth-1 && v.curX+x+1 < len(str) {
+				r = '>'
+				style = style.Reverse(true)
+			} else if line.ColorIndex[lineXPos] > 0 {
+				style = style.Reverse(true).Foreground(FilterColors[line.ColorIndex[lineXPos]])
+			}
 		}
-		var style tcell.Style
-		if x == v.viewWidth-1 && v.curX+x+1 < len(str) {
-			style = OverflowStyle
-		} else {
-			style = DefStyle
-		}
+
 		screen.SetContent(x, y, r, nil, style)
 	}
 }
 
 func (v *View) renderLineNumber(line model.Line, y int) int {
+	if line.No < 0 {
+		return 0 // TODO: 0 ok?
+	}
 	_, length, err := v.pipeline.Size()
 	if err != nil {
-		return 1 // TODO: 0 ok?
+		return 0 // TODO: 0 ok?
 	}
 
 	str := fmt.Sprintf("%*d ", util.CountDigits(length-1), line.No)
@@ -178,7 +184,7 @@ func (v *View) HandleEvent(ev tcell.Event) bool {
 		    v.Move(-1, 0)
 		    return true*/
 		case tcell.KeyCtrlF, tcell.KeyPgDn:
-			// TODO: rest as well
+			// TODO: would be surprised if this still works
 			v.Move(0, v.viewHeight)
 			return true
 		case tcell.KeyCtrlB, tcell.KeyPgUp:

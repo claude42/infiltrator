@@ -51,7 +51,11 @@ func (b *Buffer) readFromFile(filePath string) error {
 	b.width = 0
 	y := 0
 	for scanner.Scan() {
-		newLine := Line{y, scanner.Text()}
+		text := scanner.Text()
+		newLine := Line{y, text, make([]uint8, len(text))}
+		if len(newLine.Str) != len(newLine.ColorIndex) {
+			log.Panicf("Line length mismatch: %d != %d", len(newLine.Str), len(newLine.ColorIndex))
+		}
 		b.lines = append(b.lines, newLine)
 		b.width = util.IntMax(len(newLine.Str)-1, b.width)
 		y++
@@ -65,12 +69,18 @@ func (b *Buffer) readFromFile(filePath string) error {
 }
 
 func (b *Buffer) GetLine(line int) (Line, error) {
-	log.Printf("Buffer.GetLine(%d), len(b.lines)=%d", line, len(b.lines))
 	if line < 0 || line >= len(b.lines) {
 		log.Println("ErrOutOfBounds")
 		return Line{}, ErrOutOfBounds
 	}
+	b.decolorizeLine(b.lines[line])
 	return b.lines[line], nil
+}
+
+func (b *Buffer) decolorizeLine(line Line) {
+	for i := range line.ColorIndex {
+		line.ColorIndex[i] = 0
+	}
 }
 
 func (b *Buffer) Source() (Filter, error) {
@@ -88,4 +98,17 @@ func (b *Buffer) SetEventHandler(eventHandler tcell.EventHandler) {
 
 func (b *Buffer) HandleEvent(ev tcell.Event) bool {
 	return b.eventHandler.HandleEvent(ev)
+}
+
+func (b *Buffer) SetFilterFunc(fn func(input string, key string) (string, error)) {
+	log.Panicln("SetFilterFunc() should never be called on a buffer!")
+}
+
+func (b *Buffer) SetKey(key string) error {
+	log.Panicln("SetKey() should never be called on a buffer!")
+	return nil
+}
+
+func (b *Buffer) SetColorIndex(colorIndex uint8) {
+	// Buffers don't have a color
 }

@@ -16,7 +16,7 @@ type Window struct {
 	mainView     *View
 	BottomPanels []Panel
 	PanelsOpen   bool
-	activePanel  int
+	activePanel  Panel
 }
 
 func Setup(pipeline *model.Pipeline) *Window {
@@ -37,8 +37,9 @@ func Setup(pipeline *model.Pipeline) *Window {
 	}
 
 	window.SetView(NewView(pipeline))
-	k := NewKeywordPanel()
-	window.AddPanel(k)
+
+	panel := NewPanel(TypeRegex)
+	window.AddPanel(panel)
 	window.PanelsOpen = true
 
 	setupScreen()
@@ -74,51 +75,57 @@ func (w *Window) EventLoop(quit chan<- struct{}) {
 	for {
 		ev := screen.PollEvent()
 
-		if w.mainView.HandleEvent(ev) {
-			continue
-		}
-
-		if w.BottomPanels[w.activePanel].HandleEvent(ev) {
-			continue
-		}
-
 		switch ev := ev.(type) {
 		case *tcell.EventKey:
 			switch ev.Key() {
 			case tcell.KeyRune:
-				switch ev.Rune() {
-				case 'q':
-					close(quit)
-					return
-				}
 			case tcell.KeyBacktab:
 				err := w.switchPanel(-1)
 				if err != nil {
 					screen.Beep()
 				}
+				continue
 			case tcell.KeyTab:
 				err := w.switchPanel(1)
 				if err != nil {
 					screen.Beep()
 				}
+				continue
 			case tcell.KeyCtrlP:
-				err := w.AddPanel(NewKeywordPanel())
+				err := w.AddPanel(NewPanel(TypeKeyword))
 				if err != nil {
 					screen.Beep()
 				}
+				continue
 			case tcell.KeyCtrlO:
-				err := w.RemovePanel(w.activePanel)
+				toBeDestroyed := w.activePanel
+				err := w.RemovePanel()
 				if err != nil {
 					screen.Beep()
 				}
+				DestroyPanel(toBeDestroyed)
+				w.Render()
+				continue
 			case tcell.KeyEscape, tcell.KeyCtrlC:
 				close(quit)
 				return
 			case tcell.KeyCtrlL:
 				w.resizeAndRedraw()
+				continue
 			}
 		case *tcell.EventResize:
 			w.resizeAndRedraw()
+			// TODO: maybe change this in the future and let it trickle down
+			// instead of calling resize() manually
+			continue
+		}
+
+		if w.mainView.HandleEvent(ev) {
+			continue
+		}
+
+		if w.activePanel.HandleEvent(ev) {
+			continue
 		}
 	}
 }
@@ -146,7 +153,7 @@ func (w *Window) resize() {
 		y := height - totalPanelHeight
 		for _, p := range w.BottomPanels {
 			p.Resize(0, y, width, 0) // x and height ignored
-			y += p.GetHeight()
+			y += p.Height()
 		}
 	}
 }
@@ -159,7 +166,7 @@ func (w *Window) totalPanelHeight() int {
 	var totalPanelHeight = 0
 
 	for _, p := range w.BottomPanels {
-		totalPanelHeight += p.GetHeight()
+		totalPanelHeight += p.Height()
 	}
 
 	return totalPanelHeight
@@ -168,7 +175,7 @@ func (w *Window) totalPanelHeight() int {
 func (w *Window) AddPanel(newPanel Panel) error {
 	// TODO: return error if total height of panels would exceed screen height
 	w.BottomPanels = append(w.BottomPanels, newPanel)
-	w.SetActivePanel(len(w.BottomPanels) - 1)
+	w.SetActivePanel(newPanel)
 
 	// resize() doesn't sound right here but will actually recalculate where
 	// the panels should be placed and how big they are.
@@ -177,24 +184,23 @@ func (w *Window) AddPanel(newPanel Panel) error {
 	return nil
 }
 
-func (w *Window) RemovePanel(pos int) error {
-	if pos < 0 || pos >= len(w.BottomPanels) {
-		log.Fatalf("Spurios panel number %d", pos)
-	}
-
+func (w *Window) RemovePanel() error {
 	if len(w.BottomPanels) == 1 {
 		return fmt.Errorf("cannot remove last panel")
 	}
 
-	var newActivePanel int
-	if pos > 0 {
-		newActivePanel = pos - 1
+	var newActivePanel Panel
+	activePanelIndex := w.activePanelIndex()
+
+	if activePanelIndex > 0 {
+		newActivePanel = w.BottomPanels[activePanelIndex-1]
 	} else {
-		newActivePanel = 0
+		newActivePanel = w.BottomPanels[1]
 	}
 
+	w.BottomPanels = append(w.BottomPanels[:activePanelIndex],
+		w.BottomPanels[activePanelIndex+1:]...)
 	w.SetActivePanel(newActivePanel)
-	w.BottomPanels = append(w.BottomPanels[:pos], w.BottomPanels[pos+1:]...)
 
 	w.resize()
 	w.Render()
@@ -202,30 +208,36 @@ func (w *Window) RemovePanel(pos int) error {
 	return nil
 }
 
-func (w *Window) SetActivePanel(pos int) {
-	// should really happen but just in case
-	if w.activePanel < 0 || w.activePanel >= len(w.BottomPanels) {
-		log.Fatalf("Spurios curent panel number %d", w.activePanel)
+func (w *Window) SetActivePanel(p Panel) {
+	if w.activePanel != nil {
+		w.activePanel.SetActive(false)
 	}
-
-	w.BottomPanels[w.activePanel].SetActive(false)
-
-	w.activePanel = pos
-	w.BottomPanels[w.activePanel].SetActive(true)
+	w.activePanel = p
+	w.activePanel.SetActive(true)
 
 	// is there any case where the whole window (instead of the affected panel)
 	// would have to be redrawn?
 	// w.Render()
 }
 
+func (w *Window) activePanelIndex() int {
+	for i, panel := range w.BottomPanels {
+		if panel == w.activePanel {
+			return i
+		}
+	}
+	log.Panicln("Panel not found")
+	return -1 // never reached
+}
+
 func (w *Window) switchPanel(offset int) error {
-	newPanelIndex := w.activePanel + offset
+	newPanelIndex := w.activePanelIndex() + offset
 
 	if newPanelIndex < 0 || newPanelIndex >= len(w.BottomPanels) {
 		return fmt.Errorf("no panel at index %d", newPanelIndex)
 	}
 
-	w.SetActivePanel(newPanelIndex)
+	w.SetActivePanel(w.BottomPanels[newPanelIndex])
 	// It would probably be more natural to call render within the SetActivePanel()
 	// (or even the individual SetActive() methods of the panels and InputFields),
 	// but this way we avoid unnecessary redraws when switching panels.
