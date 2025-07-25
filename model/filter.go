@@ -18,7 +18,9 @@ type Filter interface {
 	SetSource(source Filter)
 	Size() (int, int, error)
 	Watch(eventHandler tcell.EventHandler)
+	Unwatch(eventHandler tcell.EventHandler)
 	SetColorIndex(colorIndex uint8)
+	SetMode(mode int)
 
 	tcell.EventHandler
 }

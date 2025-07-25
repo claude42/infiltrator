@@ -39,7 +39,7 @@ func Setup(pipeline *model.Pipeline) *Window {
 	window.SetView(NewView(pipeline))
 
 	var panel Panel
-	panel, err = NewPanel(TypeRegex, model.FilterHighlight)
+	panel, err = NewPanel(TypeRegex, model.FilterFocus)
 	if err != nil {
 		log.Panicf("%+v", err)
 	}
@@ -97,7 +97,7 @@ func (w *Window) EventLoop(quit chan<- struct{}) {
 				}
 				continue
 			case tcell.KeyCtrlP:
-				panel, err := NewPanel(TypeKeyword, model.FilterHighlight)
+				panel, err := NewPanel(TypeKeyword, model.FilterFocus)
 				if err != nil {
 					log.Panicf("%+v", err)
 				}

@@ -96,6 +96,11 @@ func (b *Buffer) Watch(eventHandler tcell.EventHandler) {
 	b.eventHandler = eventHandler
 }
 
+func (b *Buffer) Unwatch(eventHandler tcell.EventHandler) {
+	// TODO definitely fix this
+	b.eventHandler = nil
+}
+
 func (b *Buffer) HandleEvent(ev tcell.Event) bool {
 	return b.eventHandler.HandleEvent(ev)
 }
@@ -107,6 +112,10 @@ func (b *Buffer) SetFilterFunc(fn func(input string, key string) (string, error)
 func (b *Buffer) SetKey(key string) error {
 	log.Panicln("SetKey() should never be called on a buffer!")
 	return nil
+}
+
+func (b *Buffer) SetMode(mode int) {
+	log.Panicln("SetMode() should never be called on a buffer!")
 }
 
 func (b *Buffer) SetColorIndex(colorIndex uint8) {

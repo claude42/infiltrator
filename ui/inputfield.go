@@ -48,7 +48,7 @@ func (i *InputField) SetContent(content string) {
 	i.cursor = len(content)
 
 	i.Render(true)
-	i.updateReceiver()
+	i.updateWatchers()
 }
 
 func (i *InputField) Render(updateScreen bool) {
@@ -100,7 +100,7 @@ func (i *InputField) insertRune(r rune) {
 	}
 	i.cursor++
 	i.Render(true)
-	i.updateReceiver()
+	i.updateWatchers()
 }
 
 func (i *InputField) setCursor(newCursor int) {
@@ -114,7 +114,7 @@ func (i *InputField) setCursor(newCursor int) {
 		i.cursor = newCursor
 	}
 	i.Render(true)
-	i.updateReceiver()
+	i.updateWatchers()
 }
 
 func (i *InputField) backspaceRune() {
@@ -126,7 +126,7 @@ func (i *InputField) backspaceRune() {
 	i.content = append(i.content[:i.cursor-1], i.content[i.cursor:]...)
 	i.cursor--
 	i.Render(true)
-	i.updateReceiver()
+	i.updateWatchers()
 }
 
 func (i *InputField) deleteRune() {
@@ -137,14 +137,14 @@ func (i *InputField) deleteRune() {
 
 	i.content = append(i.content[:i.cursor], i.content[i.cursor+1:]...)
 	i.Render(true)
-	i.updateReceiver()
+	i.updateWatchers()
 }
 
 func (i *InputField) Watch(eh tcell.EventHandler) {
 	i.eh = eh
 }
 
-func (i *InputField) updateReceiver() {
+func (i *InputField) updateWatchers() {
 	if i.eh == nil {
 		return
 	}

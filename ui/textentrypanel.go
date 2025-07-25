@@ -107,12 +107,14 @@ func (p *TextEntryPanel) SetName(name string) {
 
 func (p *TextEntryPanel) SetFilter(filter model.Filter) {
 	p.filter = filter
+}
 
+func (p *TextEntryPanel) WatchInput(eh tcell.EventHandler) {
 	if p.input == nil {
-		log.Panicln("TextEntryPanel.SetFilter() called without input field!")
+		log.Panicln("TinyPanel.WatchInput() called without input field!")
 		return
 	}
-	p.input.Watch(filter)
+	p.input.Watch(eh)
 }
 
 func (p *TextEntryPanel) Filter() model.Filter {

@@ -14,12 +14,6 @@ import (
 const tinyPanelDefaultName = "This should not be seen here"
 const headerWidth = 9
 
-var modes = map[int]string{
-	model.FilterMatch:     "[match] ",
-	model.FilterHighlight: "[mark ] ",
-	model.FilterHide:      "[hide ] ",
-}
-
 type TinyPanel struct {
 	name       string
 	y          int
@@ -32,9 +26,10 @@ type TinyPanel struct {
 	ComponentImpl
 }
 
-func NewTinyPanel() *TinyPanel {
+func NewTinyPanel(mode int) *TinyPanel {
 	t := &TinyPanel{name: tinyPanelDefaultName}
 	t.input = NewInputField()
+	t.mode = mode
 
 	return t
 }
@@ -57,7 +52,9 @@ func (p *TinyPanel) Render(updateScreen bool) {
 	x := renderText(0, p.y, header, style.Reverse(true))
 	x = drawChars(x, p.y, headerWidth-x, ' ', style.Reverse((true)))
 
-	x = renderText(x, p.y, modes[p.mode], style.Reverse(true))
+	modeStr := fmt.Sprintf("[%-5s] ", FilterModes[p.mode])
+
+	x = renderText(x, p.y, modeStr, style.Reverse(true))
 
 	screen.SetContent(x, p.y, '►', nil, style)
 	screen.SetContent(x+1, p.y, ' ', nil, style)
@@ -97,6 +94,14 @@ func (p *TinyPanel) SetContent(content string) {
 }
 
 func (p *TinyPanel) HandleEvent(ev tcell.Event) bool {
+	switch ev := ev.(type) {
+	case *tcell.EventKey:
+		switch ev.Key() {
+		case tcell.KeyCtrlM:
+			p.toggleMode()
+		}
+	}
+
 	if p.input == nil {
 		return false
 	}
@@ -114,14 +119,26 @@ func (p *TinyPanel) SetName(name string) {
 
 func (p *TinyPanel) SetFilter(filter model.Filter) {
 	p.filter = filter
-
-	if p.input == nil {
-		log.Panicln("TinyPanel.SetFilter() called without input field!")
-		return
-	}
-	p.input.Watch(filter)
 }
 
 func (p *TinyPanel) Filter() model.Filter {
 	return p.filter
+}
+
+func (p *TinyPanel) WatchInput(eh tcell.EventHandler) {
+	if p.input == nil {
+		log.Panicln("TinyPanel.WatchInput() called without input field!")
+		return
+	}
+	p.input.Watch(eh)
+}
+
+func (p *TinyPanel) toggleMode() {
+	p.mode++
+	if p.mode >= len(FilterModes) {
+		p.mode = 0
+	}
+	p.filter.SetMode(p.mode)
+
+	p.Render(true)
 }

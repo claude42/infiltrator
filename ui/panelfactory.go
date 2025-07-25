@@ -16,15 +16,22 @@ const (
 	Date
 )
 
+var FilterModes = []string{
+	"match",
+	"focus",
+	"hide",
+}
+
 const keywordPanelDefaultName = "Keyword"
 const regexPanelDefaultName = "Regex"
 
 func setupNewTinyPanel(fn model.StringFilterFuncFactory, name string, mode int) (*TinyPanel, error) {
-	p := NewTinyPanel()
+	p := NewTinyPanel(mode)
 	p.SetName(name)
 	filter := model.NewStringFilter(fn, mode)
 	model.GetPipeline().AddFilter(filter)
 	p.SetFilter(filter)
+	p.WatchInput(filter)
 
 	// done last so both panel and filter get the same color index
 	colorIndex, err := GetColorManager().Add(p)

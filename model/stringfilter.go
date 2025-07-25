@@ -13,7 +13,7 @@ import (
 
 const (
 	FilterMatch int = iota
-	FilterHighlight
+	FilterFocus
 	FilterHide
 )
 
@@ -92,6 +92,14 @@ func (k *StringFilter) SetKey(key string) error {
 	return nil
 }
 
+func (k *StringFilter) SetMode(mode int) {
+	k.mode = mode
+
+	if k.eventHandler != nil {
+		k.eventHandler.HandleEvent(NewEventFilterOutput())
+	}
+}
+
 // ErrLineDidNotMatch errors are handled within GetLine() and will not
 // buble up.
 func (k *StringFilter) GetLine(line int) (Line, error) {
@@ -99,55 +107,61 @@ func (k *StringFilter) GetLine(line int) (Line, error) {
 	if err != nil {
 		return sourceLine, err
 	}
+
 	if k.filterFunc == nil {
 		// For now just return the sourceLine, don't touch its status
 		// We'll determine later if this is the right thing to do
 		return sourceLine, nil
 	}
+
 	_, indeces, err := k.filterFunc(sourceLine.Str)
-	if err != nil {
-		if errors.Is(err, ErrLineDidNotMatch) {
-			switch k.mode {
-			case FilterMatch:
-				sourceLine.Status = LineHidden
-				return sourceLine, nil
-			case FilterHighlight:
-				sourceLine.Status = LineDimmed
-				return sourceLine, nil
-			case FilterHide:
-				return sourceLine, nil
-			default:
-				log.Panicf("Unknown filter mode %d", k.mode)
-				return sourceLine, err
-			}
-		}
-		// not really sure what other errors might occur...
-		//sourceLine.Str = "SomeOtherError"
-		log.Panicf("Unknown error in GetLine() %v", err)
+
+	if err != nil && !errors.Is(err, ErrLineDidNotMatch) {
+		log.Panicf("Unknown filter mode %d", k.mode)
 		return sourceLine, err
 	}
 
-	switch k.mode {
-	case FilterMatch, FilterHighlight:
-		if sourceLine.Status != LineHidden {
-			k.colorizeLine(sourceLine, indeces)
-			if sourceLine.Status == LineWithoutStatus {
-				sourceLine.Status = LineMatched
-			}
-		}
+	matched := !errors.Is(err, ErrLineDidNotMatch)
+	k.updateStatus(matched, indeces, &sourceLine)
+
+	if !matched {
 		return sourceLine, nil
-	case FilterHide:
-		// When indeces contains only matches of zero length, this indicates
-		// that the search key was "". We treat this as a special case for
-		// LineHidden, otherwise an empty input field would immediately show
-		// an empty View.
-		if indeces[0][1] != 0 {
+	}
+
+	if (k.mode == FilterMatch || k.mode == FilterFocus) &&
+		sourceLine.Status != LineHidden {
+		k.colorizeLine(sourceLine, indeces)
+	}
+	return sourceLine, nil
+}
+
+func (k *StringFilter) updateStatus(matched bool, indeces [][]int, sourceLine *Line) {
+	switch k.mode {
+	case FilterMatch:
+		if sourceLine.Status == LineWithoutStatus && matched {
+			sourceLine.Status = LineMatched
+		} else if !matched {
 			sourceLine.Status = LineHidden
 		}
-		return sourceLine, nil
+	case FilterFocus:
+		switch sourceLine.Status {
+		case LineWithoutStatus:
+			if matched {
+				sourceLine.Status = LineMatched
+			} else {
+				sourceLine.Status = LineDimmed
+			}
+		case LineMatched:
+			if !matched {
+				sourceLine.Status = LineDimmed
+			}
+		}
+	case FilterHide:
+		if matched && indeces[0][1] != 0 {
+			sourceLine.Status = LineHidden
+		}
 	default:
-		log.Panicf("Unknown filter mode %d", k.mode)
-		return sourceLine, err
+		log.Panicf("Unkwon filter mdoe %d", k.mode)
 	}
 }
 
@@ -178,6 +192,11 @@ func (k *StringFilter) Size() (int, int, error) {
 
 func (k *StringFilter) Watch(eventHandler tcell.EventHandler) {
 	k.eventHandler = eventHandler
+}
+
+func (k *StringFilter) Unwatch(eventHandler tcell.EventHandler) {
+	// TODO: really, fix this!
+	k.eventHandler = nil
 }
 
 func (k *StringFilter) HandleEvent(ev tcell.Event) bool {

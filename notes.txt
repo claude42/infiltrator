@@ -30,5 +30,8 @@ Potentielle Filter
 
 
 
-TODO
-* Double check log.Fatal() vs log.Panic()
+Filtering
+=========
+
+Mode: match
+* 
