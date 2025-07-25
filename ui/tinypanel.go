@@ -12,16 +12,19 @@ import (
 )
 
 const tinyPanelDefaultName = "This should not be seen here"
-const headerWidth = 9
+
+const nameWidth = 9
+const headerWidth = 24
 
 type TinyPanel struct {
-	name       string
-	y          int
-	width      int
-	input      Input
-	mode       Select
-	colorIndex uint8
-	filter     model.Filter
+	name            string
+	y               int
+	width           int
+	input           Input
+	mode            *Select
+	caseSensitivity *Select
+	colorIndex      uint8
+	filter          model.Filter
 
 	ComponentImpl
 }
@@ -29,8 +32,8 @@ type TinyPanel struct {
 func NewTinyPanel(mode int) *TinyPanel {
 	t := &TinyPanel{name: tinyPanelDefaultName}
 	t.input = NewInputField()
-	t.mode = *NewSelect(FilterModes)
-	t.mode.SetSelectedIndex(mode)
+	t.mode = NewSelect(FilterModes)
+	t.caseSensitivity = NewSelect([]string{"case", "cAsE"})
 
 	return t
 }
@@ -43,7 +46,9 @@ func (p *TinyPanel) Resize(x, y, width, height int) {
 	// x, height get ignored
 	p.y = y
 	p.width = width
-	p.input.Resize(x+headerWidth+7+2, y, width-len(p.name)-5, 1)
+	p.input.Resize(x+headerWidth+2, y, width-len(p.name)-5, 1)
+	p.mode.Resize(x+nameWidth, y, 1, 1)
+	p.caseSensitivity.Resize(x+nameWidth+8, y, 1, 1)
 }
 
 func (p *TinyPanel) Render(updateScreen bool) {
@@ -51,17 +56,19 @@ func (p *TinyPanel) Render(updateScreen bool) {
 
 	header := fmt.Sprintf(" %s", p.name)
 	x := renderText(0, p.y, header, style.Reverse(true))
-	x = drawChars(x, p.y, headerWidth-x, ' ', style.Reverse((true)))
-
-	modeStr := fmt.Sprintf("[%-5s] ", FilterModes[p.mode])
-
-	x = renderText(x, p.y, modeStr, style.Reverse(true))
-
-	screen.SetContent(x, p.y, '►', nil, style)
-	screen.SetContent(x+1, p.y, ' ', nil, style)
+	drawChars(x, p.y, headerWidth-x, ' ', style.Reverse((true)))
+	renderText(headerWidth, p.y, "► ", style)
 
 	if p.input != nil {
 		p.input.Render(updateScreen)
+	}
+
+	if p.mode != nil {
+		p.mode.Render(updateScreen)
+	}
+
+	if p.caseSensitivity != nil {
+		p.caseSensitivity.Render(updateScreen)
 	}
 
 	if updateScreen {
@@ -72,6 +79,8 @@ func (p *TinyPanel) Render(updateScreen bool) {
 func (p *TinyPanel) SetColorIndex(colorIndex uint8) {
 	p.colorIndex = colorIndex
 	p.input.SetColorIndex(colorIndex)
+	p.mode.SetColorIndex(colorIndex)
+	p.caseSensitivity.SetColorIndex(colorIndex)
 	if p.filter != nil {
 		p.filter.SetColorIndex(colorIndex)
 	}
@@ -100,6 +109,8 @@ func (p *TinyPanel) HandleEvent(ev tcell.Event) bool {
 		switch ev.Key() {
 		case tcell.KeyCtrlM:
 			p.toggleMode()
+		case tcell.KeyCtrlH:
+			p.toggleCaseSensitivity()
 		}
 	}
 
@@ -112,6 +123,8 @@ func (p *TinyPanel) HandleEvent(ev tcell.Event) bool {
 func (p *TinyPanel) SetActive(active bool) {
 	p.ComponentImpl.SetActive(active)
 	p.input.SetActive(active)
+	p.mode.SetActive(active)
+	p.caseSensitivity.SetActive(active)
 }
 
 func (p *TinyPanel) SetName(name string) {
@@ -135,11 +148,13 @@ func (p *TinyPanel) WatchInput(eh tcell.EventHandler) {
 }
 
 func (p *TinyPanel) toggleMode() {
-	p.mode++
-	if p.mode >= len(FilterModes) {
-		p.mode = 0
-	}
-	p.filter.SetMode(p.mode)
+	p.filter.SetMode(p.mode.NextOption())
+
+	p.Render(true)
+}
+
+func (p *TinyPanel) toggleCaseSensitivity() {
+	p.caseSensitivity.NextOption()
 
 	p.Render(true)
 }

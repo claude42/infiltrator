@@ -11,7 +11,7 @@ type Select struct {
 	x, y, width int
 	options     []string
 	selected    int
-	style       tcell.Style
+	colorIndex  uint8
 
 	ComponentImpl
 }
@@ -29,10 +29,11 @@ func (s *Select) SetOptions(options []string) {
 }
 
 func (s *Select) SetSelectedIndex(selected int) error {
-	if selected >= len(options) {
+	if selected >= len(s.options) {
 		return util.ErrOutOfBounds
 	}
 	s.selected = selected
+	return nil
 }
 
 func (s *Select) SelectedIndex() int {
@@ -56,11 +57,31 @@ func (s *Select) Resize(x, y, width, height int) {
 	s.y = y
 }
 
-func (s *Select) SetStyle(style tcell.Style) {
-	s.style = style
-}
-
 func (s *Select) Render(updateScreen bool) {
 	str := fmt.Sprintf("[%-*s]", s.width, s.options[s.selected])
-	renderText(s.x, s.y, str, s.style)
+	renderText(s.x, s.y, str, s.determineStyle())
+}
+
+func (s *Select) SetColorIndex(colorIndex uint8) {
+	s.colorIndex = colorIndex
+}
+
+func (s *Select) determineStyle() tcell.Style {
+	style := tcell.StyleDefault.Reverse(true)
+
+	if s.IsActive() {
+		style = style.Foreground((FilterColors[s.colorIndex][0])).Bold(true)
+	} else {
+		style = style.Foreground((FilterColors[s.colorIndex][1]))
+	}
+
+	return style
+}
+
+func (s *Select) NextOption() int {
+	s.selected++
+	if s.selected >= len(s.options) {
+		s.selected = 0
+	}
+	return s.selected
 }
