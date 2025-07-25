@@ -140,7 +140,7 @@ func (i *InputField) deleteRune() {
 	i.updateReceiver()
 }
 
-func (i *InputField) SetEventHandler(eh tcell.EventHandler) {
+func (i *InputField) Watch(eh tcell.EventHandler) {
 	i.eh = eh
 }
 

@@ -176,7 +176,7 @@ func (k *StringFilter) Size() (int, int, error) {
 	return k.source.Size()
 }
 
-func (k *StringFilter) SetEventHandler(eventHandler tcell.EventHandler) {
+func (k *StringFilter) Watch(eventHandler tcell.EventHandler) {
 	k.eventHandler = eventHandler
 }
 

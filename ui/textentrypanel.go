@@ -112,7 +112,7 @@ func (p *TextEntryPanel) SetFilter(filter model.Filter) {
 		log.Panicln("TextEntryPanel.SetFilter() called without input field!")
 		return
 	}
-	p.input.SetEventHandler(filter)
+	p.input.Watch(filter)
 }
 
 func (p *TextEntryPanel) Filter() model.Filter {

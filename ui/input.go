@@ -11,7 +11,7 @@ import (
 
 type Input interface {
 	SetContent(content string)
-	SetEventHandler(eh tcell.EventHandler)
+	Watch(eh tcell.EventHandler)
 	SetColorIndex(colorIndex uint8)
 	Component
 	tcell.EventHandler

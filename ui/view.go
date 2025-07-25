@@ -31,7 +31,7 @@ func NewView(pipeline *model.Pipeline) *View {
 
 func (v *View) SetPipeline(pipeline *model.Pipeline) {
 	v.pipeline = pipeline
-	pipeline.SetEventHandler(v)
+	pipeline.Watch(v)
 	log.Printf("Added view as eventhandler to pipeline")
 	v.SetCursor(0, 0)
 }

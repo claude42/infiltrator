@@ -92,7 +92,7 @@ func (b *Buffer) SetSource(source Filter) {
 	log.Panicln("SetSource() should never be called on a buffer!")
 }
 
-func (b *Buffer) SetEventHandler(eventHandler tcell.EventHandler) {
+func (b *Buffer) Watch(eventHandler tcell.EventHandler) {
 	b.eventHandler = eventHandler
 }
 

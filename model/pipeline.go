@@ -32,13 +32,13 @@ func (p *Pipeline) AddFilter(f Filter) {
 	var last Filter
 
 	// add pipeline as eventhandler of the new filter
-	f.SetEventHandler(p)
+	f.Watch(p)
 
 	if len(p.filters) > 0 {
 		// remove pipeline itself as the event handler of previous
 		// filter, instead add new filter as event handler
 		last = p.filters[len(p.filters)-1]
-		last.SetEventHandler(f)
+		last.Watch(f)
 		f.SetSource(last)
 	}
 	p.filters = append(p.filters, f)
@@ -56,11 +56,11 @@ func (p *Pipeline) RemoveFilter(f Filter) error {
 			p.filters = append(p.filters[:i], p.filters[i+1:]...)
 			if i < len(p.filters) {
 				// set next filter as event handler of previous filter
-				p.filters[i-1].SetEventHandler(p.filters[i])
+				p.filters[i-1].Watch(p.filters[i])
 				p.filters[i].SetSource(p.filters[i-1])
 			} else {
 				// set pipeline as event handler of last filter
-				p.filters[i-1].SetEventHandler(p)
+				p.filters[i-1].Watch(p)
 			}
 			p.screenBufferClean = false
 			return nil
@@ -96,8 +96,8 @@ func (p *Pipeline) Size() (int, int, error) {
 	return filter.Size()
 }
 
-func (p *Pipeline) SetEventHandler(eventHandler tcell.EventHandler) {
-	log.Printf("Pipeline.SetEventHandler()")
+func (p *Pipeline) Watch(eventHandler tcell.EventHandler) {
+	log.Printf("Pipeline.Watch()")
 	p.eventHandler = eventHandler
 	// has that ever been a good idea?
 	// p.HandleEvent(NewEventFilterOutput())

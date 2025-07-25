@@ -119,7 +119,7 @@ func (p *TinyPanel) SetFilter(filter model.Filter) {
 		log.Panicln("TinyPanel.SetFilter() called without input field!")
 		return
 	}
-	p.input.SetEventHandler(filter)
+	p.input.Watch(filter)
 }
 
 func (p *TinyPanel) Filter() model.Filter {
