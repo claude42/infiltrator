@@ -24,13 +24,19 @@ type StringFilter struct {
 	eventHandler      tcell.EventHandler
 	colorIndex        uint8
 	mode              int
+	key               string
+	caseSensitive     bool
 }
 
-type StringFilterFuncFactory func(key string) (func(input string) (string, [][]int, error), error)
+type StringFilterFuncFactory func(key string, caseSensitive bool) (func(input string) (string, [][]int, error), error)
 
 // TODO: include error handling?
 
-func DefaultStringFilterFuncFactory(key string) (func(input string) (string, [][]int, error), error) {
+func DefaultStringFilterFuncFactory(key string, caseSensitive bool) (func(input string) (string, [][]int, error), error) {
+	if !caseSensitive {
+		key = strings.ToLower(key)
+	}
+
 	return func(input string) (string, [][]int, error) {
 		var indeces [][]int
 		if len(key) == 0 {
@@ -40,6 +46,10 @@ func DefaultStringFilterFuncFactory(key string) (func(input string) (string, [][
 				indeces = append(indeces, []int{i, i})
 			}
 			return input, indeces, nil
+		}
+
+		if !caseSensitive {
+			input = strings.ToLower(input)
 		}
 
 		offset := 0
@@ -78,10 +88,10 @@ func NewStringFilter(fn StringFilterFuncFactory, mode int) *StringFilter {
 	return k
 }
 
-func (k *StringFilter) SetKey(key string) error {
+func (k *StringFilter) updateFilterFunc(key string, caseSensitive bool) error {
 	var err error
 	if k.filterFuncFactory != nil {
-		k.filterFunc, err = k.filterFuncFactory(key)
+		k.filterFunc, err = k.filterFuncFactory(key, caseSensitive)
 		if err != nil {
 			return fmt.Errorf("error creating filter function: %w", err)
 		}
@@ -90,6 +100,16 @@ func (k *StringFilter) SetKey(key string) error {
 		k.eventHandler.HandleEvent(NewEventFilterOutput())
 	}
 	return nil
+}
+
+func (k *StringFilter) SetKey(key string) error {
+	k.key = key
+	return k.updateFilterFunc(k.key, k.caseSensitive)
+}
+
+func (k *StringFilter) SetCaseSensitive(on bool) error {
+	k.caseSensitive = on
+	return k.updateFilterFunc(k.key, k.caseSensitive)
 }
 
 func (k *StringFilter) SetMode(mode int) {

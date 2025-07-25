@@ -1,12 +1,16 @@
 package model
 
 import (
+	"fmt"
 	"regexp"
 
 	"github.com/claude42/infiltrator/util"
 )
 
-func RegexFilterFuncFactory(key string) (func(input string) (string, [][]int, error), error) {
+func RegexFilterFuncFactory(key string, caseSensitive bool) (func(input string) (string, [][]int, error), error) {
+	if !caseSensitive {
+		key = fmt.Sprintf("(?i)%s", key)
+	}
 	re, err := regexp.Compile(key)
 	if err != nil {
 		return nil, err

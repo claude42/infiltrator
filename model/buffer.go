@@ -117,6 +117,11 @@ func (b *Buffer) SetMode(mode int) {
 	log.Panicln("SetMode() should never be called on a buffer!")
 }
 
+func (b *Buffer) SetCaseSensitive(caseSensitive bool) error {
+	log.Panicln("SetCaseSensitive() should never be called on a buffer!")
+	return nil
+}
+
 func (b *Buffer) SetColorIndex(colorIndex uint8) {
 	// Buffers don't have a color
 }

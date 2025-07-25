@@ -20,6 +20,7 @@ type Filter interface {
 	Unwatch(eventHandler tcell.EventHandler)
 	SetColorIndex(colorIndex uint8)
 	SetMode(mode int)
+	SetCaseSensitive(on bool) error
 
 	tcell.EventHandler
 }

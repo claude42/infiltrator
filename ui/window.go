@@ -39,7 +39,7 @@ func Setup(pipeline *model.Pipeline) *Window {
 	window.SetView(NewView(pipeline))
 
 	var panel Panel
-	panel, err = NewPanel(TypeRegex, model.FilterFocus)
+	panel, err = NewPanel(TypeKeyword, model.FilterFocus)
 	if err != nil {
 		log.Panicf("%+v", err)
 	}

@@ -17,14 +17,14 @@ const nameWidth = 9
 const headerWidth = 24
 
 type TinyPanel struct {
-	name            string
-	y               int
-	width           int
-	input           Input
-	mode            *Select
-	caseSensitivity *Select
-	colorIndex      uint8
-	filter          model.Filter
+	name          string
+	y             int
+	width         int
+	input         Input
+	mode          *Select
+	caseSensitive *Select
+	colorIndex    uint8
+	filter        model.Filter
 
 	ComponentImpl
 }
@@ -33,7 +33,7 @@ func NewTinyPanel(mode int) *TinyPanel {
 	t := &TinyPanel{name: tinyPanelDefaultName}
 	t.input = NewInputField()
 	t.mode = NewSelect(FilterModes)
-	t.caseSensitivity = NewSelect([]string{"case", "cAsE"})
+	t.caseSensitive = NewSelect([]string{"case", "cAsE"})
 
 	return t
 }
@@ -48,7 +48,7 @@ func (p *TinyPanel) Resize(x, y, width, height int) {
 	p.width = width
 	p.input.Resize(x+headerWidth+2, y, width-len(p.name)-5, 1)
 	p.mode.Resize(x+nameWidth, y, 1, 1)
-	p.caseSensitivity.Resize(x+nameWidth+8, y, 1, 1)
+	p.caseSensitive.Resize(x+nameWidth+8, y, 1, 1)
 }
 
 func (p *TinyPanel) Render(updateScreen bool) {
@@ -67,8 +67,8 @@ func (p *TinyPanel) Render(updateScreen bool) {
 		p.mode.Render(updateScreen)
 	}
 
-	if p.caseSensitivity != nil {
-		p.caseSensitivity.Render(updateScreen)
+	if p.caseSensitive != nil {
+		p.caseSensitive.Render(updateScreen)
 	}
 
 	if updateScreen {
@@ -80,7 +80,7 @@ func (p *TinyPanel) SetColorIndex(colorIndex uint8) {
 	p.colorIndex = colorIndex
 	p.input.SetColorIndex(colorIndex)
 	p.mode.SetColorIndex(colorIndex)
-	p.caseSensitivity.SetColorIndex(colorIndex)
+	p.caseSensitive.SetColorIndex(colorIndex)
 	if p.filter != nil {
 		p.filter.SetColorIndex(colorIndex)
 	}
@@ -110,7 +110,7 @@ func (p *TinyPanel) HandleEvent(ev tcell.Event) bool {
 		case tcell.KeyCtrlM:
 			p.toggleMode()
 		case tcell.KeyCtrlH:
-			p.toggleCaseSensitivity()
+			p.toggleCaseSensitive()
 		}
 	}
 
@@ -124,7 +124,7 @@ func (p *TinyPanel) SetActive(active bool) {
 	p.ComponentImpl.SetActive(active)
 	p.input.SetActive(active)
 	p.mode.SetActive(active)
-	p.caseSensitivity.SetActive(active)
+	p.caseSensitive.SetActive(active)
 }
 
 func (p *TinyPanel) SetName(name string) {
@@ -153,8 +153,8 @@ func (p *TinyPanel) toggleMode() {
 	p.Render(true)
 }
 
-func (p *TinyPanel) toggleCaseSensitivity() {
-	p.caseSensitivity.NextOption()
+func (p *TinyPanel) toggleCaseSensitive() {
+	p.filter.SetCaseSensitive(p.caseSensitive.NextOption() == 1)
 
 	p.Render(true)
 }
