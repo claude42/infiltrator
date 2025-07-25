@@ -97,7 +97,7 @@ func (w *Window) EventLoop(quit chan<- struct{}) {
 				}
 				continue
 			case tcell.KeyCtrlP:
-				panel, err := NewPanel(TypeKeyword, model.FilterFocus)
+				panel, err := NewPanel(TypeRegex, model.FilterFocus)
 				if err != nil {
 					log.Panicf("%+v", err)
 				}

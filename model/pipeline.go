@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"log"
 
-	// "github.com/claude42/infiltrator/util"
+	"github.com/claude42/infiltrator/util"
 
 	"github.com/gdamore/tcell/v2"
 )
@@ -121,9 +121,9 @@ func (p *Pipeline) RefreshScreenBuffer(startLine, viewHeight int) {
 	for y < viewHeight {
 		line, err := p.GetLine(lineNo)
 		lineNo++
-		if errors.Is(err, ErrLineDidNotMatch) {
+		if errors.Is(err, util.ErrLineDidNotMatch) {
 			log.Panicf("shoult not happen anymore")
-		} else if errors.Is(err, ErrOutOfBounds) {
+		} else if errors.Is(err, util.ErrOutOfBounds) {
 			break
 		} else if err != nil {
 			log.Panicf("fuck me")
@@ -167,7 +167,7 @@ func (p *Pipeline) ScrollDownLineBuffer() error {
 	// what's more elegant...
 	if lineNo >= length {
 		log.Println("P.ScrollDown ErrOutOfBounds")
-		return ErrOutOfBounds
+		return util.ErrOutOfBounds
 	}
 
 	log.Println("Pipeline.ScrollDown3")
@@ -200,7 +200,7 @@ func (p *Pipeline) ScrollUpLineBuffer() error {
 	// what's more elegant...
 	if lineNo < 0 {
 		log.Println("P.ScrollUp ErrOutOfBounds")
-		return ErrOutOfBounds
+		return util.ErrOutOfBounds
 	}
 
 	if len(p.screenBuffer) > 0 {

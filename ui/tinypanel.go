@@ -19,9 +19,9 @@ type TinyPanel struct {
 	y          int
 	width      int
 	input      Input
+	mode       Select
 	colorIndex uint8
 	filter     model.Filter
-	mode       int
 
 	ComponentImpl
 }
@@ -29,7 +29,8 @@ type TinyPanel struct {
 func NewTinyPanel(mode int) *TinyPanel {
 	t := &TinyPanel{name: tinyPanelDefaultName}
 	t.input = NewInputField()
-	t.mode = mode
+	t.mode = *NewSelect(FilterModes)
+	t.mode.SetSelectedIndex(mode)
 
 	return t
 }

@@ -1,7 +1,6 @@
 package model
 
 import (
-	"errors"
 	//"fmt"
 	//"log"
 	"time"
@@ -28,9 +27,6 @@ type Filter interface {
 type EventFilterOutput struct {
 	time time.Time
 }
-
-var ErrOutOfBounds = errors.New("out of bounds")
-var ErrLineDidNotMatch = errors.New("line did not match")
 
 func NewEventFilterOutput() *EventFilterOutput {
 	e := &EventFilterOutput{}

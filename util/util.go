@@ -8,7 +8,10 @@ import (
 	"math"
 )
 
-var ErrOutOfBounds = errors.New("out of bounds")
+var (
+	ErrOutOfBounds     = errors.New("out of bounds")
+	ErrLineDidNotMatch = errors.New("line did not match")
+)
 
 func IntMax(a, b int) int {
 	if a > b {

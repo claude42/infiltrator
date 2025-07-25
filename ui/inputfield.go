@@ -174,11 +174,6 @@ func (i *InputField) determineStyle() tcell.Style {
 		style = tcell.StyleDefault.Foreground((FilterColors[i.colorIndex][1]))
 	}
 
-	// if i.IsActive() {
-	// 	style = ActiveTextInputStyle
-	// } else {
-	// 	style = TextInputStyle
-	// }
 	if !i.inputCorrect {
 		style = style.Italic(true)
 	}

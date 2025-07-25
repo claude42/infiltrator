@@ -70,8 +70,7 @@ func (b *Buffer) readFromFile(filePath string) error {
 
 func (b *Buffer) GetLine(line int) (Line, error) {
 	if line < 0 || line >= len(b.lines) {
-		log.Println("ErrOutOfBounds")
-		return Line{Str: "ErrOutOfBounds"}, ErrOutOfBounds
+		return Line{Str: "ErrOutOfBounds"}, util.ErrOutOfBounds
 	}
 	b.decolorizeLine(b.lines[line])
 	b.lines[line].Status = LineWithoutStatus

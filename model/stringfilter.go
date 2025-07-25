@@ -58,7 +58,7 @@ func DefaultStringFilterFuncFactory(key string) (func(input string) (string, [][
 		}
 
 		if len(indeces) == 0 {
-			return "", nil, ErrLineDidNotMatch
+			return "", nil, util.ErrLineDidNotMatch
 		}
 
 		return input, indeces, nil
@@ -116,12 +116,12 @@ func (k *StringFilter) GetLine(line int) (Line, error) {
 
 	_, indeces, err := k.filterFunc(sourceLine.Str)
 
-	if err != nil && !errors.Is(err, ErrLineDidNotMatch) {
+	if err != nil && !errors.Is(err, util.ErrLineDidNotMatch) {
 		log.Panicf("Unknown filter mode %d", k.mode)
 		return sourceLine, err
 	}
 
-	matched := !errors.Is(err, ErrLineDidNotMatch)
+	matched := !errors.Is(err, util.ErrLineDidNotMatch)
 	k.updateStatus(matched, indeces, &sourceLine)
 
 	if !matched {
