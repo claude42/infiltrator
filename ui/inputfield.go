@@ -3,7 +3,7 @@ package ui
 import (
 	"log"
 
-	"github.com/claude42/infiltrator/model"
+	// "github.com/claude42/infiltrator/model"
 	"github.com/claude42/infiltrator/util"
 
 	"github.com/gdamore/tcell/v2"
@@ -13,7 +13,7 @@ type InputField struct {
 	x, y, width  int
 	cursor       int
 	content      []rune
-	receiver     model.UpdatedTextReceiver
+	eh           tcell.EventHandler
 	inputCorrect bool
 	colorIndex   uint8
 
@@ -27,9 +27,9 @@ func NewInputField() *InputField {
 	return i
 }
 
-func NewInputFieldWithReceiver(receiver model.UpdatedTextReceiver) *InputField {
+func NewInputFieldWithEventhandler(eh tcell.EventHandler) *InputField {
 	i := &InputField{}
-	i.receiver = receiver
+	i.eh = eh
 	i.inputCorrect = true
 
 	return i
@@ -140,19 +140,22 @@ func (i *InputField) deleteRune() {
 	i.updateReceiver()
 }
 
-func (i *InputField) SetReceiver(receiver model.UpdatedTextReceiver) {
-	i.receiver = receiver
+func (i *InputField) SetEventHandler(eh tcell.EventHandler) {
+	i.eh = eh
 }
 
 func (i *InputField) updateReceiver() {
-	if i.receiver == nil {
+	if i.eh == nil {
 		return
 	}
 
-	err := i.receiver.UpdateText(string(i.content))
+	ev := util.NewEventText(string(i.content))
+
+	consumed := i.eh.HandleEvent(ev)
+
 	// in case new inputCorrect state is different from previous
-	if (err == nil) != i.inputCorrect {
-		i.inputCorrect = (err == nil)
+	if consumed != i.inputCorrect {
+		i.inputCorrect = consumed
 		screen.Beep()
 		i.Render(true)
 	}

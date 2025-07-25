@@ -114,16 +114,14 @@ func (p *TinyPanel) SetName(name string) {
 
 func (p *TinyPanel) SetFilter(filter model.Filter) {
 	p.filter = filter
+
+	if p.input == nil {
+		log.Panicln("TinyPanel.SetFilter() called without input field!")
+		return
+	}
+	p.input.SetEventHandler(filter)
 }
 
 func (p *TinyPanel) Filter() model.Filter {
 	return p.filter
-}
-
-func (p *TinyPanel) SetReceiver(receiver model.UpdatedTextReceiver) {
-	if p.input == nil {
-		log.Panicln("TinyPanel.SetReceiver() called without input field!")
-		return
-	}
-	p.input.SetReceiver(receiver)
 }

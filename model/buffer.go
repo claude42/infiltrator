@@ -93,7 +93,6 @@ func (b *Buffer) SetSource(source Filter) {
 }
 
 func (b *Buffer) SetEventHandler(eventHandler tcell.EventHandler) {
-	log.Println("Buffer.SetEventHandler")
 	b.eventHandler = eventHandler
 }
 

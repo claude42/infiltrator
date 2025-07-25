@@ -107,16 +107,14 @@ func (p *TextEntryPanel) SetName(name string) {
 
 func (p *TextEntryPanel) SetFilter(filter model.Filter) {
 	p.filter = filter
+
+	if p.input == nil {
+		log.Panicln("TextEntryPanel.SetFilter() called without input field!")
+		return
+	}
+	p.input.SetEventHandler(filter)
 }
 
 func (p *TextEntryPanel) Filter() model.Filter {
 	return p.filter
-}
-
-func (p *TextEntryPanel) SetReceiver(receiver model.UpdatedTextReceiver) {
-	if p.input == nil {
-		log.Panicln("TextEntryPanel.SetReceiver() called without input field!")
-		return
-	}
-	p.input.SetReceiver(receiver)
 }

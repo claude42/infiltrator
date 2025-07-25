@@ -25,7 +25,6 @@ func setupNewTinyPanel(fn model.StringFilterFuncFactory, name string, mode int) 
 	filter := model.NewStringFilter(fn, mode)
 	model.GetPipeline().AddFilter(filter)
 	p.SetFilter(filter)
-	p.SetReceiver(filter)
 
 	// done last so both panel and filter get the same color index
 	colorIndex, err := GetColorManager().Add(p)

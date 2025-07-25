@@ -7,6 +7,7 @@ import (
 	"log"
 	"strings"
 
+	"github.com/claude42/infiltrator/util"
 	"github.com/gdamore/tcell/v2"
 )
 
@@ -85,12 +86,10 @@ func (k *StringFilter) SetKey(key string) error {
 			return fmt.Errorf("error creating filter function: %w", err)
 		}
 	}
-	k.HandleEvent(NewEventFilterOutput())
+	if k.eventHandler != nil {
+		k.eventHandler.HandleEvent(NewEventFilterOutput())
+	}
 	return nil
-}
-
-func (k *StringFilter) UpdateText(text string) error {
-	return k.SetKey(text)
 }
 
 // ErrLineDidNotMatch errors are handled within GetLine() and will not
@@ -182,10 +181,13 @@ func (k *StringFilter) SetEventHandler(eventHandler tcell.EventHandler) {
 }
 
 func (k *StringFilter) HandleEvent(ev tcell.Event) bool {
-	if k.eventHandler == nil {
+	switch ev := ev.(type) {
+	case *util.EventText:
+		err := k.SetKey(ev.Text())
+		return err == nil
+	default:
 		return false
 	}
-	return k.eventHandler.HandleEvent(ev)
 }
 
 func (k *StringFilter) SetColorIndex(colorIndex uint8) {
