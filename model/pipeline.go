@@ -114,7 +114,6 @@ func (p *Pipeline) HandleEvent(ev tcell.Event) bool {
 //
 //	lines) didn't match the filters
 func (p *Pipeline) RefreshScreenBuffer(startLine, viewHeight int) {
-	log.Printf("Pipieline.refresh")
 	lineNo := startLine
 	y := 0
 	p.screenBuffer = make([]Line, viewHeight)

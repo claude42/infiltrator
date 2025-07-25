@@ -35,8 +35,6 @@ func (b *Buffer) Size() (int, int, error) {
 }
 
 func (b *Buffer) readFromFile(filePath string) error {
-	//log.Println("Called readLinesFromFile")
-
 	file, err := os.Open(filePath)
 	if err != nil {
 		return err

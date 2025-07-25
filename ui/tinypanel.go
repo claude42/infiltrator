@@ -38,37 +38,37 @@ func NewTinyPanel(mode int) *TinyPanel {
 	return t
 }
 
-func (p *TinyPanel) Height() int {
+func (t *TinyPanel) Height() int {
 	return 1
 }
 
-func (p *TinyPanel) Resize(x, y, width, height int) {
+func (t *TinyPanel) Resize(x, y, width, height int) {
 	// x, height get ignored
-	p.y = y
-	p.width = width
-	p.input.Resize(x+headerWidth+2, y, width-len(p.name)-5, 1)
-	p.mode.Resize(x+nameWidth, y, 1, 1)
-	p.caseSensitive.Resize(x+nameWidth+8, y, 1, 1)
+	t.y = y
+	t.width = width
+	t.input.Resize(x+headerWidth+2, y, width-len(t.name)-5, 1)
+	t.mode.Resize(x+nameWidth, y, 1, 1)
+	t.caseSensitive.Resize(x+nameWidth+8, y, 1, 1)
 }
 
-func (p *TinyPanel) Render(updateScreen bool) {
-	style := p.determinePanelStyle()
+func (t *TinyPanel) Render(updateScreen bool) {
+	style := t.determinePanelStyle()
 
-	header := fmt.Sprintf(" %s", p.name)
-	x := renderText(0, p.y, header, style.Reverse(true))
-	drawChars(x, p.y, headerWidth-x, ' ', style.Reverse((true)))
-	renderText(headerWidth, p.y, "► ", style)
+	header := fmt.Sprintf(" %s", t.name)
+	x := renderText(0, t.y, header, style.Reverse(true))
+	drawChars(x, t.y, headerWidth-x, ' ', style.Reverse((true)))
+	renderText(headerWidth, t.y, "► ", style)
 
-	if p.input != nil {
-		p.input.Render(updateScreen)
+	if t.input != nil {
+		t.input.Render(updateScreen)
 	}
 
-	if p.mode != nil {
-		p.mode.Render(updateScreen)
+	if t.mode != nil {
+		t.mode.Render(updateScreen)
 	}
 
-	if p.caseSensitive != nil {
-		p.caseSensitive.Render(updateScreen)
+	if t.caseSensitive != nil {
+		t.caseSensitive.Render(updateScreen)
 	}
 
 	if updateScreen {
@@ -76,85 +76,85 @@ func (p *TinyPanel) Render(updateScreen bool) {
 	}
 }
 
-func (p *TinyPanel) SetColorIndex(colorIndex uint8) {
-	p.colorIndex = colorIndex
-	p.input.SetColorIndex(colorIndex)
-	p.mode.SetColorIndex(colorIndex)
-	p.caseSensitive.SetColorIndex(colorIndex)
-	if p.filter != nil {
-		p.filter.SetColorIndex(colorIndex)
+func (t *TinyPanel) SetColorIndex(colorIndex uint8) {
+	t.colorIndex = colorIndex
+	t.input.SetColorIndex(colorIndex)
+	t.mode.SetColorIndex(colorIndex)
+	t.caseSensitive.SetColorIndex(colorIndex)
+	if t.filter != nil {
+		t.filter.SetColorIndex(colorIndex)
 	}
 }
 
-func (p *TinyPanel) determinePanelStyle() tcell.Style {
-	if p.IsActive() {
-		return tcell.StyleDefault.Bold(true).Foreground(FilterColors[p.colorIndex][0])
+func (t *TinyPanel) determinePanelStyle() tcell.Style {
+	if t.IsActive() {
+		return tcell.StyleDefault.Bold(true).Foreground(FilterColors[t.colorIndex][0])
 	} else {
-		return tcell.StyleDefault.Foreground(FilterColors[p.colorIndex][1])
+		return tcell.StyleDefault.Foreground(FilterColors[t.colorIndex][1])
 	}
 }
 
-func (p *TinyPanel) SetContent(content string) {
-	if p.input == nil {
+func (t *TinyPanel) SetContent(content string) {
+	if t.input == nil {
 		log.Panicln("TinyPanel.SetContent() called without input field!")
 		return
 	}
-	p.input.SetContent(content)
+	t.input.SetContent(content)
 
 }
 
-func (p *TinyPanel) HandleEvent(ev tcell.Event) bool {
+func (t *TinyPanel) HandleEvent(ev tcell.Event) bool {
 	switch ev := ev.(type) {
 	case *tcell.EventKey:
 		switch ev.Key() {
 		case tcell.KeyCtrlM:
-			p.toggleMode()
+			t.toggleMode()
 		case tcell.KeyCtrlH:
-			p.toggleCaseSensitive()
+			t.toggleCaseSensitive()
 		}
 	}
 
-	if p.input == nil {
+	if t.input == nil {
 		return false
 	}
-	return p.input.HandleEvent(ev)
+	return t.input.HandleEvent(ev)
 }
 
-func (p *TinyPanel) SetActive(active bool) {
-	p.ComponentImpl.SetActive(active)
-	p.input.SetActive(active)
-	p.mode.SetActive(active)
-	p.caseSensitive.SetActive(active)
+func (t *TinyPanel) SetActive(active bool) {
+	t.ComponentImpl.SetActive(active)
+	t.input.SetActive(active)
+	t.mode.SetActive(active)
+	t.caseSensitive.SetActive(active)
 }
 
-func (p *TinyPanel) SetName(name string) {
-	p.name = name
+func (t *TinyPanel) SetName(name string) {
+	t.name = name
 }
 
-func (p *TinyPanel) SetFilter(filter model.Filter) {
-	p.filter = filter
+func (t *TinyPanel) SetFilter(filter model.Filter) {
+	t.filter = filter
 }
 
-func (p *TinyPanel) Filter() model.Filter {
-	return p.filter
+func (t *TinyPanel) Filter() model.Filter {
+	return t.filter
 }
 
-func (p *TinyPanel) WatchInput(eh tcell.EventHandler) {
-	if p.input == nil {
+func (t *TinyPanel) WatchInput(eh tcell.EventHandler) {
+	if t.input == nil {
 		log.Panicln("TinyPanel.WatchInput() called without input field!")
 		return
 	}
-	p.input.Watch(eh)
+	t.input.Watch(eh)
 }
 
-func (p *TinyPanel) toggleMode() {
-	p.filter.SetMode(p.mode.NextOption())
+func (t *TinyPanel) toggleMode() {
+	t.filter.SetMode(t.mode.NextOption())
 
-	p.Render(true)
+	t.Render(true)
 }
 
-func (p *TinyPanel) toggleCaseSensitive() {
-	p.filter.SetCaseSensitive(p.caseSensitive.NextOption() == 1)
+func (t *TinyPanel) toggleCaseSensitive() {
+	t.filter.SetCaseSensitive(t.caseSensitive.NextOption() == 1)
 
-	p.Render(true)
+	t.Render(true)
 }

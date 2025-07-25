@@ -1,16 +1,8 @@
 package util
 
 import (
-	"errors"
-	"fmt"
-
 	// "log"
 	"math"
-)
-
-var (
-	ErrOutOfBounds     = errors.New("out of bounds")
-	ErrLineDidNotMatch = errors.New("line did not match")
 )
 
 func IntMax(a, b int) int {
@@ -31,19 +23,12 @@ func IntMin(a, b int) int {
 
 func InBetween(i, min, max int) (int, error) {
 	if i < min {
-		return min, &NotInBetweenError{}
+		return min, ErrNotInBetween
 	} else if i > max {
-		return max, &NotInBetweenError{}
+		return max, ErrNotInBetween
 	} else {
 		return i, nil
 	}
-}
-
-type NotInBetweenError struct {
-}
-
-func (e *NotInBetweenError) Error() string {
-	return fmt.Sprintf("Value not in between error")
 }
 
 func CountDigits(i int) int {

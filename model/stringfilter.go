@@ -88,75 +88,75 @@ func NewStringFilter(fn StringFilterFuncFactory, mode int) *StringFilter {
 	return k
 }
 
-func (k *StringFilter) updateFilterFunc(key string, caseSensitive bool) error {
+func (s *StringFilter) updateFilterFunc(key string, caseSensitive bool) error {
 	var err error
-	if k.filterFuncFactory != nil {
-		k.filterFunc, err = k.filterFuncFactory(key, caseSensitive)
+	if s.filterFuncFactory != nil {
+		s.filterFunc, err = s.filterFuncFactory(key, caseSensitive)
 		if err != nil {
 			return fmt.Errorf("error creating filter function: %w", err)
 		}
 	}
-	if k.eventHandler != nil {
-		k.eventHandler.HandleEvent(NewEventFilterOutput())
+	if s.eventHandler != nil {
+		s.eventHandler.HandleEvent(NewEventFilterOutput())
 	}
 	return nil
 }
 
-func (k *StringFilter) SetKey(key string) error {
-	k.key = key
-	return k.updateFilterFunc(k.key, k.caseSensitive)
+func (s *StringFilter) SetKey(key string) error {
+	s.key = key
+	return s.updateFilterFunc(s.key, s.caseSensitive)
 }
 
-func (k *StringFilter) SetCaseSensitive(on bool) error {
-	k.caseSensitive = on
-	return k.updateFilterFunc(k.key, k.caseSensitive)
+func (s *StringFilter) SetCaseSensitive(on bool) error {
+	s.caseSensitive = on
+	return s.updateFilterFunc(s.key, s.caseSensitive)
 }
 
-func (k *StringFilter) SetMode(mode int) {
-	k.mode = mode
+func (s *StringFilter) SetMode(mode int) {
+	s.mode = mode
 
-	if k.eventHandler != nil {
-		k.eventHandler.HandleEvent(NewEventFilterOutput())
+	if s.eventHandler != nil {
+		s.eventHandler.HandleEvent(NewEventFilterOutput())
 	}
 }
 
 // ErrLineDidNotMatch errors are handled within GetLine() and will not
 // buble up.
-func (k *StringFilter) GetLine(line int) (Line, error) {
-	sourceLine, err := k.source.GetLine(line)
+func (s *StringFilter) GetLine(line int) (Line, error) {
+	sourceLine, err := s.source.GetLine(line)
 	if err != nil {
 		return sourceLine, err
 	}
 
-	if k.filterFunc == nil {
+	if s.filterFunc == nil {
 		// For now just return the sourceLine, don't touch its status
 		// We'll determine later if this is the right thing to do
 		return sourceLine, nil
 	}
 
-	_, indeces, err := k.filterFunc(sourceLine.Str)
+	_, indeces, err := s.filterFunc(sourceLine.Str)
 
 	if err != nil && !errors.Is(err, util.ErrLineDidNotMatch) {
-		log.Panicf("Unknown filter mode %d", k.mode)
+		log.Panicf("Unknown filter mode %d", s.mode)
 		return sourceLine, err
 	}
 
 	matched := !errors.Is(err, util.ErrLineDidNotMatch)
-	k.updateStatus(matched, indeces, &sourceLine)
+	s.updateStatus(matched, indeces, &sourceLine)
 
 	if !matched {
 		return sourceLine, nil
 	}
 
-	if (k.mode == FilterMatch || k.mode == FilterFocus) &&
+	if (s.mode == FilterMatch || s.mode == FilterFocus) &&
 		sourceLine.Status != LineHidden {
-		k.colorizeLine(sourceLine, indeces)
+		s.colorizeLine(sourceLine, indeces)
 	}
 	return sourceLine, nil
 }
 
-func (k *StringFilter) updateStatus(matched bool, indeces [][]int, sourceLine *Line) {
-	switch k.mode {
+func (s *StringFilter) updateStatus(matched bool, indeces [][]int, sourceLine *Line) {
+	switch s.mode {
 	case FilterMatch:
 		if sourceLine.Status == LineWithoutStatus && matched {
 			sourceLine.Status = LineMatched
@@ -181,54 +181,54 @@ func (k *StringFilter) updateStatus(matched bool, indeces [][]int, sourceLine *L
 			sourceLine.Status = LineHidden
 		}
 	default:
-		log.Panicf("Unkwon filter mdoe %d", k.mode)
+		log.Panicf("Unkwon filter mdoe %d", s.mode)
 	}
 }
 
-func (k *StringFilter) colorizeLine(line Line, indeces [][]int) {
+func (s *StringFilter) colorizeLine(line Line, indeces [][]int) {
 	for _, index := range indeces {
 		for i := index[0]; i < index[1]; i++ {
-			line.ColorIndex[i] = k.colorIndex
+			line.ColorIndex[i] = s.colorIndex
 		}
 	}
 }
 
-func (k *StringFilter) Source() (Filter, error) {
-	if k.source == nil {
+func (s *StringFilter) Source() (Filter, error) {
+	if s.source == nil {
 		return nil, fmt.Errorf("no source defined")
 	}
 
-	return k.source, nil
+	return s.source, nil
 }
 
-func (k *StringFilter) SetSource(source Filter) {
-	k.source = source
+func (s *StringFilter) SetSource(source Filter) {
+	s.source = source
 }
 
-func (k *StringFilter) Size() (int, int, error) {
+func (s *StringFilter) Size() (int, int, error) {
 	//return 80, 0, nil // FIXME
-	return k.source.Size()
+	return s.source.Size()
 }
 
-func (k *StringFilter) Watch(eventHandler tcell.EventHandler) {
-	k.eventHandler = eventHandler
+func (s *StringFilter) Watch(eventHandler tcell.EventHandler) {
+	s.eventHandler = eventHandler
 }
 
-func (k *StringFilter) Unwatch(eventHandler tcell.EventHandler) {
+func (s *StringFilter) Unwatch(eventHandler tcell.EventHandler) {
 	// TODO: really, fix this!
-	k.eventHandler = nil
+	s.eventHandler = nil
 }
 
-func (k *StringFilter) HandleEvent(ev tcell.Event) bool {
+func (s *StringFilter) HandleEvent(ev tcell.Event) bool {
 	switch ev := ev.(type) {
 	case *util.EventText:
-		err := k.SetKey(ev.Text())
+		err := s.SetKey(ev.Text())
 		return err == nil
 	default:
 		return false
 	}
 }
 
-func (k *StringFilter) SetColorIndex(colorIndex uint8) {
-	k.colorIndex = colorIndex
+func (s *StringFilter) SetColorIndex(colorIndex uint8) {
+	s.colorIndex = colorIndex
 }

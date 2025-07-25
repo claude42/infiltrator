@@ -20,6 +20,6 @@ type Line struct {
 	No     int
 	Status int
 	Str    string
-	// each byt in ColorIndex is a color index for each byte in Str
+	// each byte in ColorIndex is a color index for each byte in Str
 	ColorIndex []uint8
 }
