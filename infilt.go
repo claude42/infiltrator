@@ -18,7 +18,18 @@ import (
 var showLineNumbers = false
 
 func main() {
-	err := run()
+	var err error
+	// Set up logging first
+	debug, err := os.OpenFile("debug.log", os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
+	if err != nil {
+		log.Panicf("Failed to open debug log file: %v", err)
+	}
+	defer debug.Close()
+	log.SetOutput(debug)
+	log.SetFlags(log.LstdFlags | log.Lshortfile)
+	log.Println("Started")
+
+	err = run()
 
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
@@ -27,28 +38,18 @@ func main() {
 }
 
 func run() error {
-	// Set up logging first
-	debug, err := os.OpenFile("debug.log", os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
-	if err != nil {
-		log.Fatalf("Failed to open debug log file: %v", err)
-	}
-	defer debug.Close()
-	log.SetOutput(debug)
-	log.SetFlags(log.LstdFlags | log.Lshortfile)
-	log.Println("Started")
 
 	// Parse command line
 	flag.BoolVar(&showLineNumbers, "lines", false, "Show line numbers")
 
 	flag.Parse()
 	if len(flag.Args()) != 1 {
-		return fmt.Errorf("Usage: %s filename", filepath.Base(os.Args[0]))
+		return fmt.Errorf("usage: %s filename", filepath.Base(os.Args[0]))
 	}
 	filePath := flag.Args()[0]
 
 	// Set up filtering pipeline
 	p := model.GetPipeline()
-	log.Printf("Got pipeline")
 
 	// Create buffer
 	buffer, err := model.NewBufferFromFile(filePath)
@@ -56,21 +57,23 @@ func run() error {
 		return err
 	}
 	p.AddFilter(buffer)
-	log.Printf("Added buffer to pipeline")
 
 	// Set up UI
 	window := ui.Setup(p)
-	log.Printf("Set up ui")
 	defer ui.Cleanup()
 	window.ShowLineNumbers(showLineNumbers)
 
 	quit := make(chan struct{})
 	go window.EventLoop(quit)
 
-	for {
-		select {
-		case <-quit:
-			return nil
-		}
-	}
+	<-quit
+
+	return nil
+
+	// for {
+	// 	select {
+	// 	case <-quit:
+	// 		return nil
+	// 	}
+	// }
 }

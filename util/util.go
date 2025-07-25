@@ -1,10 +1,14 @@
 package util
 
 import (
+	"errors"
 	"fmt"
-	"log"
+
+	// "log"
 	"math"
 )
+
+var ErrOutOfBounds = errors.New("out of bounds")
 
 func IntMax(a, b int) int {
 	if a > b {
@@ -47,9 +51,9 @@ func CountDigits(i int) int {
 	return int(math.Floor(math.Log10(float64(i)))) + 1
 }
 
-func InsertRune(runes []rune, r rune, index int) []rune {
+func InsertRune(runes []rune, r rune, index int) ([]rune, error) {
 	if index < 0 || index > len(runes) {
-		log.Fatalf("Out of bounds")
+		return nil, ErrOutOfBounds
 	}
 
 	result := make([]rune, len(runes)+1)
@@ -58,5 +62,5 @@ func InsertRune(runes []rune, r rune, index int) []rune {
 	result[index] = r
 	copy(result[index+1:], runes[index:])
 
-	return result
+	return result, nil
 }

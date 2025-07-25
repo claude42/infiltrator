@@ -89,7 +89,7 @@ func (b *Buffer) Source() (Filter, error) {
 }
 
 func (b *Buffer) SetSource(source Filter) {
-	log.Fatalln("SetSource() should never be called on a buffer!")
+	log.Panicln("SetSource() should never be called on a buffer!")
 }
 
 func (b *Buffer) SetEventHandler(eventHandler tcell.EventHandler) {

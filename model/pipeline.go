@@ -127,11 +127,11 @@ func (p *Pipeline) RefreshScreenBuffer(startLine, viewHeight int) {
 		line, err := p.GetLine(lineNo)
 		lineNo++
 		if errors.Is(err, ErrLineDidNotMatch) {
-			log.Fatalf("shoult not happen anymore")
+			log.Panicf("shoult not happen anymore")
 		} else if errors.Is(err, ErrOutOfBounds) {
 			break
 		} else if err != nil {
-			log.Fatalf("fuck me")
+			log.Panicf("fuck me")
 		}
 
 		if line.Status != LineHidden {

@@ -1,7 +1,7 @@
 package ui
 
 import (
-	// "log"
+	"log"
 
 	"github.com/claude42/infiltrator/model"
 	"github.com/claude42/infiltrator/util"
@@ -15,6 +15,7 @@ type InputField struct {
 	content      []rune
 	receiver     model.UpdatedTextReceiver
 	inputCorrect bool
+	colorIndex   uint8
 
 	ComponentImpl
 }
@@ -51,19 +52,11 @@ func (i *InputField) SetContent(content string) {
 }
 
 func (i *InputField) Render(updateScreen bool) {
-	var style tcell.Style
-	if i.IsActive() {
-		style = ActiveTextInputStyle
-	} else {
-		style = TextInputStyle
-	}
-	if !i.inputCorrect {
-		style = style.Italic(true)
-	}
+	style := i.determineStyle()
 
 	x := renderRunes(i.x, i.y, i.content, style)
 
-	drawChars(x, i.y, i.width-len(i.content), ' ', style)
+	drawChars(x, i.y, i.width-len(i.content), '‾', style)
 
 	if i.IsActive() {
 		changeStyle(i.x+i.cursor, i.y, CursorTextInputStyle)
@@ -100,7 +93,11 @@ func (i *InputField) HandleEvent(ev tcell.Event) bool {
 }
 
 func (i *InputField) insertRune(r rune) {
-	i.content = util.InsertRune(i.content, r, i.cursor)
+	var err error
+	i.content, err = util.InsertRune(i.content, r, i.cursor)
+	if err != nil {
+		log.Panic("Input field out of bounds?!")
+	}
 	i.cursor++
 	i.Render(true)
 	i.updateReceiver()
@@ -159,4 +156,29 @@ func (i *InputField) updateReceiver() {
 		screen.Beep()
 		i.Render(true)
 	}
+}
+
+func (i *InputField) SetColorIndex(colorIndex uint8) {
+	i.colorIndex = colorIndex
+}
+
+func (i *InputField) determineStyle() tcell.Style {
+	var style tcell.Style
+
+	if i.IsActive() {
+		style = tcell.StyleDefault.Foreground((FilterColors[i.colorIndex][0]))
+	} else {
+		style = tcell.StyleDefault.Foreground((FilterColors[i.colorIndex][1]))
+	}
+
+	// if i.IsActive() {
+	// 	style = ActiveTextInputStyle
+	// } else {
+	// 	style = TextInputStyle
+	// }
+	if !i.inputCorrect {
+		style = style.Italic(true)
+	}
+
+	return style
 }

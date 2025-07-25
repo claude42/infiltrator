@@ -21,7 +21,7 @@ type Window struct {
 
 func Setup(pipeline *model.Pipeline) *Window {
 	if window != nil {
-		log.Fatalln("ui.setup() called twice!")
+		log.Panicln("ui.setup() called twice!")
 	}
 
 	window = &Window{}
@@ -29,16 +29,21 @@ func Setup(pipeline *model.Pipeline) *Window {
 	var err error
 	screen, err = tcell.NewScreen()
 	if err != nil {
-		log.Fatalf("%+v", err)
+		log.Panicf("%+v", err)
 	}
 
-	if err := screen.Init(); err != nil {
-		log.Fatalf("%+v", err)
+	if err = screen.Init(); err != nil {
+		log.Panicf("%+v", err)
 	}
 
 	window.SetView(NewView(pipeline))
 
-	panel := NewPanel(TypeRegex, model.FilterHide)
+	var panel Panel
+	panel, err = NewPanel(TypeRegex, model.FilterHighlight)
+	if err != nil {
+		log.Panicf("%+v", err)
+	}
+
 	window.AddPanel(panel)
 	window.PanelsOpen = true
 
@@ -92,8 +97,13 @@ func (w *Window) EventLoop(quit chan<- struct{}) {
 				}
 				continue
 			case tcell.KeyCtrlP:
-				err := w.AddPanel(NewPanel(TypeKeyword, model.FilterHide))
+				panel, err := NewPanel(TypeKeyword, model.FilterHighlight)
 				if err != nil {
+					log.Panicf("%+v", err)
+				}
+				w.AddPanel(panel)
+				if err != nil {
+					log.Panicf("%+v", err)
 					screen.Beep()
 				}
 				continue

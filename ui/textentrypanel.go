@@ -63,12 +63,10 @@ func (p *TextEntryPanel) SetColorIndex(colorIndex uint8) {
 }
 
 func (p *TextEntryPanel) determinePanelStyle() tcell.Style {
-	style := tcell.StyleDefault.Background(FilterColors[p.colorIndex])
-
 	if p.IsActive() {
-		return style.Bold(true)
+		return tcell.StyleDefault.Bold(true).Background(FilterColors[p.colorIndex][0])
 	} else {
-		return style
+		return tcell.StyleDefault.Background(FilterColors[p.colorIndex][0])
 	}
 }
 

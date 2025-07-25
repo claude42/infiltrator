@@ -19,8 +19,8 @@ const (
 const keywordPanelDefaultName = "Keyword"
 const regexPanelDefaultName = "Regex"
 
-func setupNewTextEntryPanel(fn model.StringFilterFuncFactory, name string, mode int) *TextEntryPanel {
-	p := NewTextEntryPanel()
+func setupNewTinyPanel(fn model.StringFilterFuncFactory, name string, mode int) (*TinyPanel, error) {
+	p := NewTinyPanel()
 	p.SetName(name)
 	filter := model.NewStringFilter(fn, mode)
 	model.GetPipeline().AddFilter(filter)
@@ -28,18 +28,22 @@ func setupNewTextEntryPanel(fn model.StringFilterFuncFactory, name string, mode 
 	p.SetReceiver(filter)
 
 	// done last so both panel and filter get the same color index
-	p.SetColorIndex(GetColorManager().Add(p))
+	colorIndex, err := GetColorManager().Add(p)
+	if err != nil {
+		return nil, err
+	}
+	p.SetColorIndex(colorIndex)
 
-	return p
+	return p, nil
 }
 
-func NewPanel(panelType int, mode int) Panel {
+func NewPanel(panelType int, mode int) (Panel, error) {
 	switch panelType {
 	case TypeKeyword:
-		return setupNewTextEntryPanel(model.DefaultStringFilterFuncFactory, keywordPanelDefaultName, mode)
+		return setupNewTinyPanel(model.DefaultStringFilterFuncFactory, keywordPanelDefaultName, mode)
 		// return createNewKeywordPanel()
 	case TypeRegex:
-		return setupNewTextEntryPanel(model.RegexFilterFuncFactory, regexPanelDefaultName, mode)
+		return setupNewTinyPanel(model.RegexFilterFuncFactory, regexPanelDefaultName, mode)
 		// return createNewRegexPanel()
 	/*case Glob:
 		return NewGlobPanel()
@@ -51,7 +55,7 @@ func NewPanel(panelType int, mode int) Panel {
 		return NewDatePanel()*/
 	default:
 		log.Panicln("NewPanel() called with unknown panel type:", panelType)
-		return nil
+		return nil, nil
 	}
 }
 

@@ -79,7 +79,13 @@ func (v *View) renderLine(line model.Line, y int) {
 				r = '>'
 				style = style.Reverse(true)
 			} else if line.ColorIndex[lineXPos] > 0 {
-				style = style.Reverse(true).Foreground(FilterColors[line.ColorIndex[lineXPos]])
+				switch line.Status {
+				case model.LineWithoutStatus, model.LineMatched:
+					style = style.Foreground(FilterColors[line.ColorIndex[lineXPos]][0])
+				case model.LineDimmed:
+					style = style.Foreground(FilterColors[line.ColorIndex[lineXPos]][1])
+				}
+				style = style.Reverse(true)
 			}
 		}
 

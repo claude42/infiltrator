@@ -7,23 +7,40 @@ import (
 	"github.com/gdamore/tcell/v2"
 )
 
-var FilterColors = []tcell.Color{
-	tcell.ColorBrown,
-	tcell.ColorMaroon,
-	tcell.ColorGreen,
-	tcell.ColorOlive,
-	tcell.ColorNavy,
-	tcell.ColorPurple,
-	tcell.ColorTeal,
-	tcell.ColorAliceBlue,
-	tcell.ColorAquaMarine,
-	tcell.ColorAzure,
-	tcell.ColorBeige,
-	tcell.ColorBisque,
-	tcell.ColorBlack,
-	tcell.ColorBlanchedAlmond,
-	tcell.ColorBlue,
+var FilterColors = [][2]tcell.Color{
+	{tcell.ColorGreen, tcell.ColorGreen}, // just to detect wither something went wrong
+	{tcell.ColorRed, tcell.ColorDarkRed},
+	{tcell.ColorLightPink, tcell.ColorPink},
+	{tcell.ColorGoldenrod, tcell.ColorDarkGoldenrod},
+	{tcell.ColorGreen, tcell.ColorDarkGreen},
+	{tcell.ColorMaroon, tcell.ColorDarkMagenta},
+	{tcell.ColorSalmon, tcell.ColorDarkSalmon},
+	{tcell.ColorSlateBlue, tcell.ColorDarkSlateBlue},
+	{tcell.ColorViolet, tcell.ColorDarkViolet},
+	{tcell.ColorTurquoise, tcell.ColorDarkTurquoise},
+	{tcell.ColorOrchid, tcell.ColorDarkOrchid},
+	{tcell.ColorOlive, tcell.ColorDarkOliveGreen},
+	{tcell.ColorKhaki, tcell.ColorDarkKhaki},
+	{tcell.ColorOrange, tcell.ColorDarkOrange},
 }
+
+// var FilterColors = []tcell.Color{
+// 	tcell.ColorBrown,
+// 	tcell.ColorMaroon,
+// 	tcell.ColorGreen,
+// 	tcell.ColorOlive,
+// 	tcell.ColorNavy,
+// 	tcell.ColorPurple,
+// 	tcell.ColorTeal,
+// 	tcell.ColorAliceBlue,
+// 	tcell.ColorAquaMarine,
+// 	tcell.ColorAzure,
+// 	tcell.ColorBeige,
+// 	tcell.ColorBisque,
+// 	tcell.ColorBlack,
+// 	tcell.ColorBlanchedAlmond,
+// 	tcell.ColorBlue,
+// }
 
 type colorManager struct {
 	colors []colorMap
@@ -64,22 +81,21 @@ func (c *colorManager) findNextUnassigendColorIndex() (uint8, error) {
 	return 0, fmt.Errorf("no unassigned color index found")
 }
 
-func (c *colorManager) Add(panel Panel) uint8 {
+func (c *colorManager) Add(panel Panel) (uint8, error) {
 	if panel == nil {
 		log.Panic("Add() called with nil panel")
-		return 0
+		return 0, nil
 	}
 
 	unassigned, err := c.findNextUnassigendColorIndex()
 	if err != nil {
-		// TODO probably should not panic here, but handle the error gracefully
-		log.Panic("Add() called with no unassigned color index available")
-		return 0
+
+		return 0, fmt.Errorf("maximum number of panels")
 	}
 
 	c.colors = append(c.colors, colorMap{panel: panel, colorIndex: unassigned})
 
-	return unassigned
+	return unassigned, nil
 }
 
 func (c *colorManager) Remove(panel Panel) {
@@ -92,14 +108,14 @@ func (c *colorManager) Remove(panel Panel) {
 	log.Panicf("Remove() called with panel %v that is not registered", panel)
 }
 
-func (c *colorManager) GetColor(panel Panel) tcell.Color {
+func (c *colorManager) GetColor(panel Panel) [2]tcell.Color {
 	for i, cm := range c.colors {
 		if cm.panel == panel {
 			if i < len(FilterColors) {
 				return FilterColors[i]
 			}
-			return tcell.ColorDefault // fallback color
+			return [2]tcell.Color{tcell.ColorDefault, tcell.ColorDefault} // fallback color
 		}
 	}
-	return tcell.ColorDefault // fallback color if panel not found
+	return [2]tcell.Color{tcell.ColorDefault, tcell.ColorDefault} // fallback color if panel not found
 }

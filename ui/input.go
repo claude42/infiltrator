@@ -12,6 +12,7 @@ import (
 type Input interface {
 	SetContent(content string)
 	SetReceiver(receiver model.UpdatedTextReceiver)
+	SetColorIndex(colorIndex uint8)
 	Component
 	tcell.EventHandler
 
