@@ -180,23 +180,10 @@ func (v *View) HandleEvent(ev tcell.Event) bool {
 		log.Printf("Handling key %s", ev.Name())
 		switch ev.Key() {
 		case tcell.KeyDown:
-			log.Printf("Handling KeyDown")
-			err := v.pipeline.ScrollDownLineBuffer()
-			if err != nil {
-				log.Printf("Eventloop ScrollDownLineBufferError")
-				screen.Beep()
-				return true
-			}
-			v.Render(true)
+			v.scrollDown()
 			return true
 		case tcell.KeyUp:
-			err := v.pipeline.ScrollUpLineBuffer()
-			if err != nil {
-				log.Printf("Eventloop ScrollUpLineBufferError")
-				screen.Beep()
-				return true
-			}
-			v.Render(true)
+			v.scrollUp()
 			return true
 
 		/*case tcell.KeyRight:
@@ -222,12 +209,39 @@ func (v *View) HandleEvent(ev tcell.Event) bool {
 				v.Render(true)
 			}
 		}
+	case *tcell.EventMouse:
+		buttons := ev.Buttons()
+
+		if buttons&tcell.WheelUp != 0 {
+			v.scrollUp()
+		} else if buttons&tcell.WheelDown != 0 {
+			v.scrollDown()
+		}
 	case *model.EventFilterOutput:
-		log.Println("Handling EventFilterOutput")
 		v.Render(true)
 	}
 
 	return false
+}
+
+func (v *View) scrollUp() {
+	err := v.pipeline.ScrollUpLineBuffer()
+	if err != nil {
+		log.Printf("Eventloop ScrollUpLineBufferError")
+		screen.Beep()
+		return
+	}
+	v.Render(true)
+}
+
+func (v *View) scrollDown() {
+	err := v.pipeline.ScrollDownLineBuffer()
+	if err != nil {
+		log.Printf("Eventloop ScrollUpLineBufferError")
+		screen.Beep()
+		return
+	}
+	v.Render(true)
 }
 
 func (v *View) SetShowLineNumbers(showLineNumbers bool) {
