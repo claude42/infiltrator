@@ -1,7 +1,7 @@
 package main
 
 import (
-	"flag"
+	// "flag"
 	"fmt"
 	"log"
 	"os"
@@ -11,7 +11,10 @@ import (
 
 	"github.com/claude42/infiltrator/model"
 	"github.com/claude42/infiltrator/ui"
+
 	//"github.com/claude42/infiltrator/util"
+
+	flag "github.com/spf13/pflag"
 )
 
 // Command line options
@@ -40,7 +43,7 @@ func main() {
 func run() error {
 
 	// Parse command line
-	flag.BoolVar(&showLineNumbers, "lines", false, "Show line numbers")
+	flag.BoolVarP(&showLineNumbers, "lines", "l", false, "Show line numbers")
 
 	flag.Parse()
 	if len(flag.Args()) != 1 {
