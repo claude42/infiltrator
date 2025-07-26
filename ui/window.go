@@ -67,8 +67,8 @@ func Setup(pipeline *model.Pipeline) *Window {
 
 func setupScreen() {
 	screen.SetStyle(DefStyle)
-	screen.EnableMouse()
-	screen.EnablePaste()
+	screen.EnableMouse(tcell.MouseButtonEvents)
+	screen.DisablePaste()
 	screen.Clear()
 }
 
@@ -300,4 +300,8 @@ func (w *Window) switchPanel(offset int) error {
 // As soon as we get more options, we should use a struct for this
 func (w *Window) ShowLineNumbers(showLineNumbers bool) {
 	w.mainView.SetShowLineNumbers(showLineNumbers)
+}
+
+func (w *Window) FollowFile(followFile bool) {
+	w.mainView.SetFollowFile(followFile)
 }

@@ -76,6 +76,7 @@ func (b *Buffer) ReadFromFile(filePath string, postEvent func(ev tcell.Event) er
 	if err != nil {
 		return err
 	}
+	postEvent(NewEventBufferDirty())
 
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
@@ -103,7 +104,6 @@ func (b *Buffer) ReadFromFile(filePath string, postEvent func(ev tcell.Event) er
 				if err != nil {
 					log.Printf("error reading file %s, %v", filePath, err)
 				}
-
 				postEvent(NewEventBufferDirty())
 
 				continue

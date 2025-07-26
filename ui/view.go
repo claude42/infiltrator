@@ -14,8 +14,8 @@ type View struct {
 	pipeline              *model.Pipeline
 	viewWidth, viewHeight int
 	curX, curY            int
-
-	showLineNumbers bool
+	showLineNumbers       bool
+	followFile            bool
 
 	ComponentImpl
 }
@@ -178,8 +178,7 @@ func (v *View) Resize(x, y, width, height int) {
 func (v *View) HandleEvent(ev tcell.Event) bool {
 	switch ev := ev.(type) {
 	case *model.EventBufferDirty:
-		v.pipeline.InvalidateScreenBuffer()
-		v.Render(true)
+		v.reactToFileUpdate()
 		return true
 	case *tcell.EventKey:
 		log.Printf("View.HandleEvent: %s", ev.Name())
@@ -258,6 +257,15 @@ func (v *View) HandleEvent(ev tcell.Event) bool {
 	}
 
 	return false
+}
+
+func (v *View) reactToFileUpdate() {
+	v.pipeline.InvalidateScreenBuffer()
+	if v.followFile {
+		v.scrollEnd()
+	} else {
+		v.Render(true)
+	}
 }
 
 func (v *View) scrollUp(render bool) error {
@@ -345,4 +353,9 @@ func (v *View) scrollEnd() error {
 
 func (v *View) SetShowLineNumbers(showLineNumbers bool) {
 	v.showLineNumbers = showLineNumbers
+}
+
+func (v *View) SetFollowFile(followFile bool) {
+	v.followFile = followFile
+	v.scrollEnd()
 }

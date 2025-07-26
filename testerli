@@ -1,0 +1,91 @@
+Jul 12 00:00:01 nirvana CRON[3984268]: pam_unix(cron:session): session opened for user root(uid=0) by (uid=0)
+Jul 12 00:00:01 nirvana CRON[3984267]: pam_unix(cron:session): session opened for user root(uid=0) by (uid=0)
+Jul 12 00:00:01 nirvana CRON[3984271]: (root) CMD (test -x /usr/bin/monit && monit summary | tail -n +3 | grep -v OK)
+Jul 12 00:00:01 nirvana CRON[3984270]: (root) CMD (test -x /usr/bin/certbot -a \! -d /run/systemd/system && perl -e 'sleep int(rand(43200))' && certbot -q renew --no-random-sleep-on-renew)
+Jul 12 00:00:01 nirvana CRON[3984267]: pam_unix(cron:session): session closed for user root
+Jul 12 00:00:01 nirvana CRON[3984269]: pam_unix(cron:session): session opened for user www-data(uid=33) by (uid=0)
+Jul 12 00:00:01 nirvana CRON[3984275]: (www-data) CMD (php -f /var/www/nextcloud/cron.php)
+Jul 12 00:00:01 nirvana systemd[1]: Starting dpkg-db-backup.service - Daily dpkg database backup service...
+Jul 12 00:00:01 nirvana systemd[1]: Starting logrotate.service - Rotate log files...
+Jul 12 00:00:01 nirvana CRON[3984268]: pam_unix(cron:session): session closed for user root
+Jul 12 00:00:03 nirvana systemd[1]: dpkg-db-backup.service: Deactivated successfully.
+Jul 12 00:00:03 nirvana systemd[1]: Finished dpkg-db-backup.service - Daily dpkg database backup service.
+Jul 12 00:00:06 nirvana systemd[1]: Reloading apache2.service - The Apache HTTP Server...
+Jul 12 00:00:06 nirvana systemd[1]: Reloaded apache2.service - The Apache HTTP Server.
+Jul 12 00:00:06 nirvana systemd[1]: logrotate.service: Deactivated successfully.
+Jul 12 00:00:06 nirvana systemd[1]: Finished logrotate.service - Rotate log files.
+Jul 12 00:00:12 nirvana CRON[3984269]: pam_unix(cron:session): session closed for user www-data
+Jul 12 00:00:49 nirvana dovecot[3382581]: imap-login: Disconnected: Aborted login by logging out (no auth attempts in 0 secs): user=<>, rip=2001:1410:200:ee9::1, lip=2a03:4000:23:8c::1, TLS, session=<OcFeca45ZpcgARQQAgAO6QAAAAAAAAAB>
+Jul 12 00:00:49 nirvana dovecot[3382581]: imap-login: Disconnected: Aborted login by logging out (no auth attempts in 0 secs): user=<>, rip=2001:1410:200:ee9::1, lip=2a03:4000:23:8c::1, TLS, session=<KYFgca45+OAgARQQAgAO6QAAAAAAAAAB>
+Jul 12 00:00:49 nirvana postfix/submission/smtpd[3984065]: connect from moksha.aw.net[2001:1410:200:ee9::1]
+Jul 12 00:00:49 nirvana opendmarc[1379]: ignoring connection from moksha.aw.net
+Jul 12 00:00:49 nirvana postfix/submission/smtpd[3984065]: Anonymous TLS connection established from moksha.aw.net[2001:1410:200:ee9::1]: TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits) key-exchange X25519 server-signature RSA-PSS (2048 bits) server-digest SHA256
+Jul 12 00:00:49 nirvana postfix/submission/smtpd[3984065]: disconnect from moksha.aw.net[2001:1410:200:ee9::1] ehlo=2 starttls=1 auth=1 quit=1 commands=5
+Jul 12 00:00:49 nirvana postfix/smtpd[3984026]: connect from moksha.aw.net[2001:1410:200:ee9::1]
+Jul 12 00:00:49 nirvana opendmarc[1379]: ignoring connection from moksha.aw.net
+Jul 12 00:00:49 nirvana postfix/smtpd[3984026]: Anonymous TLS connection established from moksha.aw.net[2001:1410:200:ee9::1]: TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits) key-exchange X25519 server-signature RSA-PSS (2048 bits) server-digest SHA256
+Jul 12 00:00:49 nirvana postfix/smtpd[3984026]: disconnect from moksha.aw.net[2001:1410:200:ee9::1] ehlo=2 starttls=1 quit=1 commands=4
+Jul 12 00:00:49 nirvana sshd[3984454]: Connection closed by 2001:1410:200:ee9::1 port 58460 [preauth]
+Jul 12 00:00:50 nirvana dovecot[3382581]: imap-login: Disconnected: Aborted login by logging out (no auth attempts in 0 secs): user=<>, rip=217.10.14.233, lip=185.228.136.144, TLS, session=<qYdpca45TsnZCg7p>
+Jul 12 00:00:50 nirvana dovecot[3382581]: imap-login: Disconnected: Aborted login by logging out (no auth attempts in 0 secs): user=<>, rip=217.10.14.233, lip=185.228.136.144, TLS, session=<E8Frca45nMTZCg7p>
+foo
+Jul 12 00:00:01 nirvana CRON[3984268]: pam_unix(cron:session): session opened for user root(uid=0) by (uid=0)
+Jul 12 00:00:01 nirvana CRON[3984267]: pam_unix(cron:session): session opened for user root(uid=0) by (uid=0)
+Jul 12 00:00:01 nirvana CRON[3984271]: (root) CMD (test -x /usr/bin/monit && monit summary | tail -n +3 | grep -v OK)
+Jul 12 00:00:01 nirvana CRON[3984270]: (root) CMD (test -x /usr/bin/certbot -a \! -d /run/systemd/system && perl -e 'sleep int(rand(43200))' && certbot -q renew --no-random-sleep-on-renew)
+Jul 12 00:00:01 nirvana CRON[3984267]: pam_unix(cron:session): session closed for user root
+Jul 12 00:00:01 nirvana CRON[3984269]: pam_unix(cron:session): session opened for user www-data(uid=33) by (uid=0)
+Jul 12 00:00:01 nirvana CRON[3984275]: (www-data) CMD (php -f /var/www/nextcloud/cron.php)
+Jul 12 00:00:01 nirvana systemd[1]: Starting dpkg-db-backup.service - Daily dpkg database backup service...
+Jul 12 00:00:01 nirvana systemd[1]: Starting logrotate.service - Rotate log files...
+Jul 12 00:00:01 nirvana CRON[3984268]: pam_unix(cron:session): session closed for user root
+Jul 12 00:00:03 nirvana systemd[1]: dpkg-db-backup.service: Deactivated successfully.
+Jul 12 00:00:03 nirvana systemd[1]: Finished dpkg-db-backup.service - Daily dpkg database backup service.
+Jul 12 00:00:06 nirvana systemd[1]: Reloading apache2.service - The Apache HTTP Server...
+Jul 12 00:00:06 nirvana systemd[1]: Reloaded apache2.service - The Apache HTTP Server.
+Jul 12 00:00:06 nirvana systemd[1]: logrotate.service: Deactivated successfully.
+Jul 12 00:00:06 nirvana systemd[1]: Finished logrotate.service - Rotate log files.
+Jul 12 00:00:12 nirvana CRON[3984269]: pam_unix(cron:session): session closed for user www-data
+Jul 12 00:00:49 nirvana dovecot[3382581]: imap-login: Disconnected: Aborted login by logging out (no auth attempts in 0 secs): user=<>, rip=2001:1410:200:ee9::1, lip=2a03:4000:23:8c::1, TLS, session=<OcFeca45ZpcgARQQAgAO6QAAAAAAAAAB>
+Jul 12 00:00:49 nirvana dovecot[3382581]: imap-login: Disconnected: Aborted login by logging out (no auth attempts in 0 secs): user=<>, rip=2001:1410:200:ee9::1, lip=2a03:4000:23:8c::1, TLS, session=<KYFgca45+OAgARQQAgAO6QAAAAAAAAAB>
+Jul 12 00:00:49 nirvana postfix/submission/smtpd[3984065]: connect from moksha.aw.net[2001:1410:200:ee9::1]
+Jul 12 00:00:49 nirvana opendmarc[1379]: ignoring connection from moksha.aw.net
+Jul 12 00:00:49 nirvana postfix/submission/smtpd[3984065]: Anonymous TLS connection established from moksha.aw.net[2001:1410:200:ee9::1]: TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits) key-exchange X25519 server-signature RSA-PSS (2048 bits) server-digest SHA256
+Jul 12 00:00:49 nirvana postfix/submission/smtpd[3984065]: disconnect from moksha.aw.net[2001:1410:200:ee9::1] ehlo=2 starttls=1 auth=1 quit=1 commands=5
+Jul 12 00:00:49 nirvana postfix/smtpd[3984026]: connect from moksha.aw.net[2001:1410:200:ee9::1]
+Jul 12 00:00:49 nirvana opendmarc[1379]: ignoring connection from moksha.aw.net
+Jul 12 00:00:49 nirvana postfix/smtpd[3984026]: Anonymous TLS connection established from moksha.aw.net[2001:1410:200:ee9::1]: TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits) key-exchange X25519 server-signature RSA-PSS (2048 bits) server-digest SHA256
+Jul 12 00:00:49 nirvana postfix/smtpd[3984026]: disconnect from moksha.aw.net[2001:1410:200:ee9::1] ehlo=2 starttls=1 quit=1 commands=4
+Jul 12 00:00:49 nirvana sshd[3984454]: Connection closed by 2001:1410:200:ee9::1 port 58460 [preauth]
+Jul 12 00:00:50 nirvana dovecot[3382581]: imap-login: Disconnected: Aborted login by logging out (no auth attempts in 0 secs): user=<>, rip=217.10.14.233, lip=185.228.136.144, TLS, session=<qYdpca45TsnZCg7p>
+Jul 12 00:00:50 nirvana dovecot[3382581]: imap-login: Disconnected: Aborted login by logging out (no auth attempts in 0 secs): user=<>, rip=217.10.14.233, lip=185.228.136.144, TLS, session=<E8Frca45nMTZCg7p>
+Jul 12 00:00:01 nirvana CRON[3984268]: pam_unix(cron:session): session opened for user root(uid=0) by (uid=0)
+Jul 12 00:00:01 nirvana CRON[3984267]: pam_unix(cron:session): session opened for user root(uid=0) by (uid=0)
+Jul 12 00:00:01 nirvana CRON[3984271]: (root) CMD (test -x /usr/bin/monit && monit summary | tail -n +3 | grep -v OK)
+Jul 12 00:00:01 nirvana CRON[3984270]: (root) CMD (test -x /usr/bin/certbot -a \! -d /run/systemd/system && perl -e 'sleep int(rand(43200))' && certbot -q renew --no-random-sleep-on-renew)
+Jul 12 00:00:01 nirvana CRON[3984267]: pam_unix(cron:session): session closed for user root
+Jul 12 00:00:01 nirvana CRON[3984269]: pam_unix(cron:session): session opened for user www-data(uid=33) by (uid=0)
+Jul 12 00:00:01 nirvana CRON[3984275]: (www-data) CMD (php -f /var/www/nextcloud/cron.php)
+Jul 12 00:00:01 nirvana systemd[1]: Starting dpkg-db-backup.service - Daily dpkg database backup service...
+Jul 12 00:00:01 nirvana systemd[1]: Starting logrotate.service - Rotate log files...
+Jul 12 00:00:01 nirvana CRON[3984268]: pam_unix(cron:session): session closed for user root
+Jul 12 00:00:03 nirvana systemd[1]: dpkg-db-backup.service: Deactivated successfully.
+Jul 12 00:00:03 nirvana systemd[1]: Finished dpkg-db-backup.service - Daily dpkg database backup service.
+Jul 12 00:00:06 nirvana systemd[1]: Reloading apache2.service - The Apache HTTP Server...
+Jul 12 00:00:06 nirvana systemd[1]: Reloaded apache2.service - The Apache HTTP Server.
+Jul 12 00:00:06 nirvana systemd[1]: logrotate.service: Deactivated successfully.
+Jul 12 00:00:06 nirvana systemd[1]: Finished logrotate.service - Rotate log files.
+Jul 12 00:00:12 nirvana CRON[3984269]: pam_unix(cron:session): session closed for user www-data
+Jul 12 00:00:49 nirvana dovecot[3382581]: imap-login: Disconnected: Aborted login by logging out (no auth attempts in 0 secs): user=<>, rip=2001:1410:200:ee9::1, lip=2a03:4000:23:8c::1, TLS, session=<OcFeca45ZpcgARQQAgAO6QAAAAAAAAAB>
+Jul 12 00:00:49 nirvana dovecot[3382581]: imap-login: Disconnected: Aborted login by logging out (no auth attempts in 0 secs): user=<>, rip=2001:1410:200:ee9::1, lip=2a03:4000:23:8c::1, TLS, session=<KYFgca45+OAgARQQAgAO6QAAAAAAAAAB>
+Jul 12 00:00:49 nirvana postfix/submission/smtpd[3984065]: connect from moksha.aw.net[2001:1410:200:ee9::1]
+Jul 12 00:00:49 nirvana opendmarc[1379]: ignoring connection from moksha.aw.net
+Jul 12 00:00:49 nirvana postfix/submission/smtpd[3984065]: Anonymous TLS connection established from moksha.aw.net[2001:1410:200:ee9::1]: TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits) key-exchange X25519 server-signature RSA-PSS (2048 bits) server-digest SHA256
+Jul 12 00:00:49 nirvana postfix/submission/smtpd[3984065]: disconnect from moksha.aw.net[2001:1410:200:ee9::1] ehlo=2 starttls=1 auth=1 quit=1 commands=5
+Jul 12 00:00:49 nirvana postfix/smtpd[3984026]: connect from moksha.aw.net[2001:1410:200:ee9::1]
+Jul 12 00:00:49 nirvana opendmarc[1379]: ignoring connection from moksha.aw.net
+Jul 12 00:00:49 nirvana postfix/smtpd[3984026]: Anonymous TLS connection established from moksha.aw.net[2001:1410:200:ee9::1]: TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits) key-exchange X25519 server-signature RSA-PSS (2048 bits) server-digest SHA256
+Jul 12 00:00:49 nirvana postfix/smtpd[3984026]: disconnect from moksha.aw.net[2001:1410:200:ee9::1] ehlo=2 starttls=1 quit=1 commands=4
+Jul 12 00:00:49 nirvana sshd[3984454]: Connection closed by 2001:1410:200:ee9::1 port 58460 [preauth]
+Jul 12 00:00:50 nirvana dovecot[3382581]: imap-login: Disconnected: Aborted login by logging out (no auth attempts in 0 secs): user=<>, rip=217.10.14.233, lip=185.228.136.144, TLS, session=<qYdpca45TsnZCg7p>
+Jul 12 00:00:50 nirvana dovecot[3382581]: imap-login: Disconnected: Aborted login by logging out (no auth attempts in 0 secs): user=<>, rip=217.10.14.233, lip=185.228.136.144, TLS, session=<E8Frca45nMTZCg7p>

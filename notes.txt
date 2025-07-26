@@ -45,11 +45,12 @@ Available
 TODO
 * Fix Getline() ErrNotMatched DONE
 * ThreadSave Handlers and Singletons DONE
-* Read buffer in a Thread
-* Read new lines that are appended to a file
-* tail -f style output
+* Read buffer in a Thread DONE
+* Read new lines that are appended to a file DONE
+* tail -f style output DONE
 * use model.GetPipeline() everywhere
-* Get rid of EventFilterOutput
+
+* Fail when file can't be opened
 
 * Configuration file
 * Change type (Keyword, regex, etc.) on the fly

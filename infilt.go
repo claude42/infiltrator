@@ -19,6 +19,7 @@ import (
 
 // Command line options
 var showLineNumbers = false
+var followFile = false
 
 func main() {
 	var err error
@@ -44,6 +45,7 @@ func run() error {
 
 	// Parse command line
 	flag.BoolVarP(&showLineNumbers, "lines", "l", false, "Show line numbers")
+	flag.BoolVarP(&followFile, "follow", "f", false, "Follow changes to file")
 
 	flag.Parse()
 	if len(flag.Args()) != 1 {
@@ -64,6 +66,7 @@ func run() error {
 	window := ui.Setup(pipeline)
 	defer ui.Cleanup()
 	window.ShowLineNumbers(showLineNumbers)
+	window.FollowFile(followFile)
 
 	quit := make(chan struct{})
 	go window.EventLoop(quit)
