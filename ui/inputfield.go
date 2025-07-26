@@ -10,14 +10,15 @@ import (
 )
 
 type InputField struct {
-	x, y, width  int
-	cursor       int
-	content      []rune
-	eh           tcell.EventHandler
+	x, y, width int
+	cursor      int
+	content     []rune
+
 	inputCorrect bool
 	colorIndex   uint8
 
 	ComponentImpl
+	util.ObservableImpl
 }
 
 func NewInputField() *InputField {
@@ -29,7 +30,7 @@ func NewInputField() *InputField {
 
 func NewInputFieldWithEventhandler(eh tcell.EventHandler) *InputField {
 	i := &InputField{}
-	i.eh = eh
+	i.Watch(eh)
 	i.inputCorrect = true
 
 	return i
@@ -144,25 +145,19 @@ func (i *InputField) deleteRune() {
 	i.updateWatchers()
 }
 
-func (i *InputField) Watch(eh tcell.EventHandler) {
-	i.eh = eh
-}
-
 func (i *InputField) updateWatchers() {
-	if i.eh == nil {
-		return
-	}
-
 	ev := util.NewEventText(string(i.content))
+	i.PostEvent(ev)
 
-	consumed := i.eh.HandleEvent(ev)
+	// TODO: FIX THIS
+	// consumed := i.eh.HandleEvent(ev)
 
 	// in case new inputCorrect state is different from previous
-	if consumed != i.inputCorrect {
-		i.inputCorrect = consumed
-		screen.Beep()
-		i.Render(true)
-	}
+	// if consumed != i.inputCorrect {
+	// 	i.inputCorrect = consumed
+	// 	screen.Beep()
+	// 	i.Render(true)
+	// }
 }
 
 func (i *InputField) SetColorIndex(colorIndex uint8) {

@@ -17,8 +17,9 @@ var (
 )
 
 type Pipeline struct {
-	filters      []Filter
-	eventHandler tcell.EventHandler
+	util.ObservableImpl
+
+	filters []Filter
 
 	screenBuffer      []Line
 	screenBufferClean bool
@@ -97,20 +98,14 @@ func (p *Pipeline) Size() (int, int, error) {
 	return filter.Size()
 }
 
-func (p *Pipeline) Watch(eventHandler tcell.EventHandler) {
-	p.eventHandler = eventHandler
-}
-
 func (p *Pipeline) HandleEvent(ev tcell.Event) bool {
 	switch ev.(type) {
 	case *EventFilterOutput:
 		p.screenBufferClean = false
 	}
 
-	if p.eventHandler == nil {
-		return false
-	}
-	return p.eventHandler.HandleEvent(ev)
+	p.PostEvent(ev)
+	return true
 }
 
 // Will return the new startLine - in case the original starting line (or subsequent

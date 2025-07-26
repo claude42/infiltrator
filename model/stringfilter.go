@@ -21,7 +21,6 @@ type StringFilter struct {
 	source            Filter
 	filterFunc        func(input string) (string, [][]int, bool)
 	filterFuncFactory StringFilterFuncFactory
-	eventHandler      tcell.EventHandler
 	colorIndex        uint8
 	mode              int
 	key               string
@@ -119,9 +118,7 @@ func (s *StringFilter) SetCaseSensitive(on bool) error {
 func (s *StringFilter) SetMode(mode int) {
 	s.mode = mode
 
-	if s.eventHandler != nil {
-		s.eventHandler.HandleEvent(NewEventFilterOutput())
-	}
+	s.PostEvent(NewEventFilterOutput())
 }
 
 // ErrLineDidNotMatch errors are handled within GetLine() and will not
