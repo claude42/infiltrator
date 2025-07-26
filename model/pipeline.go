@@ -4,10 +4,16 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"sync"
 
 	"github.com/claude42/infiltrator/util"
 
 	"github.com/gdamore/tcell/v2"
+)
+
+var (
+	instance *Pipeline
+	once     sync.Once
 )
 
 type Pipeline struct {
@@ -18,13 +24,10 @@ type Pipeline struct {
 	screenBufferClean bool
 }
 
-var instance *Pipeline
-
 func GetPipeline() *Pipeline {
-	// not thread safe!
-	if instance == nil {
+	once.Do(func() {
 		instance = &Pipeline{}
-	}
+	})
 	return instance
 }
 
@@ -140,7 +143,6 @@ func (p *Pipeline) RefreshScreenBuffer(startLine, viewHeight int) {
 }
 
 func (p *Pipeline) ScrollDownLineBuffer() error {
-	// TODO: get rid of Move(), what about MoveCursor()
 	var nextLine Line
 	var err error
 

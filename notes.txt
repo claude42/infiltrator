@@ -43,7 +43,7 @@ Available
 * CTRL-D, F, I, J, K, L, N, Q, R, S, T, U, V, W, X, Y, Z
 
 TODO
-* Fix Getline() ErrNotMatched
+* Fix Getline() ErrNotMatched DONE
 * ThreadSave Handlers and Singletons
 * Read buffer in a Thread
 * Read new lines that are appended to a file
