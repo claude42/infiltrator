@@ -138,11 +138,6 @@ func (s *StringFilter) GetLine(line int) (Line, error) {
 
 	_, indeces, matched := s.filterFunc(sourceLine.Str)
 
-	if err != nil {
-		log.Panicf("Unknown error from filter function: %w", err)
-		return sourceLine, err
-	}
-
 	s.updateStatus(matched, indeces, &sourceLine)
 
 	if !matched {
