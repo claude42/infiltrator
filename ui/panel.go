@@ -12,6 +12,7 @@ import (
 
 type Panel interface {
 	Height() int
+	Position() (int, int)
 	SetColorIndex(colorIndex uint8)
 	SetFilter(filter model.Filter)
 	Filter() model.Filter

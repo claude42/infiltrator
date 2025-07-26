@@ -18,7 +18,7 @@ Resize Event
 * term.Synch()
 
 
-Potentielle Filter
+Potential filters
 * keyword filter
 * regex filter
 * glob filter
@@ -26,12 +26,19 @@ Potentielle Filter
 * date filter
 * facility filter
 
+Keyboard shortcuts
+* Shift/Alt Cursor Keys: scroll
+* Cursor Up / Down without shift: scroll up/Down
+* CTRL-F/CTRL-B/PgUp/PgDn: scroll page-wise
+* CTRL-A/Home, CTRL-E/End: Top/Bottom of file
 
+* Tab/Shift-Tab Switch Panels
+* F keys: switch to a specific panel
+* CTRL-P/CTRL-O: Create / destroy panel
 
+* CTRL-M toggle filter Mode
+* CTRL-H toggle case sensitivity
 
+Available
+* CTRL-D, F, I, J, K, L, N, Q, R, S, T, U, V, W, X, Y, Z
 
-Filtering
-=========
-
-Mode: match
-* 

@@ -14,6 +14,7 @@ const (
 	LineMatched
 	LineDimmed
 	LineHidden
+	LineDoesNotExist = -1
 )
 
 type Line struct {

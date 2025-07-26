@@ -145,7 +145,7 @@ func (s *StringFilter) GetLine(line int) (Line, error) {
 	s.updateStatus(matched, indeces, &sourceLine)
 
 	if !matched {
-		return sourceLine, nil
+		return sourceLine, util.ErrLineDidNotMatch
 	}
 
 	if (s.mode == FilterMatch || s.mode == FilterFocus) &&

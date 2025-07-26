@@ -82,6 +82,12 @@ func (w *Window) EventLoop(quit chan<- struct{}) {
 
 		switch ev := ev.(type) {
 		case *tcell.EventKey:
+			log.Print("-------------------------------------------------------")
+			log.Printf("Modmast: %d", ev.Modifiers())
+			log.Printf("Rune: %c", ev.Rune())
+			log.Printf("Key: %s", tcell.KeyNames[ev.Key()])
+			log.Printf("Name: %s", ev.Name())
+
 			switch ev.Key() {
 			case tcell.KeyRune:
 			case tcell.KeyBacktab:
@@ -116,12 +122,28 @@ func (w *Window) EventLoop(quit chan<- struct{}) {
 				DestroyPanel(toBeDestroyed)
 				w.Render()
 				continue
+			case tcell.KeyF1, tcell.KeyF2, tcell.KeyF3, tcell.KeyF4, tcell.KeyF5, tcell.KeyF6,
+				tcell.KeyF7, tcell.KeyF8, tcell.KeyF9, tcell.KeyF10, tcell.KeyF11, tcell.KeyF12:
+
+				w.goToPanel(int(ev.Key() - tcell.KeyF1))
 			case tcell.KeyEscape, tcell.KeyCtrlC:
 				close(quit)
 				return
 			case tcell.KeyCtrlL:
 				w.resizeAndRedraw()
 				continue
+			}
+		case *tcell.EventMouse:
+			buttons := ev.Buttons()
+			if buttons&tcell.ButtonPrimary != 0 {
+				_, buttonY := ev.Position()
+				for i, panel := range w.BottomPanels {
+					_, panelY := panel.Position()
+					if buttonY == panelY {
+						w.goToPanel(i)
+					}
+				}
+				// do not continue here so the now active panel can handle this event as well
 			}
 		case *tcell.EventResize:
 			w.resizeAndRedraw()
@@ -130,11 +152,11 @@ func (w *Window) EventLoop(quit chan<- struct{}) {
 			continue
 		}
 
-		if w.mainView.HandleEvent(ev) {
+		if w.activePanel.HandleEvent(ev) {
 			continue
 		}
 
-		if w.activePanel.HandleEvent(ev) {
+		if w.mainView.HandleEvent(ev) {
 			continue
 		}
 	}
@@ -240,6 +262,20 @@ func (w *Window) activePanelIndex() int {
 	return -1 // never reached
 }
 
+func (w *Window) goToPanel(no int) error {
+	if no < 0 || no >= len(w.BottomPanels) {
+		return fmt.Errorf("no panel at index %d", no)
+	}
+
+	w.SetActivePanel(w.BottomPanels[no])
+	// It would probably be more natural to call render within the SetActivePanel()
+	// (or even the individual SetActive() methods of the panels and InputFields),
+	// but this way we avoid unnecessary redraws when switching panels.
+	w.Render()
+
+	return nil
+}
+
 func (w *Window) switchPanel(offset int) error {
 	newPanelIndex := w.activePanelIndex() + offset
 
@@ -247,13 +283,7 @@ func (w *Window) switchPanel(offset int) error {
 		return fmt.Errorf("no panel at index %d", newPanelIndex)
 	}
 
-	w.SetActivePanel(w.BottomPanels[newPanelIndex])
-	// It would probably be more natural to call render within the SetActivePanel()
-	// (or even the individual SetActive() methods of the panels and InputFields),
-	// but this way we avoid unnecessary redraws when switching panels.
-	w.Render()
-
-	return nil
+	return w.goToPanel(newPanelIndex)
 }
 
 func (w *Window) SetView(v *View) {

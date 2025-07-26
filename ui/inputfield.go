@@ -75,11 +75,15 @@ func (i *InputField) HandleEvent(ev tcell.Event) bool {
 			i.insertRune(ev.Rune())
 			return true
 		case tcell.KeyLeft:
-			i.setCursor(i.cursor - 1)
-			return true
+			if ev.Modifiers() == 0 {
+				i.setCursor(i.cursor - 1)
+				return true
+			}
 		case tcell.KeyRight:
-			i.setCursor(i.cursor + 1)
-			return true
+			if ev.Modifiers() == 0 {
+				i.setCursor(i.cursor + 1)
+				return true
+			}
 		case tcell.KeyBackspace, tcell.KeyBackspace2:
 			i.backspaceRune()
 		case tcell.KeyDelete:

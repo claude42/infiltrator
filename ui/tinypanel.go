@@ -33,6 +33,7 @@ func NewTinyPanel(mode int) *TinyPanel {
 	t := &TinyPanel{name: tinyPanelDefaultName}
 	t.input = NewInputField()
 	t.mode = NewSelect(FilterModes)
+	t.mode.SetSelectedIndex(mode)
 	t.caseSensitive = NewSelect([]string{"case", "cAsE"})
 
 	return t
@@ -40,6 +41,10 @@ func NewTinyPanel(mode int) *TinyPanel {
 
 func (t *TinyPanel) Height() int {
 	return 1
+}
+
+func (t *TinyPanel) Position() (int, int) {
+	return 0, t.y
 }
 
 func (t *TinyPanel) Resize(x, y, width, height int) {
@@ -109,15 +114,29 @@ func (t *TinyPanel) HandleEvent(ev tcell.Event) bool {
 		switch ev.Key() {
 		case tcell.KeyCtrlM:
 			t.toggleMode()
+			return true
 		case tcell.KeyCtrlH:
 			t.toggleCaseSensitive()
+			return true
+		}
+	case *tcell.EventMouse:
+		buttons := ev.Buttons()
+		if buttons&tcell.ButtonPrimary != 0 {
+			if t.mouseToggleMode(ev) {
+				return true
+			}
+			if t.mouseToggleCaseSensitive(ev) {
+				return true
+			}
+
 		}
 	}
 
-	if t.input == nil {
-		return false
+	if t.input != nil && t.input.HandleEvent(ev) {
+		return true
 	}
-	return t.input.HandleEvent(ev)
+
+	return false
 }
 
 func (t *TinyPanel) SetActive(active bool) {
@@ -153,8 +172,31 @@ func (t *TinyPanel) toggleMode() {
 	t.Render(true)
 }
 
+func (t *TinyPanel) mouseToggleMode(ev *tcell.EventMouse) bool {
+	mouseX, mouseY := ev.Position()
+	if mouseX >= t.mode.x && mouseX <= t.mode.x+t.mode.width &&
+		mouseY == t.mode.y {
+		t.toggleMode()
+		return true
+	} else {
+		return false
+	}
+}
+
 func (t *TinyPanel) toggleCaseSensitive() {
 	t.filter.SetCaseSensitive(t.caseSensitive.NextOption() == 1)
 
 	t.Render(true)
+}
+
+func (t *TinyPanel) mouseToggleCaseSensitive(ev *tcell.EventMouse) bool {
+	mouseX, mouseY := ev.Position()
+	if mouseX >= t.caseSensitive.x &&
+		mouseX <= t.caseSensitive.x+t.caseSensitive.width &&
+		mouseY == t.caseSensitive.y {
+		t.toggleCaseSensitive()
+		return true
+	} else {
+		return false
+	}
 }

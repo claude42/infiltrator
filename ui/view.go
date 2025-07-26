@@ -32,7 +32,6 @@ func NewView(pipeline *model.Pipeline) *View {
 func (v *View) SetPipeline(pipeline *model.Pipeline) {
 	v.pipeline = pipeline
 	pipeline.Watch(v)
-	log.Printf("Added view as eventhandler to pipeline")
 	v.SetCursor(0, 0)
 }
 
@@ -123,7 +122,13 @@ func (v *View) renderLineNumber(line model.Line, y int) int {
 
 func (v *View) SetCursor(x, y int) error {
 	var err error
+
+	if v.curY != y {
+		v.pipeline.InvalidateScreenBuffer()
+	}
+
 	v.curX, v.curY, err = v.stayWithinLimits(x, y)
+
 	return err
 }
 
@@ -131,14 +136,11 @@ func (v *View) GetCursor() (x, y int) {
 	return v.curX, v.curY
 }
 
-func (v *View) MoveCursor(xOff, yOff int) error {
+func (v *View) Move(xOff, yOff int) {
 	var err error
 	v.curX, v.curY, err = v.stayWithinLimits(v.curX+xOff, v.curY+yOff)
-	return err
-}
 
-func (v *View) Move(xOff, yOff int) {
-	if v.MoveCursor(xOff, yOff) != nil {
+	if err != nil {
 		screen.Beep()
 	}
 	v.Render(true)
@@ -174,48 +176,78 @@ func (v *View) Resize(x, y, width, height int) {
 }
 
 func (v *View) HandleEvent(ev tcell.Event) bool {
-	log.Printf("View.Handling: %T", ev)
 	switch ev := ev.(type) {
 	case *tcell.EventKey:
-		log.Printf("Handling key %s", ev.Name())
+		log.Printf("View.HandleEvent: %s", ev.Name())
 		switch ev.Key() {
 		case tcell.KeyDown:
-			v.scrollDown()
+			err := v.scrollDown(true)
+			if err != nil {
+				screen.Beep()
+			}
 			return true
 		case tcell.KeyUp:
-			v.scrollUp()
+			err := v.scrollUp(true)
+			if err != nil {
+				screen.Beep()
+			}
 			return true
 
-		/*case tcell.KeyRight:
-		    v.Move(1, 0)
-		    return true
+		case tcell.KeyRight:
+			err := v.scrollHorizontal(1)
+			if err != nil {
+				screen.Beep()
+			}
+			return true
 		case tcell.KeyLeft:
-		    v.Move(-1, 0)
-		    return true*/
+			err := v.scrollHorizontal(-1)
+			if err != nil {
+				screen.Beep()
+			}
+			return true
 		case tcell.KeyCtrlF, tcell.KeyPgDn:
-			// TODO: would be surprised if this still works
-			v.Move(0, v.viewHeight)
+			err := v.pageDown()
+			if err != nil {
+				screen.Beep()
+			}
 			return true
 		case tcell.KeyCtrlB, tcell.KeyPgUp:
-			v.Move(0, -v.viewHeight)
+			err := v.pageUp()
+			if err != nil {
+				screen.Beep()
+			}
 			return true
 		case tcell.KeyCtrlA, tcell.KeyHome:
-			v.SetCursor(0, 0)
-			v.Render(true)
-		case tcell.KeyCtrlE, tcell.KeyEnd:
-			_, length, err := v.pipeline.Size()
-			if err == nil {
-				v.SetCursor(0, length-10)
-				v.Render(true)
+			err := v.scrollHome()
+			if err != nil {
+				screen.Beep()
 			}
+			return true
+		case tcell.KeyCtrlE, tcell.KeyEnd:
+			err := v.scrollEnd()
+			if err != nil {
+				screen.Beep()
+			}
+			return true
 		}
 	case *tcell.EventMouse:
 		buttons := ev.Buttons()
+		log.Printf("Wheel: %d", buttons)
 
+		// Horizontal mouse wheel doesn't seem to work with the terminals I
+		// have access to but we'll leave it in anyways...
 		if buttons&tcell.WheelUp != 0 {
-			v.scrollUp()
+			v.scrollUp(true)
+			return true
 		} else if buttons&tcell.WheelDown != 0 {
-			v.scrollDown()
+			v.scrollDown(true)
+			return true
+		} else if buttons&tcell.WheelLeft != 0 {
+			v.scrollHorizontal(-1)
+			return true
+		} else if buttons&tcell.WheelRight != 0 {
+			v.scrollHorizontal(1)
+			return true
 		}
 	case *model.EventFilterOutput:
 		v.Render(true)
@@ -224,24 +256,87 @@ func (v *View) HandleEvent(ev tcell.Event) bool {
 	return false
 }
 
-func (v *View) scrollUp() {
+func (v *View) scrollUp(render bool) error {
 	err := v.pipeline.ScrollUpLineBuffer()
 	if err != nil {
 		log.Printf("Eventloop ScrollUpLineBufferError")
-		screen.Beep()
-		return
+		return err
 	}
-	v.Render(true)
+	if render {
+		v.Render(true)
+	}
+	return nil
 }
 
-func (v *View) scrollDown() {
+func (v *View) pageUp() error {
+	var err error
+	for i := 0; i < v.viewHeight-1; i++ {
+		err = v.scrollUp(false)
+		if err != nil {
+			break
+		}
+	}
+	v.Render(true)
+	return err
+}
+
+func (v *View) scrollDown(render bool) error {
 	err := v.pipeline.ScrollDownLineBuffer()
 	if err != nil {
 		log.Printf("Eventloop ScrollUpLineBufferError")
-		screen.Beep()
-		return
+		return err
+	}
+	if render {
+		v.Render(true)
+	}
+	return nil
+}
+
+func (v *View) pageDown() error {
+	var err error
+	for i := 0; i < v.viewHeight-1; i++ {
+		err = v.scrollDown(false)
+		if err != nil {
+			break
+		}
 	}
 	v.Render(true)
+	return err
+}
+
+func (v *View) scrollHorizontal(offset int) error {
+	width, _, err := v.pipeline.Size()
+	if err != nil {
+		return err
+	}
+
+	newX, err := util.InBetween(v.curX+offset, 0, width)
+	if err != nil {
+		return err
+	}
+
+	v.curX = newX
+	v.Render(true)
+	return nil
+}
+
+func (v *View) scrollHome() error {
+	v.SetCursor(v.curX, 0)
+	v.Render(true)
+
+	return nil
+}
+
+func (v *View) scrollEnd() error {
+	_, length, err := v.pipeline.Size()
+	if err != nil {
+		return err
+	}
+
+	v.SetCursor(v.curX, length-v.viewHeight)
+	v.Render(true)
+
+	return nil
 }
 
 func (v *View) SetShowLineNumbers(showLineNumbers bool) {

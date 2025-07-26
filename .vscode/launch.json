@@ -10,7 +10,7 @@
             "request": "launch",
             "mode": "auto",
             "program": "${fileDirname}",
-            "args": ["-lines",
+            "args": ["--lines",
                     "medium"],
             "console": "integratedTerminal"
         }

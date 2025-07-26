@@ -33,13 +33,13 @@ func drawChars(x int, y int, width int, r rune, style tcell.Style) int {
 	return x + i
 }
 
-func fillChars(x int, y int, r rune, style tcell.Style) {
-	maxWidth, _ := screen.Size()
+// func fillChars(x int, y int, r rune, style tcell.Style) {
+// 	maxWidth, _ := screen.Size()
 
-	for i := x; i <= maxWidth; i++ {
-		screen.SetContent(i, y, r, nil, style)
-	}
-}
+// 	for i := x; i <= maxWidth; i++ {
+// 		screen.SetContent(i, y, r, nil, style)
+// 	}
+// }
 
 func changeStyle(x int, y int, style tcell.Style) {
 	r, _, _, _ := screen.GetContent(x, y)

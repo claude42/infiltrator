@@ -121,7 +121,7 @@ func (p *Pipeline) RefreshScreenBuffer(startLine, viewHeight int) {
 		line, err := p.GetLine(lineNo)
 		lineNo++
 		if errors.Is(err, util.ErrLineDidNotMatch) {
-			log.Panicf("shoult not happen anymore")
+			//log.Panicf("shoult not happen anymore")
 		} else if errors.Is(err, util.ErrOutOfBounds) {
 			break
 		} else if err != nil {
@@ -135,7 +135,7 @@ func (p *Pipeline) RefreshScreenBuffer(startLine, viewHeight int) {
 	}
 
 	for ; y < viewHeight; y++ {
-		p.screenBuffer[y] = Line{-1, LineWithoutStatus, "", []uint8{}}
+		p.screenBuffer[y] = Line{-1, LineDoesNotExist, "", []uint8{}}
 	}
 
 	p.screenBufferClean = true
@@ -151,13 +151,20 @@ func (p *Pipeline) ScrollDownLineBuffer() error {
 		// TODO error handling
 		return err
 	}
-	lineNo := p.screenBuffer[len(p.screenBuffer)-1].No + 1
-	log.Printf("length=%d, lineNo=%d", length, lineNo)
+
+	lastLineOnScreen := p.screenBuffer[len(p.screenBuffer)-1]
+	if lastLineOnScreen.Status == LineDoesNotExist {
+		return util.ErrOutOfBounds
+	}
+
+	lineNo := lastLineOnScreen.No + 1
+	// lineNo := p.screenBuffer[len(p.screenBuffer)-1].No + 1
 
 	for ; lineNo < length; lineNo++ {
-		nextLine, err = p.GetLine(lineNo)
-		if err == nil {
-			// matching line found
+		nextLine, _ = p.GetLine(lineNo)
+		if nextLine.Status == LineWithoutStatus ||
+			nextLine.Status == LineMatched || nextLine.Status == LineDimmed {
+
 			break
 		}
 	}
@@ -169,27 +176,25 @@ func (p *Pipeline) ScrollDownLineBuffer() error {
 		return util.ErrOutOfBounds
 	}
 
-	log.Println("Pipeline.ScrollDown3")
-
 	if len(p.screenBuffer) > 0 {
 		p.screenBuffer = append(p.screenBuffer[1:], nextLine)
 	} else {
 		p.screenBuffer = []Line{nextLine}
 	}
-	log.Printf("Pipeline scrolled down one line")
 
 	return nil
 }
 
 func (p *Pipeline) ScrollUpLineBuffer() error {
 	var prevLine Line
-	var err error
 
 	lineNo := p.screenBuffer[0].No - 1
 
 	for ; lineNo >= 0; lineNo-- {
-		prevLine, err = p.GetLine(lineNo)
-		if err == nil {
+		prevLine, _ = p.GetLine(lineNo)
+		if prevLine.Status == LineWithoutStatus ||
+			prevLine.Status == LineMatched || prevLine.Status == LineDimmed {
+
 			// matching line found
 			break
 		}
@@ -217,4 +222,8 @@ func (p *Pipeline) ScreenBuffer(startLine, viewHeight int) []Line {
 		p.RefreshScreenBuffer(startLine, viewHeight)
 	}
 	return p.screenBuffer
+}
+
+func (p *Pipeline) InvalidateScreenBuffer() {
+	p.screenBufferClean = false
 }
