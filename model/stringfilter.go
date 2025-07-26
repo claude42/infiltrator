@@ -26,6 +26,8 @@ type StringFilter struct {
 	mode              int
 	key               string
 	caseSensitive     bool
+
+	util.ObservableImpl
 }
 
 type StringFilterFuncFactory func(key string, caseSensitive bool) (func(input string) (string, [][]int, bool), error)
@@ -98,9 +100,9 @@ func (s *StringFilter) updateFilterFunc(key string, caseSensitive bool) error {
 			return fmt.Errorf("error creating filter function: %w", err)
 		}
 	}
-	if s.eventHandler != nil {
-		s.eventHandler.HandleEvent(NewEventFilterOutput())
-	}
+
+	s.PostEvent(NewEventFilterOutput())
+
 	return nil
 }
 
@@ -204,15 +206,6 @@ func (s *StringFilter) SetSource(source Filter) {
 func (s *StringFilter) Size() (int, int, error) {
 	//return 80, 0, nil // FIXME
 	return s.source.Size()
-}
-
-func (s *StringFilter) Watch(eventHandler tcell.EventHandler) {
-	s.eventHandler = eventHandler
-}
-
-func (s *StringFilter) Unwatch(eventHandler tcell.EventHandler) {
-	// TODO: really, fix this!
-	s.eventHandler = nil
 }
 
 func (s *StringFilter) HandleEvent(ev tcell.Event) bool {

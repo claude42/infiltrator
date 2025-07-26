@@ -9,15 +9,16 @@ import (
 	//"time"
 
 	"github.com/claude42/infiltrator/util"
-
-	"github.com/gdamore/tcell/v2"
+	// "github.com/gdamore/tcell/v2"
 )
 
 type Buffer struct {
-	filePath     string
-	width        int
-	lines        []Line
-	eventHandler tcell.EventHandler
+	filePath string
+	width    int
+	lines    []Line
+
+	util.ObservableImpl
+	util.EventHandlerIgnoreImpl
 }
 
 func NewBufferFromFile(filePath string) (*Buffer, error) {
@@ -81,19 +82,6 @@ func (b *Buffer) Source() (Filter, error) {
 
 func (b *Buffer) SetSource(source Filter) {
 	log.Panicln("SetSource() should never be called on a buffer!")
-}
-
-func (b *Buffer) Watch(eventHandler tcell.EventHandler) {
-	b.eventHandler = eventHandler
-}
-
-func (b *Buffer) Unwatch(eventHandler tcell.EventHandler) {
-	// TODO definitely fix this
-	b.eventHandler = nil
-}
-
-func (b *Buffer) HandleEvent(ev tcell.Event) bool {
-	return b.eventHandler.HandleEvent(ev)
 }
 
 func (b *Buffer) SetFilterFunc(fn func(input string, key string) (string, error)) {

@@ -2,7 +2,8 @@ package util
 
 import (
 	"time"
-	// "github.com/gdamore/tcell/v2"
+
+	"github.com/gdamore/tcell/v2"
 )
 
 type EventText struct {
@@ -27,4 +28,22 @@ func (ev *EventText) Text() string {
 
 func (ev *EventText) SetText(text string) {
 	ev.text = text
+}
+
+type EventHandler interface {
+	HandleEvent(tcell.Event) bool
+}
+
+type EventHandlerIgnoreImpl struct {
+}
+
+func (eh *EventHandlerIgnoreImpl) HandleEvent(tcell.Event) bool {
+	return false
+}
+
+type EventHandlerPanicImpl struct {
+}
+
+func (eh *EventHandlerPanicImpl) HandleEvent(tcell.Event) bool {
+	panic("HandlEvent() implementatino missing!")
 }

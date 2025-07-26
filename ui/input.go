@@ -13,8 +13,6 @@ type Input interface {
 	SetContent(content string)
 	Watch(eh tcell.EventHandler)
 	SetColorIndex(colorIndex uint8)
-	Component
-	tcell.EventHandler
 
 	Component
 }

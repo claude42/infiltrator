@@ -6,8 +6,7 @@ import (
 
 	"github.com/claude42/infiltrator/model"
 	//"github.com/claude42/infiltrator/util"
-
-	"github.com/gdamore/tcell/v2"
+	// "github.com/gdamore/tcell/v2"
 )
 
 type Panel interface {
@@ -16,8 +15,6 @@ type Panel interface {
 	SetColorIndex(colorIndex uint8)
 	SetFilter(filter model.Filter)
 	Filter() model.Filter
-	Component
-	tcell.EventHandler
 
 	Component
 }

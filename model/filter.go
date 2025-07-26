@@ -5,7 +5,7 @@ import (
 	//"log"
 	"time"
 
-	// "github.com/claude42/infiltrator/util"
+	"github.com/claude42/infiltrator/util"
 
 	"github.com/gdamore/tcell/v2"
 )
@@ -16,13 +16,12 @@ type Filter interface {
 	Source() (Filter, error)
 	SetSource(source Filter)
 	Size() (int, int, error)
-	Watch(eventHandler tcell.EventHandler)
-	Unwatch(eventHandler tcell.EventHandler)
 	SetColorIndex(colorIndex uint8)
 	SetMode(mode int)
 	SetCaseSensitive(on bool) error
 
 	tcell.EventHandler
+	util.Observable
 }
 
 type EventFilterOutput struct {
