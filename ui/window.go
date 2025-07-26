@@ -34,7 +34,7 @@ func GetScreen() tcell.Screen {
 	return screen
 }
 
-func Setup(pipeline *model.Pipeline) *Window {
+func Setup() *Window {
 	GetScreen()
 
 	if window != nil {
@@ -47,7 +47,7 @@ func Setup(pipeline *model.Pipeline) *Window {
 		log.Panicf("%+v", err)
 	}
 
-	window.mainView = NewView(pipeline)
+	window.mainView = NewView()
 
 	var panel Panel
 	panel, err := NewPanel(TypeKeyword, model.FilterFocus)

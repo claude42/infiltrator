@@ -63,7 +63,7 @@ func run() error {
 	go buffer.ReadFromFile(filePath, ui.GetScreen().PostEvent)
 
 	// Set up UI
-	window := ui.Setup(pipeline)
+	window := ui.Setup()
 	defer ui.Cleanup()
 	window.ShowLineNumbers(showLineNumbers)
 	window.FollowFile(followFile)
@@ -74,11 +74,4 @@ func run() error {
 	<-quit
 
 	return nil
-
-	// for {
-	// 	select {
-	// 	case <-quit:
-	// 		return nil
-	// 	}
-	// }
 }

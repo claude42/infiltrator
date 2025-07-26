@@ -11,7 +11,6 @@ import (
 )
 
 type View struct {
-	pipeline              *model.Pipeline
 	viewWidth, viewHeight int
 	curX, curY            int
 	showLineNumbers       bool
@@ -20,23 +19,17 @@ type View struct {
 	ComponentImpl
 }
 
-func NewView(pipeline *model.Pipeline) *View {
+func NewView() *View {
 	v := &View{}
 	v.viewWidth, v.viewHeight = screen.Size()
-
-	v.SetPipeline(pipeline)
+	model.GetPipeline().Watch(v)
+	v.SetCursor(0, 0)
 
 	return v
 }
 
-func (v *View) SetPipeline(pipeline *model.Pipeline) {
-	v.pipeline = pipeline
-	pipeline.Watch(v)
-	v.SetCursor(0, 0)
-}
-
 func (v *View) Render(updateScreen bool) {
-	screenBuffer := v.pipeline.ScreenBuffer(v.curY, v.viewHeight)
+	screenBuffer := model.GetPipeline().ScreenBuffer(v.curY, v.viewHeight)
 	// if the first line on the screen doesn't match, adjust curY, so
 	// e.g. the next cursor down will have an effect
 	v.curY = util.IntMax(screenBuffer[0].No, 0)
@@ -96,7 +89,7 @@ func (v *View) renderLineNumber(line model.Line, y int) int {
 	if line.No < 0 {
 		return 0 // TODO: 0 ok?
 	}
-	_, length, err := v.pipeline.Size()
+	_, length, err := model.GetPipeline().Size()
 	if err != nil {
 		return 0 // TODO: 0 ok?
 	}
@@ -124,7 +117,7 @@ func (v *View) SetCursor(x, y int) error {
 	var err error
 
 	if v.curY != y {
-		v.pipeline.InvalidateScreenBuffer()
+		model.GetPipeline().InvalidateScreenBuffer()
 	}
 
 	v.curX, v.curY, err = v.stayWithinLimits(x, y)
@@ -151,7 +144,7 @@ func (v *View) stayWithinLimits(x int, y int) (int, int, error) {
 	var errX, errY error
 	var err error = nil
 
-	width, length, err := v.pipeline.Size()
+	width, length, err := model.GetPipeline().Size()
 	if err != nil {
 		return 0, 0, err
 	}
@@ -172,7 +165,7 @@ func (v *View) Resize(x, y, width, height int) {
 	// x, y ignored for now
 	v.viewWidth = width
 	v.viewHeight = height
-	v.pipeline.RefreshScreenBuffer(v.curY, v.viewHeight)
+	model.GetPipeline().RefreshScreenBuffer(v.curY, v.viewHeight)
 }
 
 func (v *View) HandleEvent(ev tcell.Event) bool {
@@ -260,7 +253,7 @@ func (v *View) HandleEvent(ev tcell.Event) bool {
 }
 
 func (v *View) reactToFileUpdate() {
-	v.pipeline.InvalidateScreenBuffer()
+	model.GetPipeline().InvalidateScreenBuffer()
 	if v.followFile {
 		v.scrollEnd()
 	} else {
@@ -269,7 +262,7 @@ func (v *View) reactToFileUpdate() {
 }
 
 func (v *View) scrollUp(render bool) error {
-	err := v.pipeline.ScrollUpLineBuffer()
+	err := model.GetPipeline().ScrollUpLineBuffer()
 	if err != nil {
 		log.Printf("Eventloop ScrollUpLineBufferError")
 		return err
@@ -293,7 +286,7 @@ func (v *View) pageUp() error {
 }
 
 func (v *View) scrollDown(render bool) error {
-	err := v.pipeline.ScrollDownLineBuffer()
+	err := model.GetPipeline().ScrollDownLineBuffer()
 	if err != nil {
 		log.Printf("Eventloop ScrollUpLineBufferError")
 		return err
@@ -317,7 +310,7 @@ func (v *View) pageDown() error {
 }
 
 func (v *View) scrollHorizontal(offset int) error {
-	width, _, err := v.pipeline.Size()
+	width, _, err := model.GetPipeline().Size()
 	if err != nil {
 		return err
 	}
@@ -340,7 +333,7 @@ func (v *View) scrollHome() error {
 }
 
 func (v *View) scrollEnd() error {
-	_, length, err := v.pipeline.Size()
+	_, length, err := model.GetPipeline().Size()
 	if err != nil {
 		return err
 	}
@@ -357,5 +350,7 @@ func (v *View) SetShowLineNumbers(showLineNumbers bool) {
 
 func (v *View) SetFollowFile(followFile bool) {
 	v.followFile = followFile
-	v.scrollEnd()
+	if followFile {
+		v.scrollEnd()
+	}
 }
