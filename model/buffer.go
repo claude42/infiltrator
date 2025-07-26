@@ -3,75 +3,159 @@ package model
 import (
 	"bufio"
 	"fmt"
+	"sync"
+
+	// "io"
 	"log"
 	"os"
+	"time"
 
 	//"time"
 
 	"github.com/claude42/infiltrator/util"
+	"github.com/fsnotify/fsnotify"
+	"github.com/gdamore/tcell/v2"
 	// "github.com/gdamore/tcell/v2"
 )
 
 type Buffer struct {
-	filePath string
-	width    int
-	lines    []Line
-
 	util.ObservableImpl
 	util.EventHandlerIgnoreImpl
+
+	sync.Mutex
+
+	width int
+	lines []Line
 }
 
-func NewBufferFromFile(filePath string) (*Buffer, error) {
-	b := Buffer{}
-	err := b.readFromFile(filePath)
-	if err != nil {
-		return &b, err
-	}
+type EventBufferDirty struct {
+	time time.Time
+}
 
-	return &b, nil
+func NewEventBufferDirty() *EventBufferDirty {
+	e := &EventBufferDirty{}
+	e.time = time.Now()
+
+	return e
+}
+
+func (e *EventBufferDirty) When() time.Time {
+	return e.time
+}
+
+func NewBuffer() *Buffer {
+	return &Buffer{}
 }
 
 func (b *Buffer) Size() (int, int, error) {
-	return b.width, len(b.lines), nil
+	b.Lock()
+	length := len(b.lines)
+	b.Unlock()
+
+	return b.width, length, nil
 }
 
-func (b *Buffer) readFromFile(filePath string) error {
+func (b *Buffer) initLines() {
+	b.Lock()
+	b.lines = nil
+	b.Unlock()
+
+	b.width = 0
+}
+
+func (b *Buffer) ReadFromFile(filePath string, postEvent func(ev tcell.Event) error) error {
 	file, err := os.Open(filePath)
 	if err != nil {
 		return err
 	}
 	defer file.Close()
 
-	b.filePath = filePath
+	b.initLines()
 
-	scanner := bufio.NewScanner(file)
+	lineNo, err := b.addNewLines(file, 0)
+	if err != nil {
+		return err
+	}
 
-	b.lines = nil
-	b.width = 0
-	y := 0
-	for scanner.Scan() {
-		text := scanner.Text()
-		newLine := Line{y, LineWithoutStatus, text, make([]uint8, len(text))}
-		if len(newLine.Str) != len(newLine.ColorIndex) {
-			log.Panicf("Line length mismatch: %d != %d", len(newLine.Str), len(newLine.ColorIndex))
+	watcher, err := fsnotify.NewWatcher()
+	if err != nil {
+		return fmt.Errorf("error creating watcher: %w", err)
+	}
+	defer watcher.Close()
+
+	err = watcher.Add(filePath)
+	if err != nil {
+		return fmt.Errorf("error watching file %s: %s", filePath, err)
+	}
+
+	for {
+		select {
+		case event, ok := <-watcher.Events:
+			if !ok {
+				log.Println("Watcher events channel closed")
+				return nil
+			}
+			log.Printf("Event received: %s (Op: %s)", event.Name, event.Op.String())
+
+			if event.Has(fsnotify.Write) {
+				log.Printf("Handling write")
+				lineNo, err = b.addNewLines(file, lineNo)
+				if err != nil {
+					log.Printf("error reading file %s, %v", filePath, err)
+				}
+
+				postEvent(NewEventBufferDirty())
+
+				continue
+			}
+		case err, ok := <-watcher.Errors:
+			if !ok {
+				log.Println("Watcher errors channel closd.")
+				return nil
+			}
+			log.Println("Watcher error:", err)
+			continue
 		}
-		b.lines = append(b.lines, newLine)
-		b.width = util.IntMax(len(newLine.Str)-1, b.width)
-		y++
+	}
+}
+
+func (b *Buffer) addNewLines(file *os.File, lineNo int) (int, error) {
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		b.addNewLine(lineNo, scanner.Text())
+		lineNo++
 	}
 
 	if err := scanner.Err(); err != nil {
-		return fmt.Errorf("error reading file %s: %w", filePath, err)
+		return lineNo, fmt.Errorf("error reading file: %w", err)
 	}
 
-	return nil
+	return lineNo, nil
+}
+
+func (b *Buffer) addNewLine(lineNo int, text string) {
+	newLine := Line{lineNo, LineWithoutStatus, text, make([]uint8, len(text))}
+
+	b.Lock()
+	b.lines = append(b.lines, newLine)
+	b.Unlock()
+
+	b.width = util.IntMax(len(newLine.Str)-1, b.width)
 }
 
 func (b *Buffer) GetLine(line int) (Line, error) {
-	if line < 0 || line >= len(b.lines) {
+	b.Lock()
+	length := len(b.lines)
+	b.Unlock()
+
+	if line < 0 || line >= length {
 		return Line{Str: "ErrOutOfBounds"}, util.ErrOutOfBounds
 	}
+
+	b.Lock()
 	b.lines[line].CleanUp()
+	b.Unlock()
+
 	return b.lines[line], nil
 }
 

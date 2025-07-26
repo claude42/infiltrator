@@ -44,7 +44,224 @@ Available
 
 TODO
 * Fix Getline() ErrNotMatched DONE
-* ThreadSave Handlers and Singletons
+* ThreadSave Handlers and Singletons DONE
 * Read buffer in a Thread
 * Read new lines that are appended to a file
 * tail -f style output
+* use model.GetPipeline() everywhere
+* Get rid of EventFilterOutput
+
+* Configuration file
+* Change type (Keyword, regex, etc.) on the fly
+
+
+
+package main
+
+import (
+	"bufio" // Import bufio package
+	"fmt"
+	"io"
+	"log"
+	"os"
+	"path/filepath"
+	"time"
+
+	"github.com/fsnotify/fsnotify" // go get github.com/fsnotify/fsnotify
+)
+
+func main() {
+	// 1. Create a temporary file to watch
+	tempDir := os.TempDir()
+	fileName := "my_tail_log.txt"
+	filePath := filepath.Join(tempDir, fileName)
+
+	// Ensure the file exists initially and add some content
+	initialContent := "--- Start of Log ---\n"
+	err := os.WriteFile(filePath, []byte(initialContent), 0644)
+	if err != nil {
+		log.Fatalf("Failed to create temporary file: %v", err)
+	}
+	fmt.Printf("Created log file: %s\n", filePath)
+
+	// 2. Open the file for reading and keep its file descriptor open
+	// This is crucial to track the read position.
+	file, err := os.OpenFile(filePath, os.O_RDONLY, 0644)
+	if err != nil {
+		log.Fatalf("Failed to open file for reading: %v", err)
+	}
+	defer file.Close() // Ensure the file is closed when main exits
+
+	// Initialize lastReadOffset to the current size of the file
+	// This ensures we only read *new* content.
+	info, err := file.Stat()
+	if err != nil {
+		log.Fatalf("Failed to stat file: %v", err)
+	}
+	lastReadOffset := info.Size()
+	fmt.Printf("Initial file size: %d bytes. Starting tail from here.\n", lastReadOffset)
+
+	// 3. Create a new fsnotify watcher
+	watcher, err := fsnotify.NewWatcher()
+	if err != nil {
+		log.Fatal("Failed to create watcher:", err)
+	}
+	defer watcher.Close()
+
+	// 4. Add the single file to watch
+	err = watcher.Add(filePath)
+	if err != nil {
+		log.Fatal("Failed to add file to watcher:", err)
+	}
+	fmt.Printf("Watching for changes on: %s\n", filePath)
+
+	// 5. Start a goroutine to listen for events and errors
+	done := make(chan bool) // Channel to signal when event listening should stop
+	go func() {
+		for {
+			select {
+			case event, ok := <-watcher.Events:
+				if !ok {
+					fmt.Println("Watcher events channel closed.")
+					done <- true
+					return
+				}
+				log.Printf("Event received: %s (Op: %s)", event.Name, event.Op.String())
+
+				if event.Has(fsnotify.Write) {
+					// --- Handle WRITE event: Read and print new content ---
+					fmt.Println("  -> Detected WRITE event. Attempting to read new content...")
+
+					// Get current file info to check for truncation or growth
+					currentInfo, err := os.Stat(filePath)
+					if err != nil {
+						log.Printf("Error stating file during write event: %v", err)
+						continue // Skip this event
+					}
+
+					// If the file was truncated (e.g., log rotation), reset offset
+					if currentInfo.Size() < lastReadOffset {
+						fmt.Println("  -> File truncated! Resetting read position to 0.")
+						lastReadOffset = 0
+					}
+
+					// Seek to the last read offset
+					_, err = file.Seek(lastReadOffset, io.SeekStart)
+					if err != nil {
+						log.Printf("Error seeking file to offset %d: %v", lastReadOffset, err)
+						continue
+					}
+
+					// Create a new scanner from the file.
+					// It will read from the current seek position.
+					scanner := bufio.NewScanner(file)
+					// Set the split function to ScanLines for line-by-line reading
+					scanner.Split(bufio.ScanLines)
+
+					var newLinesRead bool
+					for scanner.Scan() {
+						line := scanner.Text()
+						if !newLinesRead {
+							fmt.Println("  --- NEW CONTENT ---")
+							newLinesRead = true
+						}
+						fmt.Println(line) // Print each new line
+					}
+					if err := scanner.Err(); err != nil {
+						log.Printf("Error scanning new content: %v", err)
+					}
+
+					if newLinesRead {
+						fmt.Println("  -------------------")
+					} else {
+						fmt.Println("  -> No new content read (might be a metadata write or empty write).")
+					}
+
+					// Update lastReadOffset to the current position of the file handle
+					// after the scanner has read everything.
+					newOffset, err := file.Seek(0, io.SeekCurrent)
+					if err != nil {
+						log.Printf("Error getting current file offset: %v", err)
+						continue
+					}
+					lastReadOffset = newOffset
+
+				} else if event.Has(fsnotify.Remove) {
+					fmt.Println("  -> Detected REMOVE event (file deleted).")
+					// In a real tailer, you'd handle this by potentially trying to re-open
+					// the file if it's expected to reappear (e.g., log rotation creates a new file).
+					// For this example, we'll just log.
+				} else if event.Has(fsnotify.Rename) {
+					fmt.Println("  -> Detected RENAME event (file renamed/moved).")
+					// In a real tailer, you'd need to remove the old watch and add a new one
+					// for the new path if you want to continue watching.
+				} else if event.Has(fsnotify.Chmod) {
+					fmt.Println("  -> Detected CHMOD event (file permissions changed).")
+				}
+
+			case err, ok := <-watcher.Errors:
+				if !ok {
+					fmt.Println("Watcher errors channel closed.")
+					done <- true
+					return
+				}
+				log.Println("Watcher error:", err)
+			}
+		}
+	}()
+
+	// 6. Simulate file changes after a short delay
+	fmt.Println("\nSimulating log writes...")
+	time.Sleep(1 * time.Second)
+
+	// Simulate multiple writes
+	for i := 0; i < 3; i++ {
+		fmt.Printf("  -- Appending line %d to file...\n", i+1)
+		f, err := os.OpenFile(filePath, os.O_APPEND|os.O_WRONLY, 0644)
+		if err != nil {
+			log.Fatal(err)
+		}
+		_, err = f.WriteString(fmt.Sprintf("Log entry %d: This is a new line of content.\n", i+1))
+		f.Close() // Close to ensure write event is flushed
+		if err != nil {
+			log.Fatal(err)
+		}
+		time.Sleep(500 * time.Millisecond) // Give watcher time to pick up event
+	}
+
+	// Simulate a file truncation (e.g., log rotation) and then another write
+	fmt.Println("\nSimulating log rotation (truncation) and new writes...")
+	time.Sleep(1 * time.Second)
+	err = os.WriteFile(filePath, []byte("--- Rotated Log ---\n"), 0644) // Overwrites and truncates
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println("  -- File truncated and new header written.")
+	time.Sleep(500 * time.Millisecond)
+
+	fmt.Println("  -- Appending to rotated file...")
+	f, err = os.OpenFile(filePath, os.O_APPEND|os.O_WRONLY, 0644)
+	if err != nil {
+		log.Fatal(err)
+	}
+	_, err = f.WriteString("Log entry 4: This is a line after rotation.\n")
+	f.Close()
+	if err != nil {
+		log.Fatal(err)
+	}
+	time.Sleep(500 * time.Millisecond)
+
+	// 7. Clean up the temporary file
+	fmt.Println("\nCleaning up temporary file...")
+	err = os.Remove(filePath)
+	if err != nil {
+		log.Printf("Error removing file: %v", err)
+	}
+
+	// 8. Wait for the goroutine to signal completion
+	fmt.Println("Simulation complete. Waiting for watcher goroutine to finish...")
+	<-done
+
+	fmt.Println("Main program exiting.")
+}
+

@@ -3,14 +3,18 @@ package ui
 import (
 	"fmt"
 	"log"
+	"sync"
 
 	"github.com/claude42/infiltrator/model"
 
 	"github.com/gdamore/tcell/v2"
 )
 
-var window *Window
-var screen tcell.Screen
+var (
+	screen tcell.Screen
+	once   sync.Once
+	window *Window
+)
 
 type Window struct {
 	mainView     *View
@@ -19,27 +23,34 @@ type Window struct {
 	activePanel  Panel
 }
 
+func GetScreen() tcell.Screen {
+	once.Do(func() {
+		var err error
+		screen, err = tcell.NewScreen()
+		if err != nil {
+			log.Panicf("%+v", err)
+		}
+	})
+	return screen
+}
+
 func Setup(pipeline *model.Pipeline) *Window {
+	GetScreen()
+
 	if window != nil {
 		log.Panicln("ui.setup() called twice!")
 	}
 
 	window = &Window{}
 
-	var err error
-	screen, err = tcell.NewScreen()
-	if err != nil {
+	if err := screen.Init(); err != nil {
 		log.Panicf("%+v", err)
 	}
 
-	if err = screen.Init(); err != nil {
-		log.Panicf("%+v", err)
-	}
-
-	window.SetView(NewView(pipeline))
+	window.mainView = NewView(pipeline)
 
 	var panel Panel
-	panel, err = NewPanel(TypeKeyword, model.FilterFocus)
+	panel, err := NewPanel(TypeKeyword, model.FilterFocus)
 	if err != nil {
 		log.Panicf("%+v", err)
 	}
@@ -284,10 +295,6 @@ func (w *Window) switchPanel(offset int) error {
 	}
 
 	return w.goToPanel(newPanelIndex)
-}
-
-func (w *Window) SetView(v *View) {
-	window.mainView = v
 }
 
 // As soon as we get more options, we should use a struct for this

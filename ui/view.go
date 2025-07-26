@@ -177,6 +177,10 @@ func (v *View) Resize(x, y, width, height int) {
 
 func (v *View) HandleEvent(ev tcell.Event) bool {
 	switch ev := ev.(type) {
+	case *model.EventBufferDirty:
+		v.pipeline.InvalidateScreenBuffer()
+		v.Render(true)
+		return true
 	case *tcell.EventKey:
 		log.Printf("View.HandleEvent: %s", ev.Name())
 		switch ev.Key() {

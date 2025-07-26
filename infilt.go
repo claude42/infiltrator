@@ -52,17 +52,16 @@ func run() error {
 	filePath := flag.Args()[0]
 
 	// Set up filtering pipeline
-	p := model.GetPipeline()
+	pipeline := model.GetPipeline()
 
 	// Create buffer
-	buffer, err := model.NewBufferFromFile(filePath)
-	if err != nil {
-		return err
-	}
-	p.AddFilter(buffer)
+	buffer := model.NewBuffer()
+	pipeline.AddFilter(buffer)
+
+	go buffer.ReadFromFile(filePath, ui.GetScreen().PostEvent)
 
 	// Set up UI
-	window := ui.Setup(p)
+	window := ui.Setup(pipeline)
 	defer ui.Cleanup()
 	window.ShowLineNumbers(showLineNumbers)
 
