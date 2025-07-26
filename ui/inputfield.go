@@ -147,17 +147,14 @@ func (i *InputField) deleteRune() {
 
 func (i *InputField) updateWatchers() {
 	ev := util.NewEventText(string(i.content))
-	i.PostEvent(ev)
-
-	// TODO: FIX THIS
-	// consumed := i.eh.HandleEvent(ev)
+	consumed := i.PostEvent(ev)
 
 	// in case new inputCorrect state is different from previous
-	// if consumed != i.inputCorrect {
-	// 	i.inputCorrect = consumed
-	// 	screen.Beep()
-	// 	i.Render(true)
-	// }
+	if consumed != i.inputCorrect {
+		i.inputCorrect = consumed
+		screen.Beep()
+		i.Render(true)
+	}
 }
 
 func (i *InputField) SetColorIndex(colorIndex uint8) {

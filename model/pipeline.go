@@ -104,8 +104,7 @@ func (p *Pipeline) HandleEvent(ev tcell.Event) bool {
 		p.screenBufferClean = false
 	}
 
-	p.PostEvent(ev)
-	return true
+	return p.PostEvent(ev)
 }
 
 // Will return the new startLine - in case the original starting line (or subsequent

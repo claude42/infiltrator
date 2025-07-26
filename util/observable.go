@@ -39,12 +39,12 @@ func (o *ObservableImpl) Unwatch(eh tcell.EventHandler) {
 
 }
 
-func (o *ObservableImpl) PostEvent(ev tcell.Event) {
+func (o *ObservableImpl) PostEvent(ev tcell.Event) bool {
 	o.Lock()
 	defer o.Unlock()
 
 	if o.watchers == nil {
-		return
+		return false
 	}
 
 	watcherCopy := make(map[tcell.EventHandler]struct{}, len(o.watchers))
@@ -52,7 +52,13 @@ func (o *ObservableImpl) PostEvent(ev tcell.Event) {
 		watcherCopy[k] = struct{}{}
 	}
 
+	consumed := false
+
 	for k := range watcherCopy {
-		k.HandleEvent(ev)
+		if k.HandleEvent(ev) {
+			consumed = true
+		}
 	}
+
+	return consumed
 }
