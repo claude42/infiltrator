@@ -70,18 +70,12 @@ func (b *Buffer) GetLine(line int) (Line, error) {
 	if line < 0 || line >= len(b.lines) {
 		return Line{Str: "ErrOutOfBounds"}, util.ErrOutOfBounds
 	}
-	b.decolorizeLine(b.lines[line])
-	b.lines[line].Status = LineWithoutStatus
+	b.lines[line].CleanUp()
 	return b.lines[line], nil
 }
 
-func (b *Buffer) decolorizeLine(line Line) {
-	for i := range line.ColorIndex {
-		line.ColorIndex[i] = 0
-	}
-}
-
 func (b *Buffer) Source() (Filter, error) {
+	log.Panicln("Source() should never be called on a buffer")
 	return nil, fmt.Errorf("buffers don't have a source")
 }
 

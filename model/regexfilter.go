@@ -3,11 +3,10 @@ package model
 import (
 	"fmt"
 	"regexp"
-
-	"github.com/claude42/infiltrator/util"
+	// "github.com/claude42/infiltrator/util"
 )
 
-func RegexFilterFuncFactory(key string, caseSensitive bool) (func(input string) (string, [][]int, error), error) {
+func RegexFilterFuncFactory(key string, caseSensitive bool) (func(input string) (string, [][]int, bool), error) {
 	if !caseSensitive {
 		key = fmt.Sprintf("(?i)%s", key)
 	}
@@ -16,12 +15,12 @@ func RegexFilterFuncFactory(key string, caseSensitive bool) (func(input string) 
 		return nil, err
 	}
 
-	return func(input string) (string, [][]int, error) {
+	return func(input string) (string, [][]int, bool) {
 		indeces := re.FindAllStringIndex(input, -1)
 		if indeces == nil {
-			return "", indeces, util.ErrLineDidNotMatch
+			return "", indeces, false
 		}
 
-		return input, indeces, nil
+		return input, indeces, true
 	}, nil
 }

@@ -1,7 +1,7 @@
 package model
 
 import (
-	"errors"
+	// "errors"
 	"fmt"
 
 	"log"
@@ -19,7 +19,7 @@ const (
 
 type StringFilter struct {
 	source            Filter
-	filterFunc        func(input string) (string, [][]int, error)
+	filterFunc        func(input string) (string, [][]int, bool)
 	filterFuncFactory StringFilterFuncFactory
 	eventHandler      tcell.EventHandler
 	colorIndex        uint8
@@ -28,16 +28,18 @@ type StringFilter struct {
 	caseSensitive     bool
 }
 
-type StringFilterFuncFactory func(key string, caseSensitive bool) (func(input string) (string, [][]int, error), error)
+type StringFilterFuncFactory func(key string, caseSensitive bool) (func(input string) (string, [][]int, bool), error)
 
 // TODO: include error handling?
 
-func DefaultStringFilterFuncFactory(key string, caseSensitive bool) (func(input string) (string, [][]int, error), error) {
+func DefaultStringFilterFuncFactory(key string, caseSensitive bool) (func(input string) (string, [][]int, bool), error) {
 	if !caseSensitive {
 		key = strings.ToLower(key)
 	}
 
-	return func(input string) (string, [][]int, error) {
+	// Will return the matched string, an array of start/end pairs of matches
+	// in the line and bool that's true if there was at least one match
+	return func(input string) (string, [][]int, bool) {
 		var indeces [][]int
 		if len(key) == 0 {
 			// Handle empty substring: returns all positions as zero-width matches.
@@ -45,7 +47,7 @@ func DefaultStringFilterFuncFactory(key string, caseSensitive bool) (func(input 
 			for i := range input {
 				indeces = append(indeces, []int{i, i})
 			}
-			return input, indeces, nil
+			return input, indeces, true
 		}
 
 		if !caseSensitive {
@@ -68,10 +70,10 @@ func DefaultStringFilterFuncFactory(key string, caseSensitive bool) (func(input 
 		}
 
 		if len(indeces) == 0 {
-			return "", nil, util.ErrLineDidNotMatch
+			return "", nil, false
 		}
 
-		return input, indeces, nil
+		return input, indeces, true
 	}, nil
 }
 
@@ -134,18 +136,17 @@ func (s *StringFilter) GetLine(line int) (Line, error) {
 		return sourceLine, nil
 	}
 
-	_, indeces, err := s.filterFunc(sourceLine.Str)
+	_, indeces, matched := s.filterFunc(sourceLine.Str)
 
-	if err != nil && !errors.Is(err, util.ErrLineDidNotMatch) {
-		log.Panicf("Unknown filter mode %d", s.mode)
+	if err != nil {
+		log.Panicf("Unknown error from filter function: %w", err)
 		return sourceLine, err
 	}
 
-	matched := !errors.Is(err, util.ErrLineDidNotMatch)
 	s.updateStatus(matched, indeces, &sourceLine)
 
 	if !matched {
-		return sourceLine, util.ErrLineDidNotMatch
+		return sourceLine, nil
 	}
 
 	if (s.mode == FilterMatch || s.mode == FilterFocus) &&

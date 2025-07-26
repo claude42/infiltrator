@@ -42,3 +42,9 @@ Keyboard shortcuts
 Available
 * CTRL-D, F, I, J, K, L, N, Q, R, S, T, U, V, W, X, Y, Z
 
+TODO
+* Fix Getline() ErrNotMatched
+* ThreadSave Handlers and Singletons
+* Read buffer in a Thread
+* Read new lines that are appended to a file
+* tail -f style output

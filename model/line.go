@@ -24,3 +24,10 @@ type Line struct {
 	// each byte in ColorIndex is a color index for each byte in Str
 	ColorIndex []uint8
 }
+
+func (l *Line) CleanUp() {
+	for i := range l.ColorIndex {
+		l.ColorIndex[i] = 0
+	}
+	l.Status = LineWithoutStatus
+}
