@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"sync"
+	"time"
 
 	"github.com/claude42/infiltrator/util"
 
@@ -23,6 +24,22 @@ type Pipeline struct {
 
 	screenBuffer      []Line
 	screenBufferClean bool
+	currentLine       int
+}
+
+type EventPositionChanged struct {
+	time time.Time
+}
+
+func NewEventPositionChanged() *EventPositionChanged {
+	e := &EventPositionChanged{}
+	e.time = time.Now()
+
+	return e
+}
+
+func (e *EventPositionChanged) When() time.Time {
+	return e.time
 }
 
 func GetPipeline() *Pipeline {
@@ -137,7 +154,7 @@ func (p *Pipeline) RefreshScreenBuffer(startLine, viewHeight int) {
 }
 
 // will return the line it scrolled to
-func (p *Pipeline) ScrollDownLineBuffer() (Line, error) {
+func (p *Pipeline) ScrollDownLineBuffer(updatePosition bool) (Line, error) {
 	var nextLine Line
 	var err error
 
@@ -177,6 +194,11 @@ func (p *Pipeline) ScrollDownLineBuffer() (Line, error) {
 		p.screenBuffer = []Line{nextLine}
 	}
 
+	p.currentLine = p.screenBuffer[0].No
+	if updatePosition {
+		p.PostEvent(NewEventPositionChanged())
+	}
+
 	return nextLine, nil
 }
 
@@ -208,6 +230,9 @@ func (p *Pipeline) ScrollUpLineBuffer() (Line, error) {
 	} else {
 		p.screenBuffer = []Line{prevLine}
 	}
+
+	p.currentLine = p.screenBuffer[0].No
+	p.PostEvent(NewEventPositionChanged())
 
 	return prevLine, nil
 }
@@ -247,6 +272,69 @@ func (p *Pipeline) ScreenBuffer(startLine, viewHeight int) []Line {
 	return p.screenBuffer
 }
 
+func (p *Pipeline) SetCurrentLine(newCurrentLine int) {
+	p.currentLine = newCurrentLine
+	p.InvalidateScreenBuffer()
+	p.PostEvent(NewEventPositionChanged())
+}
+
 func (p *Pipeline) InvalidateScreenBuffer() {
 	p.screenBufferClean = false
 }
+
+func (p *Pipeline) Percentage() (int, error) {
+	_, length, err := p.Size()
+	if err != nil || p.currentLine < 0 ||
+		p.currentLine > length {
+		return -1, err
+	}
+
+	percentage := 100 * (p.currentLine + len(p.screenBuffer)) / length
+	if percentage > 100 {
+		percentage = 100
+	}
+
+	return percentage, nil
+}
+
+// func (p *Pipeline) FindFilteredEnd() (int, error) {
+// 	for {
+// 		_, err := p.ScrollDownLineBuffer()
+// 		if err != nil {
+// 			break
+// 		}
+// 	}
+// }
+
+// func (p *Pipeline) FindFilteredEnd() (int, error) {
+// 	_, length, err := p.Size()
+// 	if err != nil {
+// 		return -1, err
+// 	}
+// 	viewHeight := len(p.screenBuffer)
+
+// 	// search number of view lines times a line which is not hidden
+// 	// starting from the end of the file
+
+// 	var line Line
+// 	for lineUp := 0; lineUp < viewHeight-1; lineUp++ {
+// 		for i := length - 1; ; i-- {
+// 			if i < 0 {
+// 				return 0, nil
+// 			}
+// 			line, err := p.GetLine(i)
+// 			if err != nil {
+// 				return -1, err
+// 			}
+// 			status := line.Status
+// 			if status == LineWithoutStatus || status == LineMatched ||
+// 				status == LineDimmed {
+// 				break
+// 			} else if i < 0 {
+// 				return -1, fmt.Errorf("all lines vanished")
+// 			}
+// 		}
+// 	}
+
+// 	return line.No, nil
+// }

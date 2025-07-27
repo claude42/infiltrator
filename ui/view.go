@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 
+	"github.com/claude42/infiltrator/config"
 	"github.com/claude42/infiltrator/model"
 	"github.com/claude42/infiltrator/util"
 
@@ -13,8 +14,6 @@ import (
 type View struct {
 	viewWidth, viewHeight int
 	curX, curY            int
-	showLineNumbers       bool
-	followFile            bool
 	currentMatchLineNo    int
 
 	ComponentImpl
@@ -26,6 +25,10 @@ func NewView() *View {
 	model.GetPipeline().Watch(v)
 	v.SetCursor(0, 0)
 	v.unsetCurrentMatchLineNo()
+	// OK that way, or better inject ConfigManager?!
+	if config.GetConfiguration().FollowFile {
+		v.scrollEnd()
+	}
 
 	return v
 }
@@ -50,7 +53,7 @@ func (v *View) renderLine(line model.Line, y int) {
 	var start = 0
 	matched := line.No == v.currentMatchLineNo
 
-	if v.showLineNumbers {
+	if config.GetConfiguration().ShowLineNumbers {
 		start = v.renderLineNumber(line, y, matched)
 	}
 
@@ -141,12 +144,14 @@ func (v *View) determineLineNumberStyle(line model.Line, matched bool) tcell.Sty
 
 func (v *View) SetCursor(x, y int) error {
 	var err error
+	var newY int
 
-	if v.curY != y {
-		model.GetPipeline().InvalidateScreenBuffer()
+	v.curX, newY, err = v.stayWithinLimits(x, y)
+
+	if v.curY != newY {
+		v.curY = newY
+		model.GetPipeline().SetCurrentLine(newY)
 	}
-
-	v.curX, v.curY, err = v.stayWithinLimits(x, y)
 
 	return err
 }
@@ -196,10 +201,17 @@ func (v *View) Resize(x, y, width, height int) {
 
 func (v *View) HandleEvent(ev tcell.Event) bool {
 	switch ev := ev.(type) {
-	case *model.EventBufferDirty:
+	case *model.EventFileChanged:
+		log.Printf("Event: %T, %+v", ev, ev)
 		v.reactToFileUpdate()
-		return true
+		return false
+	case *model.EventFilterOutput:
+		log.Printf("Event: %T, %+v", ev, ev)
+		v.unsetCurrentMatchLineNo()
+		v.Render(true)
+		return false
 	case *EventPressedEnterInInputField:
+		log.Printf("Event: %T, %+v", ev, ev)
 		v.goToNextMatchingLine()
 		return true
 	case *tcell.EventKey:
@@ -227,6 +239,11 @@ func (v *View) HandleEvent(ev tcell.Event) bool {
 			case 'l':
 				v.scrollHorizontal(1)
 				return true
+			case 'f':
+				v.pageDown()
+				return true
+			case 'b':
+				v.pageUp()
 			case 'n':
 				v.goToNextMatchingLine()
 				return true
@@ -277,9 +294,6 @@ func (v *View) HandleEvent(ev tcell.Event) bool {
 			v.scrollHorizontal(1)
 			return true
 		}
-	case *model.EventFilterOutput:
-		v.unsetCurrentMatchLineNo()
-		v.Render(true)
 	}
 
 	return false
@@ -354,7 +368,7 @@ func (v *View) goToNextMatchingLine() {
 	}
 
 	for {
-		newLine, err := model.GetPipeline().ScrollDownLineBuffer()
+		newLine, err := model.GetPipeline().ScrollDownLineBuffer(false)
 		if err != nil {
 			screen.Beep()
 			v.Render(true)
@@ -368,12 +382,13 @@ func (v *View) goToNextMatchingLine() {
 	// scroll a bit further to see a bit more context around the highlighted match
 
 	for i := 0; i < v.viewHeight/4; i++ {
-		_, err := model.GetPipeline().ScrollDownLineBuffer()
+		_, err := model.GetPipeline().ScrollDownLineBuffer(false)
 		if err != nil {
 			break
 		}
 	}
 
+	model.GetPipeline().InvalidateScreenBuffer()
 	v.Render(true)
 }
 
@@ -395,7 +410,7 @@ func (v *View) isOnScreen(lineNo int) bool {
 
 func (v *View) reactToFileUpdate() {
 	model.GetPipeline().InvalidateScreenBuffer()
-	if v.followFile {
+	if config.GetConfiguration().FollowFile {
 		v.scrollEnd()
 	} else {
 		v.Render(true)
@@ -427,7 +442,7 @@ func (v *View) pageUp() {
 }
 
 func (v *View) scrollDown() {
-	_, err := model.GetPipeline().ScrollDownLineBuffer()
+	_, err := model.GetPipeline().ScrollDownLineBuffer(true)
 	if err != nil {
 		screen.Beep()
 		return
@@ -439,11 +454,12 @@ func (v *View) scrollDown() {
 func (v *View) pageDown() {
 	var err error
 	for i := 0; i < v.viewHeight-1; i++ {
-		_, err = model.GetPipeline().ScrollDownLineBuffer()
+		_, err = model.GetPipeline().ScrollDownLineBuffer(true)
 		if err != nil {
 			break
 		}
 	}
+
 	v.Render(true)
 	if err != nil {
 		screen.Beep()
@@ -474,25 +490,20 @@ func (v *View) scrollHome() {
 }
 
 func (v *View) scrollEnd() {
-	_, length, err := model.GetPipeline().Size()
-	if err != nil {
-		screen.Beep()
-		return
+
+	// TODO: this is *not* fast for large files!
+	for {
+		_, err := model.GetPipeline().ScrollDownLineBuffer(false)
+		if err != nil {
+			break
+		}
 	}
 
-	v.SetCursor(v.curX, length-v.viewHeight)
 	v.Render(true)
-}
 
-func (v *View) SetShowLineNumbers(showLineNumbers bool) {
-	v.showLineNumbers = showLineNumbers
-}
-
-func (v *View) SetFollowFile(followFile bool) {
-	v.followFile = followFile
-	if followFile {
-		v.scrollEnd()
-	}
+	// this is hacky but gives a lot of speed improvement as we don't
+	// fire an event for every scrolled line
+	model.GetPipeline().InvalidateScreenBuffer()
 }
 
 func (v *View) unsetCurrentMatchLineNo() {

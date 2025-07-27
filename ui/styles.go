@@ -22,6 +22,8 @@ var TextInputStyle = tcell.StyleDefault.Foreground((tcell.ColorDimGray))
 var ActiveTextInputStyle = tcell.StyleDefault
 var CursorTextInputStyle = ActiveTextInputStyle.Reverse(true)
 
+var StatusBarStyle = tcell.StyleDefault.Reverse((true)).Bold((true))
+
 // var TextInputStyle = tcell.StyleDefault.Background(tcell.ColorDarkBlue)
 // var ActiveTextInputStyle = tcell.StyleDefault.Background(tcell.ColorWhite).Foreground(tcell.ColorBlack).Bold(true)
 // var CursorTextInputStyle = ActiveTextInputStyle.Reverse(true)

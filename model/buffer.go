@@ -28,18 +28,18 @@ type Buffer struct {
 	lines []Line
 }
 
-type EventBufferDirty struct {
+type EventFileChanged struct {
 	time time.Time
 }
 
-func NewEventBufferDirty() *EventBufferDirty {
-	e := &EventBufferDirty{}
+func NewEventFileChanged() *EventFileChanged {
+	e := &EventFileChanged{}
 	e.time = time.Now()
 
 	return e
 }
 
-func (e *EventBufferDirty) When() time.Time {
+func (e *EventFileChanged) When() time.Time {
 	return e.time
 }
 
@@ -63,10 +63,26 @@ func (b *Buffer) initLines() {
 	b.width = 0
 }
 
-func (b *Buffer) ReadFromFile(filePath string, postEvent func(ev tcell.Event) error) error {
+func (b *Buffer) ReadFromStdin(postEvent func(ev tcell.Event) error) {
+	b.initLines()
+	var lineNo int
+
+	scanner := bufio.NewScanner(os.Stdin)
+	for scanner.Scan() {
+		b.addNewLine(lineNo, scanner.Text())
+		lineNo++
+		postEvent(NewEventFileChanged())
+	}
+	if err := scanner.Err(); err != nil {
+		log.Printf("error reading file: %+v", err)
+	}
+}
+
+func (b *Buffer) ReadFromFile(filePath string, postEvent func(ev tcell.Event) error) {
 	file, err := os.Open(filePath)
 	if err != nil {
-		return err
+		log.Printf("error opening file %s: %+v", filePath, err)
+		return
 	}
 	defer file.Close()
 
@@ -74,44 +90,41 @@ func (b *Buffer) ReadFromFile(filePath string, postEvent func(ev tcell.Event) er
 
 	lineNo, err := b.addNewLines(file, 0)
 	if err != nil {
-		return err
+		log.Printf("error reading from %s: %+v", filePath, err)
+		return
 	}
-	postEvent(NewEventBufferDirty())
+	postEvent(NewEventFileChanged())
 
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
-		return fmt.Errorf("error creating watcher: %w", err)
+		log.Printf("error creating watcher: %+v", err)
 	}
 	defer watcher.Close()
 
 	err = watcher.Add(filePath)
 	if err != nil {
-		return fmt.Errorf("error watching file %s: %s", filePath, err)
+		log.Printf("error watching file %s: %+v", filePath, err)
 	}
 
 	for {
 		select {
 		case event, ok := <-watcher.Events:
 			if !ok {
-				log.Println("Watcher events channel closed")
-				return nil
+				log.Println("Watcher channel closed.")
 			}
-			log.Printf("Event received: %s (Op: %s)", event.Name, event.Op.String())
 
 			if event.Has(fsnotify.Write) {
-				log.Printf("Handling write")
 				lineNo, err = b.addNewLines(file, lineNo)
 				if err != nil {
 					log.Printf("error reading file %s, %v", filePath, err)
 				}
-				postEvent(NewEventBufferDirty())
+				postEvent(NewEventFileChanged())
 
 				continue
 			}
 		case err, ok := <-watcher.Errors:
 			if !ok {
-				log.Println("Watcher errors channel closd.")
-				return nil
+				log.Println("Watcher errors channel closed.")
 			}
 			log.Println("Watcher error:", err)
 			continue

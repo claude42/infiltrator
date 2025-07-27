@@ -21,6 +21,7 @@ type Window struct {
 	BottomPanels []Panel
 	panelsOpen   bool
 	activePanel  Panel
+	statusbar    *Statusbar
 }
 
 func GetScreen() tcell.Screen {
@@ -49,6 +50,8 @@ func Setup() *Window {
 
 	window.mainView = NewView()
 
+	window.statusbar = NewStatusbar()
+
 	setupScreen()
 
 	window.resize()
@@ -76,6 +79,8 @@ func (w *Window) Render() {
 			p.Render(false)
 		}
 	}
+
+	w.statusbar.Render(false)
 
 	screen.Show()
 }
@@ -172,9 +177,15 @@ func (w *Window) EventLoop(quit chan<- struct{}) {
 		case *EventPressedEnterInInputField:
 			w.SetPanelIsOpen(false)
 			// don't continue here so that view can handle this as well
+		default:
+			log.Printf("Event: %T, %+v", ev, ev)
 		}
 
 		if w.mainView.HandleEvent(ev) {
+			continue
+		}
+
+		if w.statusbar.HandleEvent(ev) {
 			continue
 		}
 	}
@@ -209,20 +220,21 @@ func (w *Window) resizeAndRedraw() {
 func (w *Window) resize() {
 	width, height := screen.Size()
 
-	totalPanelHeight := w.totalPanelHeight()
+	panelsPlusStatusbarHeight := w.totalPanelHeight() + w.statusbar.Height()
 	// TODO: in case the terminal gets to small, the panels will never
 	// open again!
-	if totalPanelHeight >= height {
+	if panelsPlusStatusbarHeight >= height {
 		w.panelsOpen = false
-		w.mainView.Resize(0, 0, width, height)
+		w.mainView.Resize(0, 0, width, height-w.statusbar.Height())
 	} else {
-		w.mainView.Resize(0, 0, width, height-totalPanelHeight)
-		y := height - totalPanelHeight
+		w.mainView.Resize(0, 0, width, height-panelsPlusStatusbarHeight)
+		y := height - panelsPlusStatusbarHeight
 		for _, p := range w.BottomPanels {
 			p.Resize(0, y, width, 0) // x and height ignored
 			y += p.Height()
 		}
 	}
+	w.statusbar.Resize(0, height-1, width, 0) // x and height ignored
 }
 
 func (w *Window) totalPanelHeight() int {
@@ -319,15 +331,6 @@ func (w *Window) switchPanel(offset int) error {
 	}
 
 	return w.goToPanel(newPanelIndex)
-}
-
-// As soon as we get more options, we should use a struct for this
-func (w *Window) ShowLineNumbers(showLineNumbers bool) {
-	w.mainView.SetShowLineNumbers(showLineNumbers)
-}
-
-func (w *Window) FollowFile(followFile bool) {
-	w.mainView.SetFollowFile(followFile)
 }
 
 func (w *Window) SetPanelIsOpen(panelsOpen bool) {

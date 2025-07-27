@@ -165,7 +165,9 @@ func (i *InputField) updateWatchers() {
 	// in case new inputCorrect state is different from previous
 	if consumed != i.inputCorrect {
 		i.inputCorrect = consumed
-		screen.Beep()
+		if !i.inputCorrect {
+			screen.Beep()
+		}
 		i.Render(true)
 	}
 }

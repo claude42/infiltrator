@@ -9,6 +9,7 @@ import (
 
 	//"time"
 
+	"github.com/claude42/infiltrator/config"
 	"github.com/claude42/infiltrator/model"
 	"github.com/claude42/infiltrator/ui"
 
@@ -16,10 +17,6 @@ import (
 
 	flag "github.com/spf13/pflag"
 )
-
-// Command line options
-var showLineNumbers = false
-var followFile = false
 
 func main() {
 	var err error
@@ -42,35 +39,44 @@ func main() {
 }
 
 func run() error {
+	cm := config.GetConfiguration()
 
 	// Parse command line
-	flag.BoolVarP(&showLineNumbers, "lines", "l", false, "Show line numbers")
-	flag.BoolVarP(&followFile, "follow", "f", false, "Follow changes to file")
+	flag.BoolVarP(&cm.ShowLineNumbers, "lines", "l", false, "Show line numbers")
+	flag.BoolVarP(&cm.FollowFile, "follow", "f", false, "Follow changes to file")
 
 	flag.Parse()
-	if len(flag.Args()) != 1 {
-		return fmt.Errorf("usage: %s filename", filepath.Base(os.Args[0]))
-	}
-	filePath := flag.Args()[0]
+	// if len(flag.Args()) != 1 {
+	// 	return fmt.Errorf("usage: %s filename", filepath.Base(os.Args[0]))
+	// }
 
 	// Set up filtering pipeline
 	pipeline := model.GetPipeline()
 
-	// Create buffer
+	// Create buffer + load file
 	buffer := model.NewBuffer()
 	pipeline.AddFilter(buffer)
 
-	go buffer.ReadFromFile(filePath, ui.GetScreen().PostEvent)
+	switch len(flag.Args()) {
+	case 0:
+		cm.FileName = "[stdin]"
+		go buffer.ReadFromStdin(ui.GetScreen().PostEvent)
+	case 1:
+		filePath := flag.Args()[0]
+		cm.FileName = filepath.Base(filePath)
+		go buffer.ReadFromFile(filePath, ui.GetScreen().PostEvent)
+	default:
+		return fmt.Errorf("usage: %s [-f] [-l] [filename]", filepath.Base(os.Args[0]))
+	}
 
 	// Set up UI
 	window := ui.Setup()
 	defer ui.Cleanup()
-	window.ShowLineNumbers(showLineNumbers)
-	window.FollowFile(followFile)
 
 	quit := make(chan struct{})
 	go window.EventLoop(quit)
 
+	// wait for UI thread to finish
 	<-quit
 
 	return nil
