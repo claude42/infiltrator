@@ -25,7 +25,7 @@ func NewView() *View {
 	v.viewWidth, v.viewHeight = screen.Size()
 	model.GetPipeline().Watch(v)
 	v.SetCursor(0, 0)
-	v.currentMatchLineNo = -1
+	v.unsetCurrentMatchLineNo()
 
 	return v
 }
@@ -199,6 +199,9 @@ func (v *View) HandleEvent(ev tcell.Event) bool {
 	case *model.EventBufferDirty:
 		v.reactToFileUpdate()
 		return true
+	case *EventPressedEnterInInputField:
+		v.goToNextMatchingLine()
+		return true
 	case *tcell.EventKey:
 		switch ev.Key() {
 		case tcell.KeyRune:
@@ -275,7 +278,7 @@ func (v *View) HandleEvent(ev tcell.Event) bool {
 			return true
 		}
 	case *model.EventFilterOutput:
-		v.currentMatchLineNo = -1
+		v.unsetCurrentMatchLineNo()
 		v.Render(true)
 	}
 
@@ -490,4 +493,8 @@ func (v *View) SetFollowFile(followFile bool) {
 	if followFile {
 		v.scrollEnd()
 	}
+}
+
+func (v *View) unsetCurrentMatchLineNo() {
+	v.currentMatchLineNo = -1
 }

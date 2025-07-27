@@ -6,20 +6,31 @@ import (
 	"github.com/gdamore/tcell/v2"
 )
 
+type EventImpl struct {
+	t time.Time
+}
+
+func (ev *EventImpl) SetWhen() {
+	ev.t = time.Now()
+}
+
+// When returns the time when the Event was created.
+func (ev *EventImpl) When() time.Time {
+	return ev.t
+}
+
 type EventText struct {
-	t    time.Time
+	EventImpl
+
 	text string
 }
 
 // NewEventResize creates an EventResize with the new updated window size,
 // which is given in character cells.
 func NewEventText(text string) *EventText {
-	return &EventText{t: time.Now(), text: text}
-}
-
-// When returns the time when the Event was created.
-func (ev *EventText) When() time.Time {
-	return ev.t
+	ev := &EventText{text: text}
+	ev.EventImpl.SetWhen()
+	return ev
 }
 
 func (ev *EventText) Text() string {
@@ -29,6 +40,8 @@ func (ev *EventText) Text() string {
 func (ev *EventText) SetText(text string) {
 	ev.text = text
 }
+
+// EventHandler
 
 type EventHandler interface {
 	HandleEvent(tcell.Event) bool
@@ -45,5 +58,5 @@ type EventHandlerPanicImpl struct {
 }
 
 func (eh *EventHandlerPanicImpl) HandleEvent(tcell.Event) bool {
-	panic("HandlEvent() implementatino missing!")
+	panic("HandlEvent() implementation missing!")
 }

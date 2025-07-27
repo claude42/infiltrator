@@ -9,6 +9,16 @@ import (
 	"github.com/gdamore/tcell/v2"
 )
 
+type EventPressedEnterInInputField struct {
+	util.EventImpl
+}
+
+func NewEventPressedEnterInInputField() *EventPressedEnterInInputField {
+	ev := &EventPressedEnterInInputField{}
+	ev.EventImpl.SetWhen()
+	return ev
+}
+
 type InputField struct {
 	x, y, width int
 	cursor      int
@@ -72,6 +82,9 @@ func (i *InputField) HandleEvent(ev tcell.Event) bool {
 	switch ev := ev.(type) {
 	case *tcell.EventKey:
 		switch ev.Key() {
+		case tcell.KeyEnter:
+			screen.PostEvent(NewEventPressedEnterInInputField())
+			return true
 		case tcell.KeyRune:
 			i.insertRune(ev.Rune())
 			return true

@@ -169,6 +169,9 @@ func (w *Window) EventLoop(quit chan<- struct{}) {
 			// TODO: maybe change this in the future and let it trickle down
 			// instead of calling resize() manually
 			continue
+		case *EventPressedEnterInInputField:
+			w.SetPanelIsOpen(false)
+			// don't continue here so that view can handle this as well
 		}
 
 		if w.mainView.HandleEvent(ev) {
