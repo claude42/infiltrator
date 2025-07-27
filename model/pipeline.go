@@ -136,19 +136,20 @@ func (p *Pipeline) RefreshScreenBuffer(startLine, viewHeight int) {
 	p.screenBufferClean = true
 }
 
-func (p *Pipeline) ScrollDownLineBuffer() error {
+// will return the line it scrolled to
+func (p *Pipeline) ScrollDownLineBuffer() (Line, error) {
 	var nextLine Line
 	var err error
 
 	_, length, err := p.Size()
 	if err != nil {
 		// TODO error handling
-		return err
+		return Line{}, err
 	}
 
 	lastLineOnScreen := p.screenBuffer[len(p.screenBuffer)-1]
 	if lastLineOnScreen.Status == LineDoesNotExist {
-		return util.ErrOutOfBounds
+		return Line{}, util.ErrOutOfBounds
 	}
 
 	lineNo := lastLineOnScreen.No + 1
@@ -167,7 +168,7 @@ func (p *Pipeline) ScrollDownLineBuffer() error {
 	// what's more elegant...
 	if lineNo >= length {
 		log.Println("P.ScrollDown ErrOutOfBounds")
-		return util.ErrOutOfBounds
+		return Line{}, util.ErrOutOfBounds
 	}
 
 	if len(p.screenBuffer) > 0 {
@@ -176,10 +177,11 @@ func (p *Pipeline) ScrollDownLineBuffer() error {
 		p.screenBuffer = []Line{nextLine}
 	}
 
-	return nil
+	return nextLine, nil
 }
 
-func (p *Pipeline) ScrollUpLineBuffer() error {
+// will return the line it scrolled to
+func (p *Pipeline) ScrollUpLineBuffer() (Line, error) {
 	var prevLine Line
 
 	lineNo := p.screenBuffer[0].No - 1
@@ -198,7 +200,7 @@ func (p *Pipeline) ScrollUpLineBuffer() error {
 	// what's more elegant...
 	if lineNo < 0 {
 		log.Println("P.ScrollUp ErrOutOfBounds")
-		return util.ErrOutOfBounds
+		return Line{}, util.ErrOutOfBounds
 	}
 
 	if len(p.screenBuffer) > 0 {
@@ -207,7 +209,34 @@ func (p *Pipeline) ScrollUpLineBuffer() error {
 		p.screenBuffer = []Line{prevLine}
 	}
 
-	return nil
+	return prevLine, nil
+}
+
+func (p *Pipeline) FindNextMatch(start int) (int, error) {
+	_, length, err := p.Size()
+	if err != nil {
+		return -1, err
+	}
+
+	for i := start; ; i++ {
+		newLine, err := p.GetLine(i)
+		if err != nil || i >= length {
+			return -1, util.ErrOutOfBounds
+		} else if newLine.Status == LineMatched {
+			return newLine.No, nil
+		}
+	}
+}
+
+func (p *Pipeline) FindPrevMatch(start int) (int, error) {
+	for i := start; ; i-- {
+		newLine, err := p.GetLine(i)
+		if err != nil || i < 0 {
+			return -1, util.ErrOutOfBounds
+		} else if newLine.Status == LineMatched {
+			return newLine.No, nil
+		}
+	}
 }
 
 func (p *Pipeline) ScreenBuffer(startLine, viewHeight int) []Line {

@@ -1,0 +1,47 @@
+Keyboard shortcuts
+* Shift/Alt Cursor Keys: scroll
+* Cursor Up / Down without shift: scroll up/Down
+* CTRL-F/CTRL-B/PgUp/PgDn: scroll page-wise
+* CTRL-A/Home, CTRL-E/End: Top/Bottom of file
+
+* Tab/Shift-Tab Switch Panels
+* F keys: switch to a specific panel
+* CTRL-P/CTRL-O: Create / destroy panel
+
+* CTRL-M toggle filter Mode
+* CTRL-H toggle case sensitivity
+
+Available CTRL combination
+
+* a: Home
+* b: page back
+* c: quit
+* d:
+* e: End
+* f: page down
+* g:
+* h: change case sensitivity
+* i:
+* j:
+* k:
+* l: redraw
+* m: 
+* n:
+* o: remove active panel
+* p: add new panel
+* q:
+* r:
+* s: toggle filter mode
+* t:
+* u:
+* v:
+* w:
+* x:
+* y:
+* z: suspend (TODO)
+* Carat:
+* Underscore:
+* Space
+
+
+* CTRL-D, G, I, J, K, N, Q, R, S, T, U, V, W, X, Y

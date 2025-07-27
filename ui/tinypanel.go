@@ -112,7 +112,7 @@ func (t *TinyPanel) HandleEvent(ev tcell.Event) bool {
 	switch ev := ev.(type) {
 	case *tcell.EventKey:
 		switch ev.Key() {
-		case tcell.KeyCtrlM:
+		case tcell.KeyCtrlS:
 			t.toggleMode()
 			return true
 		case tcell.KeyCtrlH:

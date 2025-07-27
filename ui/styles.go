@@ -8,10 +8,12 @@ import (
 var DefStyle = tcell.StyleDefault.Background(tcell.ColorReset).Foreground(tcell.ColorReset)
 
 var ViewStyle = DefStyle
-var ViewDimmedStyle = DefStyle.Foreground(tcell.ColorDimGray)
+var ViewDimmedStyle = DefStyle.Foreground(tcell.ColorDarkGray)
+var CurrentMatchStyle = DefStyle.Foreground(tcell.ColorYellow)
 
 var ViewLineNumberStyle = DefStyle.Foreground(tcell.ColorOrange)
 var ViewDimmedLineNumberStyle = ViewLineNumberStyle.Foreground(tcell.ColorBrown)
+var ViewCurrentMatchLineNumberStyle = DefStyle.Foreground(tcell.ColorYellow)
 
 var ViewOverflowStyle = ViewStyle.Reverse(true)
 var DimmedViewOverflowStyle = ViewOverflowStyle.Foreground(tcell.ColorDimGray)

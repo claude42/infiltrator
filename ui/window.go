@@ -19,7 +19,7 @@ var (
 type Window struct {
 	mainView     *View
 	BottomPanels []Panel
-	PanelsOpen   bool
+	panelsOpen   bool
 	activePanel  Panel
 }
 
@@ -49,15 +49,6 @@ func Setup() *Window {
 
 	window.mainView = NewView()
 
-	var panel Panel
-	panel, err := NewPanel(TypeKeyword, model.FilterFocus)
-	if err != nil {
-		log.Panicf("%+v", err)
-	}
-
-	window.AddPanel(panel)
-	window.PanelsOpen = true
-
 	setupScreen()
 
 	window.resize()
@@ -80,8 +71,10 @@ func Cleanup() {
 func (w *Window) Render() {
 	w.mainView.Render(false)
 
-	for _, p := range w.BottomPanels {
-		p.Render(false)
+	if w.panelsOpen {
+		for _, p := range w.BottomPanels {
+			p.Render(false)
+		}
 	}
 
 	screen.Show()
@@ -90,6 +83,12 @@ func (w *Window) Render() {
 func (w *Window) EventLoop(quit chan<- struct{}) {
 	for {
 		ev := screen.PollEvent()
+
+		if w.panelsOpen && w.activePanel != nil &&
+			w.activePanel.HandleEvent(ev) {
+
+			continue
+		}
 
 		switch ev := ev.(type) {
 		case *tcell.EventKey:
@@ -101,6 +100,15 @@ func (w *Window) EventLoop(quit chan<- struct{}) {
 
 			switch ev.Key() {
 			case tcell.KeyRune:
+				switch ev.Rune() {
+				case '/':
+					w.CreateAndAddPanel()
+					w.SetPanelIsOpen(true)
+					continue
+				case 'q':
+					close(quit)
+					return
+				}
 			case tcell.KeyBacktab:
 				err := w.switchPanel(-1)
 				if err != nil {
@@ -114,15 +122,8 @@ func (w *Window) EventLoop(quit chan<- struct{}) {
 				}
 				continue
 			case tcell.KeyCtrlP:
-				panel, err := NewPanel(TypeRegex, model.FilterFocus)
-				if err != nil {
-					log.Panicf("%+v", err)
-				}
-				w.AddPanel(panel)
-				if err != nil {
-					log.Panicf("%+v", err)
-					screen.Beep()
-				}
+				w.CreateAndAddPanel()
+				w.SetPanelIsOpen(true)
 				continue
 			case tcell.KeyCtrlO:
 				toBeDestroyed := w.activePanel
@@ -137,7 +138,14 @@ func (w *Window) EventLoop(quit chan<- struct{}) {
 				tcell.KeyF7, tcell.KeyF8, tcell.KeyF9, tcell.KeyF10, tcell.KeyF11, tcell.KeyF12:
 
 				w.goToPanel(int(ev.Key() - tcell.KeyF1))
-			case tcell.KeyEscape, tcell.KeyCtrlC:
+			case tcell.KeyEscape:
+				if w.panelsOpen {
+					w.SetPanelIsOpen(false)
+				} else {
+					close(quit)
+					return
+				}
+			case tcell.KeyCtrlC:
 				close(quit)
 				return
 			case tcell.KeyCtrlL:
@@ -163,13 +171,24 @@ func (w *Window) EventLoop(quit chan<- struct{}) {
 			continue
 		}
 
-		if w.activePanel.HandleEvent(ev) {
-			continue
-		}
-
 		if w.mainView.HandleEvent(ev) {
 			continue
 		}
+	}
+}
+
+func (w *Window) CreateAndAddPanel() {
+	if w.activePanel != nil && !w.panelsOpen {
+		return
+	}
+	panel, err := NewPanel(TypeRegex, model.FilterFocus)
+	if err != nil {
+		log.Panicf("%+v", err)
+	}
+	w.AddPanel(panel)
+	if err != nil {
+		log.Panicf("%+v", err)
+		screen.Beep()
 	}
 }
 
@@ -188,8 +207,10 @@ func (w *Window) resize() {
 	width, height := screen.Size()
 
 	totalPanelHeight := w.totalPanelHeight()
+	// TODO: in case the terminal gets to small, the panels will never
+	// open again!
 	if totalPanelHeight >= height {
-		w.PanelsOpen = false
+		w.panelsOpen = false
 		w.mainView.Resize(0, 0, width, height)
 	} else {
 		w.mainView.Resize(0, 0, width, height-totalPanelHeight)
@@ -202,7 +223,7 @@ func (w *Window) resize() {
 }
 
 func (w *Window) totalPanelHeight() int {
-	if !w.PanelsOpen {
+	if !w.panelsOpen {
 		return 0
 	}
 
@@ -304,4 +325,9 @@ func (w *Window) ShowLineNumbers(showLineNumbers bool) {
 
 func (w *Window) FollowFile(followFile bool) {
 	w.mainView.SetFollowFile(followFile)
+}
+
+func (w *Window) SetPanelIsOpen(panelsOpen bool) {
+	w.panelsOpen = panelsOpen
+	w.resizeAndRedraw()
 }
