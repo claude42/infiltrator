@@ -5,7 +5,7 @@ import (
 	"log"
 	"sync"
 
-	"github.com/claude42/infiltrator/model"
+	// "github.com/claude42/infiltrator/model"
 
 	"github.com/gdamore/tcell/v2"
 )
@@ -195,7 +195,7 @@ func (w *Window) CreateAndAddPanel() {
 	if w.activePanel != nil && !w.panelsOpen {
 		return
 	}
-	panel, err := NewPanel(TypeRegex, model.FilterFocus)
+	panel, err := NewPanel(TypeRegex)
 	if err != nil {
 		log.Panicf("%+v", err)
 	}

@@ -16,19 +16,13 @@ const (
 	Date
 )
 
-var FilterModes = []string{
-	"match",
-	"focus",
-	"hide",
-}
-
 const keywordPanelDefaultName = "Keyword"
 const regexPanelDefaultName = "Regex"
 
-func setupNewTinyPanel(fn model.StringFilterFuncFactory, name string, mode int) (*TinyPanel, error) {
-	p := NewTinyPanel(mode)
+func setupNewTinyPanel(fn model.StringFilterFuncFactory, name string) (*TinyPanel, error) {
+	p := NewTinyPanel()
 	p.SetName(name)
-	filter := model.NewStringFilter(fn, mode)
+	filter := model.NewStringFilter(fn, p.Mode())
 	model.GetPipeline().AddFilter(filter)
 	p.SetFilter(filter)
 	p.WatchInput(filter)
@@ -43,13 +37,13 @@ func setupNewTinyPanel(fn model.StringFilterFuncFactory, name string, mode int) 
 	return p, nil
 }
 
-func NewPanel(panelType int, mode int) (Panel, error) {
+func NewPanel(panelType int) (Panel, error) {
 	switch panelType {
 	case TypeKeyword:
-		return setupNewTinyPanel(model.DefaultStringFilterFuncFactory, keywordPanelDefaultName, mode)
+		return setupNewTinyPanel(model.DefaultStringFilterFuncFactory, keywordPanelDefaultName)
 		// return createNewKeywordPanel()
 	case TypeRegex:
-		return setupNewTinyPanel(model.RegexFilterFuncFactory, regexPanelDefaultName, mode)
+		return setupNewTinyPanel(model.RegexFilterFuncFactory, regexPanelDefaultName)
 		// return createNewRegexPanel()
 	/*case Glob:
 		return NewGlobPanel()

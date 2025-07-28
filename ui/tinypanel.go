@@ -16,6 +16,17 @@ const tinyPanelDefaultName = "This should not be seen here"
 const nameWidth = 9
 const headerWidth = 24
 
+var filterModes = []string{
+	"match",
+	"focus",
+	"hide",
+}
+
+var caseSensitive = []string{
+	"case",
+	"CaSe",
+}
+
 type TinyPanel struct {
 	name          string
 	y             int
@@ -29,12 +40,11 @@ type TinyPanel struct {
 	ComponentImpl
 }
 
-func NewTinyPanel(mode int) *TinyPanel {
+func NewTinyPanel() *TinyPanel {
 	t := &TinyPanel{name: tinyPanelDefaultName}
 	t.input = NewInputField()
-	t.mode = NewSelect(FilterModes)
-	t.mode.SetSelectedIndex(mode)
-	t.caseSensitive = NewSelect([]string{"case", "cAsE"})
+	t.mode = NewSelect(filterModes)
+	t.caseSensitive = NewSelect(caseSensitive)
 
 	return t
 }
@@ -199,4 +209,12 @@ func (t *TinyPanel) mouseToggleCaseSensitive(ev *tcell.EventMouse) bool {
 	} else {
 		return false
 	}
+}
+
+func (t *TinyPanel) Mode() int {
+	return t.mode.SelectedIndex()
+}
+
+func (t *TinyPanel) SetMode(mode int) {
+	t.mode.SetSelectedIndex(mode)
 }
