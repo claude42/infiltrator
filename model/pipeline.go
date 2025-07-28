@@ -22,9 +22,20 @@ type Pipeline struct {
 
 	filters []Filter
 
-	screenBuffer      []Line
-	screenBufferClean bool
-	currentLine       int
+	screen Screen
+
+	currentLine int
+}
+
+type Screen struct {
+	sync.Mutex
+
+	buffer []Line
+	clean  bool
+}
+
+func (s *Screen) Length() int {
+	return len(s.buffer)
 }
 
 type EventPositionChanged struct {
@@ -81,7 +92,7 @@ func (p *Pipeline) RemoveFilter(f Filter) error {
 				p.filters[i-1].Watch(p)
 			}
 			f.Unwatch(p)
-			p.screenBufferClean = false
+			p.screen.clean = false
 			return nil
 		}
 	}
@@ -118,7 +129,7 @@ func (p *Pipeline) Size() (int, int, error) {
 func (p *Pipeline) HandleEvent(ev tcell.Event) bool {
 	switch ev.(type) {
 	case *EventFilterOutput:
-		p.screenBufferClean = false
+		p.screen.clean = false
 	}
 
 	return p.PostEvent(ev)
@@ -130,7 +141,7 @@ func (p *Pipeline) HandleEvent(ev tcell.Event) bool {
 func (p *Pipeline) RefreshScreenBuffer(startLine, viewHeight int) {
 	lineNo := startLine
 	y := 0
-	p.screenBuffer = make([]Line, viewHeight)
+	p.screen.buffer = make([]Line, viewHeight)
 	for y < viewHeight {
 		line, err := p.GetLine(lineNo)
 		lineNo++
@@ -141,16 +152,16 @@ func (p *Pipeline) RefreshScreenBuffer(startLine, viewHeight int) {
 		}
 
 		if line.Status != LineHidden {
-			p.screenBuffer[y] = line
+			p.screen.buffer[y] = line
 			y++
 		}
 	}
 
 	for ; y < viewHeight; y++ {
-		p.screenBuffer[y] = Line{-1, LineDoesNotExist, "", []uint8{}}
+		p.screen.buffer[y] = Line{-1, LineDoesNotExist, "", []uint8{}}
 	}
 
-	p.screenBufferClean = true
+	p.screen.clean = true
 }
 
 // will return the line it scrolled to
@@ -164,18 +175,18 @@ func (p *Pipeline) ScrollDownLineBuffer(updatePosition bool) (Line, error) {
 		return Line{}, err
 	}
 
-	if len(p.screenBuffer) <= 0 {
+	if p.screen.Length() <= 0 {
 		// TODO: better error handling
 		return Line{}, util.ErrOutOfBounds
 	}
 
-	lastLineOnScreen := p.screenBuffer[len(p.screenBuffer)-1]
+	lastLineOnScreen := p.screen.buffer[p.screen.Length()-1]
 	if lastLineOnScreen.Status == LineDoesNotExist {
 		return Line{}, util.ErrOutOfBounds
 	}
 
 	lineNo := lastLineOnScreen.No + 1
-	// lineNo := p.screenBuffer[len(p.screenBuffer)-1].No + 1
+	// lineNo := p.screenBuffer[p.screen.Length()-1].No + 1
 
 	for ; lineNo < length; lineNo++ {
 		nextLine, _ = p.GetLine(lineNo)
@@ -193,13 +204,13 @@ func (p *Pipeline) ScrollDownLineBuffer(updatePosition bool) (Line, error) {
 		return Line{}, util.ErrOutOfBounds
 	}
 
-	if len(p.screenBuffer) > 0 {
-		p.screenBuffer = append(p.screenBuffer[1:], nextLine)
+	if p.screen.Length() > 0 {
+		p.screen.buffer = append(p.screen.buffer[1:], nextLine)
 	} else {
-		p.screenBuffer = []Line{nextLine}
+		p.screen.buffer = []Line{nextLine}
 	}
 
-	p.currentLine = p.screenBuffer[0].No
+	p.currentLine = p.screen.buffer[0].No
 	if updatePosition {
 		p.PostEvent(NewEventPositionChanged())
 	}
@@ -211,7 +222,7 @@ func (p *Pipeline) ScrollDownLineBuffer(updatePosition bool) (Line, error) {
 func (p *Pipeline) ScrollUpLineBuffer() (Line, error) {
 	var prevLine Line
 
-	lineNo := p.screenBuffer[0].No - 1
+	lineNo := p.screen.buffer[0].No - 1
 
 	for ; lineNo >= 0; lineNo-- {
 		prevLine, _ = p.GetLine(lineNo)
@@ -230,13 +241,13 @@ func (p *Pipeline) ScrollUpLineBuffer() (Line, error) {
 		return Line{}, util.ErrOutOfBounds
 	}
 
-	if len(p.screenBuffer) > 0 {
-		p.screenBuffer = append([]Line{prevLine}, p.screenBuffer[:len(p.screenBuffer)-1]...)
+	if p.screen.Length() > 0 {
+		p.screen.buffer = append([]Line{prevLine}, p.screen.buffer[:p.screen.Length()-1]...)
 	} else {
-		p.screenBuffer = []Line{prevLine}
+		p.screen.buffer = []Line{prevLine}
 	}
 
-	p.currentLine = p.screenBuffer[0].No
+	p.currentLine = p.screen.buffer[0].No
 	p.PostEvent(NewEventPositionChanged())
 
 	return prevLine, nil
@@ -271,10 +282,10 @@ func (p *Pipeline) FindPrevMatch(start int) (int, error) {
 
 func (p *Pipeline) ScreenBuffer(startLine, viewHeight int) []Line {
 	// TODO: double-check startLine, viewHeight here
-	if !p.screenBufferClean {
+	if !p.screen.clean {
 		p.RefreshScreenBuffer(startLine, viewHeight)
 	}
-	return p.screenBuffer
+	return p.screen.buffer
 }
 
 func (p *Pipeline) SetCurrentLine(newCurrentLine int) {
@@ -284,7 +295,7 @@ func (p *Pipeline) SetCurrentLine(newCurrentLine int) {
 }
 
 func (p *Pipeline) InvalidateScreenBuffer() {
-	p.screenBufferClean = false
+	p.screen.clean = false
 }
 
 func (p *Pipeline) Percentage() (int, error) {
@@ -294,7 +305,7 @@ func (p *Pipeline) Percentage() (int, error) {
 		return -1, err
 	}
 
-	percentage := 100 * (p.currentLine + len(p.screenBuffer)) / length
+	percentage := 100 * (p.currentLine + p.screen.Length()) / length
 	if percentage > 100 {
 		percentage = 100
 	}
@@ -316,7 +327,7 @@ func (p *Pipeline) Percentage() (int, error) {
 // 	if err != nil {
 // 		return -1, err
 // 	}
-// 	viewHeight := len(p.screenBuffer)
+// 	viewHeight := p.screen.Length()
 
 // 	// search number of view lines times a line which is not hidden
 // 	// starting from the end of the file
