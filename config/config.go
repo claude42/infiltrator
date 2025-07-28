@@ -13,6 +13,7 @@ type ConfigManager struct {
 	FileName        string
 	ShowLineNumbers bool
 	FollowFile      bool
+	Debug           bool
 }
 
 func GetConfiguration() *ConfigManager {

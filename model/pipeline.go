@@ -164,6 +164,11 @@ func (p *Pipeline) ScrollDownLineBuffer(updatePosition bool) (Line, error) {
 		return Line{}, err
 	}
 
+	if len(p.screenBuffer) <= 0 {
+		// TODO: better error handling
+		return Line{}, util.ErrOutOfBounds
+	}
+
 	lastLineOnScreen := p.screenBuffer[len(p.screenBuffer)-1]
 	if lastLineOnScreen.Status == LineDoesNotExist {
 		return Line{}, util.ErrOutOfBounds

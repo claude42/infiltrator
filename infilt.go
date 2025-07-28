@@ -3,6 +3,7 @@ package main
 import (
 	// "flag"
 	"fmt"
+	"io"
 	"log"
 	"os"
 	"path/filepath"
@@ -19,8 +20,20 @@ import (
 )
 
 func main() {
-	var err error
-	// Set up logging first
+	err := run()
+
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
+}
+
+func enableDebugLog() {
+	if !config.GetConfiguration().Debug {
+		log.SetOutput(io.Discard)
+		return
+	}
+
 	debug, err := os.OpenFile("debug.log", os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
 	if err != nil {
 		log.Panicf("Failed to open debug log file: %v", err)
@@ -29,13 +42,6 @@ func main() {
 	log.SetOutput(debug)
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
 	log.Println("Started")
-
-	err = run()
-
-	if err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		os.Exit(1)
-	}
 }
 
 func run() error {
@@ -44,11 +50,11 @@ func run() error {
 	// Parse command line
 	flag.BoolVarP(&cm.ShowLineNumbers, "lines", "l", false, "Show line numbers")
 	flag.BoolVarP(&cm.FollowFile, "follow", "f", false, "Follow changes to file")
+	flag.BoolVarP(&cm.Debug, "debug", "d", false, "Log debugging information to ./debug.log")
 
 	flag.Parse()
-	// if len(flag.Args()) != 1 {
-	// 	return fmt.Errorf("usage: %s filename", filepath.Base(os.Args[0]))
-	// }
+
+	enableDebugLog()
 
 	// Set up filtering pipeline
 	pipeline := model.GetPipeline()
@@ -66,7 +72,8 @@ func run() error {
 		cm.FileName = filepath.Base(filePath)
 		go buffer.ReadFromFile(filePath, ui.GetScreen().PostEvent)
 	default:
-		return fmt.Errorf("usage: %s [-f] [-l] [filename]", filepath.Base(os.Args[0]))
+		flag.Usage()
+		return fmt.Errorf("Try again")
 	}
 
 	// Set up UI

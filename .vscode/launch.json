@@ -12,6 +12,7 @@
             //"program": "${fileDirname}",
             "program": "${workspaceFolder}",
             "args": ["--lines",
+                    "-f",
                     "testerli"],
             "console": "integratedTerminal"
         }
