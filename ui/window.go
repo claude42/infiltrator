@@ -3,10 +3,12 @@ package ui
 import (
 	"fmt"
 	"log"
+	"runtime/debug"
 	"sync"
 
 	// "github.com/claude42/infiltrator/model"
-
+	"github.com/claude42/infiltrator/config"
+	"github.com/claude42/infiltrator/util"
 	"github.com/gdamore/tcell/v2"
 )
 
@@ -35,7 +37,12 @@ func GetScreen() tcell.Screen {
 	return screen
 }
 
+func InfiltPostEvent(ev util.Event) error {
+	return GetScreen().PostEvent(ev)
+}
+
 func Setup() *Window {
+	log.Println("Setting up the UI")
 	GetScreen()
 
 	if window != nil {
@@ -54,7 +61,9 @@ func Setup() *Window {
 
 	setupScreen()
 
-	window.resize()
+	// apparently an explizit resize() is not necessary in the beginning as
+	// there will be always a ResizeEvent coming from the EventLoop
+	// window.resize()
 
 	return window
 }
@@ -67,12 +76,12 @@ func setupScreen() {
 }
 
 func Cleanup() {
+	log.Println("Cleaning up ui")
 	screen.Fini()
-	window = nil
 }
 
 func (w *Window) Render() {
-	w.mainView.Render(false)
+	w.mainView.Render(nil, false)
 
 	if w.panelsOpen {
 		for _, p := range w.BottomPanels {
@@ -85,113 +94,148 @@ func (w *Window) Render() {
 	screen.Show()
 }
 
-func (w *Window) EventLoop(quit chan<- struct{}) {
+func (w *Window) MetaEventLoop() {
+	log.Printf("Starting EventLoop")
+	defer func() {
+		if r := recover(); r != nil {
+			log.Printf("A panic occurred: %v\nStack trace:\n%s", r, debug.Stack())
+			panic(r)
+		}
+	}()
+
+	cfg := config.GetConfiguration()
+
+	defer cfg.WaitGroup.Done()
+
 	for {
-		ev := screen.PollEvent()
-
-		if w.panelsOpen && w.activePanel != nil &&
-			w.activePanel.HandleEvent(ev) {
-
-			continue
-		}
-
-		switch ev := ev.(type) {
-		case *tcell.EventKey:
-			log.Print("-------------------------------------------------------")
-			log.Printf("Modmast: %d", ev.Modifiers())
-			log.Printf("Rune: %c", ev.Rune())
-			log.Printf("Key: %s", tcell.KeyNames[ev.Key()])
-			log.Printf("Name: %s", ev.Name())
-
-			switch ev.Key() {
-			case tcell.KeyRune:
-				switch ev.Rune() {
-				case '/':
-					w.CreateAndAddPanel()
-					w.SetPanelIsOpen(true)
-					continue
-				case 'q':
-					close(quit)
-					return
-				}
-			case tcell.KeyBacktab:
-				err := w.switchPanel(-1)
-				if err != nil {
-					screen.Beep()
-				}
-				continue
-			case tcell.KeyTab:
-				err := w.switchPanel(1)
-				if err != nil {
-					screen.Beep()
-				}
-				continue
-			case tcell.KeyCtrlP:
-				w.CreateAndAddPanel()
-				w.SetPanelIsOpen(true)
-				continue
-			case tcell.KeyCtrlO:
-				toBeDestroyed := w.activePanel
-				err := w.RemovePanel()
-				if err != nil {
-					screen.Beep()
-				}
-				DestroyPanel(toBeDestroyed)
-				w.Render()
-				continue
-			case tcell.KeyF1, tcell.KeyF2, tcell.KeyF3, tcell.KeyF4, tcell.KeyF5, tcell.KeyF6,
-				tcell.KeyF7, tcell.KeyF8, tcell.KeyF9, tcell.KeyF10, tcell.KeyF11, tcell.KeyF12:
-
-				w.goToPanel(int(ev.Key() - tcell.KeyF1))
-			case tcell.KeyEscape:
-				if w.panelsOpen {
-					w.SetPanelIsOpen(false)
-				} else {
-					close(quit)
-					return
-				}
-			case tcell.KeyCtrlC:
-				close(quit)
-				return
-			case tcell.KeyCtrlL:
-				w.resizeAndRedraw()
-				continue
-			}
-		case *tcell.EventMouse:
-			buttons := ev.Buttons()
-			if buttons&tcell.ButtonPrimary != 0 {
-				_, buttonY := ev.Position()
-				for i, panel := range w.BottomPanels {
-					_, panelY := panel.Position()
-					if buttonY == panelY {
-						w.goToPanel(i)
-					}
-				}
-				// do not continue here so the now active panel can handle this event as well
-			}
-		case *tcell.EventResize:
-			w.resizeAndRedraw()
-			// TODO: maybe change this in the future and let it trickle down
-			// instead of calling resize() manually
-			continue
-		case *EventPressedEnterInInputField:
-			w.SetPanelIsOpen(false)
-			// don't continue here so that view can handle this as well
+		log.Println("begin meta")
+		select {
+		case <-cfg.Context.Done():
+			log.Println("Received shutdown signal")
+			return
 		default:
-			log.Printf("Event: %T, %+v", ev, ev)
+			log.Println("begin eventloop")
+			if w.EventLoop() {
+				return
+			}
+			log.Println("end eventloop")
 		}
-
-		if w.mainView.HandleEvent(ev) {
-			continue
-		}
-
-		if w.statusbar.HandleEvent(ev) {
-			continue
-		}
+		log.Println("end meta")
 	}
 }
 
+func (w *Window) EventLoop() bool {
+	ev := screen.PollEvent()
+	// log.Printf("Event: %T, %+v", ev, ev)
+	log.Printf("Main Loop: %T", ev)
+
+	if w.panelsOpen && w.activePanel != nil &&
+		w.activePanel.HandleEvent(ev) {
+
+		return false
+	}
+
+	switch ev := ev.(type) {
+	case *tcell.EventKey:
+		// log.Print("-------------------------------------------------------")
+		// log.Printf("Modmast: %d", ev.Modifiers())
+		// log.Printf("Rune: %c", ev.Rune())
+		// log.Printf("Key: %s", tcell.KeyNames[ev.Key()])
+		log.Printf("Key Name: %s", ev.Name())
+
+		switch ev.Key() {
+		case tcell.KeyRune:
+			switch ev.Rune() {
+			case '/':
+				w.CreateAndAddPanel()
+				w.SetPanelsOpen(true)
+				return false
+			case 'q':
+				log.Println("Q detected")
+				config.GetConfiguration().Quit <- "Good bye!"
+				close(config.GetConfiguration().Quit)
+				return true
+			}
+		case tcell.KeyBacktab:
+			err := w.switchPanel(-1)
+			if err != nil {
+				screen.Beep()
+			}
+			return false
+		case tcell.KeyTab:
+			err := w.switchPanel(1)
+			if err != nil {
+				screen.Beep()
+			}
+			return false
+		case tcell.KeyCtrlP:
+			w.CreateAndAddPanel()
+			w.SetPanelsOpen(true)
+			return false
+		case tcell.KeyCtrlO:
+			toBeDestroyed := w.activePanel
+			err := w.RemovePanel()
+			if err != nil {
+				screen.Beep()
+			}
+			DestroyPanel(toBeDestroyed)
+			w.Render()
+			return false
+		case tcell.KeyF1, tcell.KeyF2, tcell.KeyF3, tcell.KeyF4, tcell.KeyF5, tcell.KeyF6,
+			tcell.KeyF7, tcell.KeyF8, tcell.KeyF9, tcell.KeyF10, tcell.KeyF11, tcell.KeyF12:
+
+			w.goToPanel(int(ev.Key() - tcell.KeyF1))
+		case tcell.KeyEscape:
+			if w.panelsOpen {
+				w.SetPanelsOpen(false)
+			} else {
+				close(config.GetConfiguration().Quit)
+				return true
+			}
+		case tcell.KeyCtrlC:
+			close(config.GetConfiguration().Quit)
+			return true
+		case tcell.KeyCtrlL:
+			w.resizeAndRedraw()
+			return false
+		}
+	case *tcell.EventMouse:
+		buttons := ev.Buttons()
+		if buttons&tcell.ButtonPrimary != 0 {
+			_, buttonY := ev.Position()
+			for i, panel := range w.BottomPanels {
+				_, panelY := panel.Position()
+				if buttonY == panelY {
+					w.goToPanel(i)
+				}
+			}
+			// do not continue here so the now active panel can handle this event as well
+		}
+	case *tcell.EventResize:
+		w.resizeAndRedraw()
+		// TODO: maybe change this in the future and let it trickle down
+		// instead of calling resize() manually
+		return false
+	case *EventPressedEnterInInputField:
+		w.SetPanelsOpen(false)
+		// don't continue here so that view can handle this as well
+	default:
+		// log.Printf("Event: %T, %+v", ev, ev)
+	}
+
+	if w.mainView.HandleEvent(ev) {
+		return false
+	}
+
+	if w.statusbar.HandleEvent(ev) {
+		return false
+	}
+
+	return false
+}
+
 func (w *Window) CreateAndAddPanel() {
+	// TODO: really understand this next 3 lines?!?!
 	if w.activePanel != nil && !w.panelsOpen {
 		return
 	}
@@ -333,7 +377,12 @@ func (w *Window) switchPanel(offset int) error {
 	return w.goToPanel(newPanelIndex)
 }
 
-func (w *Window) SetPanelIsOpen(panelsOpen bool) {
+func (w *Window) SetPanelsOpen(panelsOpen bool) {
 	w.panelsOpen = panelsOpen
+	GetScreen().PostEvent(NewEventPanelStateChanged(panelsOpen))
 	w.resizeAndRedraw()
+}
+
+func (w *Window) PanelsOopen() bool {
+	return w.panelsOpen
 }

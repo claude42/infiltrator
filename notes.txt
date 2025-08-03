@@ -26,7 +26,30 @@ Potential filters
 * date filter
 * facility filter
 
+Threads
+* main (just waiting)
+* FileReader
+  * Sends: newLines
+  * Receives: ?
+* FilterManager
+  * Sends: screenUpdated, sizeUpdate, percentage (mb separate thread)
+  * Receives from FileReader: newLines
+  * Receives from UI: scrollSomewhere, getScreen(really?) addFilter, change mode / case sensitivity, setSize
+* UI (runs EventLoop)
+  * Receives from FileReader: newLines (to show progress indicator)
+  * Receives from FileReader: screenUpdated 
+
+
+
+
 TODO
+* Follow! (includes EventFileUpdate or so)
+* Read from stdin
+* Beep
+* Display wrong Regex
+* Error Messages
+
+
 * ScrollDownBuffer() / ScrollUpBuffer() less weird, more consistent
 * Quit with error message if problems reading file
 * Go to end does not update Status bar

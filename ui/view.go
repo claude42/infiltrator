@@ -12,35 +12,50 @@ import (
 )
 
 type View struct {
+	ComponentImpl
+
 	viewWidth, viewHeight int
 	curX, curY            int
-	currentMatchLineNo    int
-
-	ComponentImpl
+	CurrentDisplay        *model.Display
 }
 
 func NewView() *View {
 	v := &View{}
-	v.viewWidth, v.viewHeight = screen.Size()
-	model.GetPipeline().Watch(v)
-	v.SetCursor(0, 0)
-	v.unsetCurrentMatchLineNo()
-	// OK that way, or better inject ConfigManager?!
-	if config.GetConfiguration().FollowFile {
-		v.scrollEnd()
-	}
 
 	return v
 }
 
-func (v *View) Render(updateScreen bool) {
-	screenBuffer := model.GetPipeline().ScreenBuffer(v.curY, v.viewHeight)
-	// if the first line on the screen doesn't match, adjust curY, so
-	// e.g. the next cursor down will have an effect
-	v.curY = util.IntMax(screenBuffer[0].No, 0)
+func (v *View) Render(display *model.Display, updateScreen bool) {
+	log.Printf("view.Render()")
+	// display will be nil if called from Windows.Render(). Only go ahead
+	// if there's already a v.currentDisplay
+	if display == nil && v.CurrentDisplay == nil {
+		return
+	}
 
-	for y := 0; y < v.viewHeight; y++ {
-		v.renderLine(screenBuffer[y], y)
+	if display != nil {
+		v.CurrentDisplay = display
+	}
+
+	// no sense in rendering nothing
+	if len(v.CurrentDisplay.Buffer) == 0 {
+		return
+	}
+
+	// skip rendering if display buffer and viewheight differ. Most likely
+	// backend Goroutine needs to catch up
+	if len(v.CurrentDisplay.Buffer) != v.viewHeight {
+		return
+	}
+
+	// If what the View thinks is the first line displayed on screen vs.
+	// what's in the buffer, adjust curY
+	v.curY = util.IntMax(v.CurrentDisplay.Buffer[0].No, 0)
+
+	// Guard clause above should catch this, but still: Make sure we don't
+	// render beyond v.viewHeight!
+	for y := 0; y < len(v.CurrentDisplay.Buffer) && y < v.viewHeight; y++ {
+		v.renderLine(v.CurrentDisplay.Buffer[y], y)
 	}
 
 	if updateScreen {
@@ -51,7 +66,7 @@ func (v *View) Render(updateScreen bool) {
 func (v *View) renderLine(line model.Line, y int) {
 	str := line.Str
 	var start = 0
-	matched := line.No == v.currentMatchLineNo
+	matched := line.No == v.CurrentDisplay.CurrentMatch
 
 	if config.GetConfiguration().ShowLineNumbers {
 		start = v.renderLineNumber(line, y, matched)
@@ -108,12 +123,8 @@ func (v *View) renderLineNumber(line model.Line, y int, matched bool) int {
 	if line.No < 0 {
 		return 0 // TODO: 0 ok?
 	}
-	_, length, err := model.GetPipeline().Size()
-	if err != nil {
-		return 0 // TODO: 0 ok?
-	}
 
-	str := fmt.Sprintf("%*d ", util.CountDigits(length-1), line.No)
+	str := fmt.Sprintf("%*d ", util.CountDigits(v.CurrentDisplay.TotalLength-1), line.No)
 
 	var x int
 	style := v.determineLineNumberStyle(line, matched)
@@ -142,96 +153,42 @@ func (v *View) determineLineNumberStyle(line model.Line, matched bool) tcell.Sty
 	}
 }
 
-func (v *View) SetCursor(x, y int) error {
-	var err error
-	var newY int
-
-	v.curX, newY, err = v.stayWithinLimits(x, y)
-
-	if v.curY != newY {
-		v.curY = newY
-		model.GetPipeline().SetCurrentLine(newY)
-	}
-
-	return err
-}
-
 func (v *View) GetCursor() (x, y int) {
 	return v.curX, v.curY
-}
-
-func (v *View) Move(xOff, yOff int) {
-	var err error
-	v.curX, v.curY, err = v.stayWithinLimits(v.curX+xOff, v.curY+yOff)
-
-	if err != nil {
-		screen.Beep()
-	}
-	v.Render(true)
-}
-
-func (v *View) stayWithinLimits(x int, y int) (int, int, error) {
-	var newX, newY int
-	var errX, errY error
-	var err error = nil
-
-	width, length, err := model.GetPipeline().Size()
-	if err != nil {
-		return 0, 0, err
-	}
-
-	newX, errX = util.InBetween(x, 0, width)
-	newY, errY = util.InBetween(y, 0, length-1)
-
-	if errX != nil {
-		err = errX
-	} else if errY != nil {
-		err = errY
-	}
-
-	return newX, newY, err
 }
 
 func (v *View) Resize(x, y, width, height int) {
 	// x, y ignored for now
 	v.viewWidth = width
 	v.viewHeight = height
-	model.GetPipeline().RefreshScreenBuffer(v.curY, v.viewHeight)
+	model.GetFilterManager().SetDisplayHeight(v.viewHeight)
+	//model.GetFilterManager().RefreshScreenBuffer(v.curY, v.viewHeight)
 }
 
 func (v *View) HandleEvent(ev tcell.Event) bool {
 	switch ev := ev.(type) {
-	case *model.EventFileChanged:
-		log.Printf("Event: %T, %+v", ev, ev)
-		v.reactToFileUpdate()
-		return false
-	case *model.EventFilterOutput:
-		log.Printf("Event: %T, %+v", ev, ev)
-		v.unsetCurrentMatchLineNo()
-		v.Render(true)
-		return false
-	case *EventPressedEnterInInputField:
-		log.Printf("Event: %T, %+v", ev, ev)
-		v.goToNextMatchingLine()
-		return true
+	case *model.EventDisplay:
+		log.Printf("DisplayEvent. totalLength: %d, percentage: %d", ev.Display.TotalLength, ev.Display.Percentage)
+		v.Render(&ev.Display, true)
+	// completely handled in FileManager - no need to do something elaborate here
+	// case *model.EventFileChanged:
+	// 	log.Printf("EventFileChanged %d", ev.Length())
+	// 	return false
 	case *tcell.EventKey:
 		switch ev.Key() {
 		case tcell.KeyRune:
 			switch ev.Rune() {
-			case '<':
-				v.scrollHome()
+			case '<', 'g':
+				model.GetFilterManager().ScrollHome()
 				return true
 			case '>', 'G':
-				v.scrollEnd()
-				return true
-			case ' ':
-				v.pageDown()
+				model.GetFilterManager().ScrollEnd()
 				return true
 			case 'j':
-				v.scrollDown()
+				model.GetFilterManager().ScrollDown()
 				return true
 			case 'k':
-				v.scrollUp()
+				model.GetFilterManager().ScrollUp()
 				return true
 			case 'h':
 				v.scrollHorizontal(-1)
@@ -239,22 +196,24 @@ func (v *View) HandleEvent(ev tcell.Event) bool {
 			case 'l':
 				v.scrollHorizontal(1)
 				return true
-			case 'f':
-				v.pageDown()
+			case ' ', 'f':
+				model.GetFilterManager().PageDown()
 				return true
 			case 'b':
-				v.pageUp()
+				model.GetFilterManager().PageUp()
 			case 'n':
-				v.goToNextMatchingLine()
+				model.GetFilterManager().FindMatch(1)
 				return true
 			case 'N':
-				v.goToPrevMatchingLine()
+				model.GetFilterManager().FindMatch(-1)
+			case 'F':
+				model.GetFilterManager().ToggleFollowMode()
 			}
 		case tcell.KeyDown, tcell.KeyEnter:
-			v.scrollDown()
+			model.GetFilterManager().ScrollDown()
 			return true
 		case tcell.KeyUp:
-			v.scrollUp()
+			model.GetFilterManager().ScrollUp()
 			return true
 		case tcell.KeyRight:
 			v.scrollHorizontal(1)
@@ -263,16 +222,16 @@ func (v *View) HandleEvent(ev tcell.Event) bool {
 			v.scrollHorizontal(-1)
 			return true
 		case tcell.KeyCtrlF, tcell.KeyPgDn:
-			v.pageDown()
+			model.GetFilterManager().PageDown()
 			return true
 		case tcell.KeyCtrlB, tcell.KeyPgUp:
-			v.pageUp()
+			model.GetFilterManager().PageUp()
 			return true
 		case tcell.KeyCtrlA, tcell.KeyHome:
-			v.scrollHome()
+			model.GetFilterManager().ScrollHome()
 			return true
 		case tcell.KeyCtrlE, tcell.KeyEnd:
-			v.scrollEnd()
+			model.GetFilterManager().ScrollEnd()
 			return true
 		}
 	case *tcell.EventMouse:
@@ -282,10 +241,10 @@ func (v *View) HandleEvent(ev tcell.Event) bool {
 		// Horizontal mouse wheel doesn't seem to work with the terminals I
 		// have access to but we'll leave it in anyways...
 		if buttons&tcell.WheelUp != 0 {
-			v.scrollUp()
+			model.GetFilterManager().ScrollUp()
 			return true
 		} else if buttons&tcell.WheelDown != 0 {
-			v.scrollDown()
+			model.GetFilterManager().ScrollDown()
 			return true
 		} else if buttons&tcell.WheelLeft != 0 {
 			v.scrollHorizontal(-1)
@@ -299,213 +258,20 @@ func (v *View) HandleEvent(ev tcell.Event) bool {
 	return false
 }
 
-func (v *View) goToPrevMatchingLine() {
-	var startSearchWith int
-	if v.isOnScreen(v.currentMatchLineNo) {
-		startSearchWith = v.currentMatchLineNo - 1
-	} else {
-		startSearchWith = v.curY + v.viewHeight - 1
-	}
-
-	newLineNo, err := model.GetPipeline().FindPrevMatch(startSearchWith)
-	if err != nil {
-		screen.Beep()
-		return
-	}
-
-	if v.isOnScreen(newLineNo) {
-		v.currentMatchLineNo = newLineNo
-		v.Render(true)
-		return
-	}
-
-	// TODO: this is probably not very efficient, espcially as we have
-	// determined the matching line number already above.
-	// Pipeline should provide some ScrollUpTo() and ScrollDownTo() methods
-
-	for {
-		newLine, err := model.GetPipeline().ScrollUpLineBuffer()
-		if err != nil {
-			screen.Beep()
-			v.Render(true)
-			return
-		} else if newLine.Status == model.LineMatched {
-			v.currentMatchLineNo = newLine.No
-			break
-		}
-	}
-
-	// scroll a bit further to see a bit more context around the highlighted match
-
-	for i := 0; i < v.viewHeight/4; i++ {
-		_, err := model.GetPipeline().ScrollUpLineBuffer()
-		if err != nil {
-			break
-		}
-	}
-
-	v.Render(true)
-}
-
-func (v *View) goToNextMatchingLine() {
-	var startSearchWith int
-	if v.isOnScreen(v.currentMatchLineNo) {
-		startSearchWith = v.currentMatchLineNo + 1
-	} else {
-		startSearchWith = v.curY
-	}
-
-	newLineNo, err := model.GetPipeline().FindNextMatch(startSearchWith)
-	if err != nil {
-		screen.Beep()
-		return
-	}
-
-	if v.isOnScreen(newLineNo) {
-		v.currentMatchLineNo = newLineNo
-		v.Render(true)
-		return
-	}
-
-	for {
-		newLine, err := model.GetPipeline().ScrollDownLineBuffer(false)
-		if err != nil {
-			screen.Beep()
-			v.Render(true)
-			return
-		} else if newLine.Status == model.LineMatched {
-			v.currentMatchLineNo = newLine.No
-			break
-		}
-	}
-
-	// scroll a bit further to see a bit more context around the highlighted match
-
-	for i := 0; i < v.viewHeight/4; i++ {
-		_, err := model.GetPipeline().ScrollDownLineBuffer(false)
-		if err != nil {
-			break
-		}
-	}
-
-	model.GetPipeline().InvalidateScreenBuffer()
-	v.Render(true)
-}
-
-func (v *View) isOnScreen(lineNo int) bool {
-	if lineNo == -1 {
-		return false
-	}
-
-	sb := model.GetPipeline().ScreenBuffer(v.curY, v.viewHeight)
-
-	for _, line := range sb {
-		if lineNo == line.No {
-			return true
-		}
-	}
-
-	return false
-}
-
-func (v *View) reactToFileUpdate() {
-	model.GetPipeline().InvalidateScreenBuffer()
-	if config.GetConfiguration().FollowFile {
-		v.scrollEnd()
-	} else {
-		v.Render(true)
-	}
-}
-
-func (v *View) scrollUp() {
-	_, err := model.GetPipeline().ScrollUpLineBuffer()
-	if err != nil {
-		screen.Beep()
-		return
-	}
-
-	v.Render(true)
-}
-
-func (v *View) pageUp() {
-	var err error
-	for i := 0; i < v.viewHeight-1; i++ {
-		_, err = model.GetPipeline().ScrollUpLineBuffer()
-		if err != nil {
-			break
-		}
-	}
-	v.Render(true)
-	if err != nil {
-		screen.Beep()
-	}
-}
-
-func (v *View) scrollDown() {
-	_, err := model.GetPipeline().ScrollDownLineBuffer(true)
-	if err != nil {
-		screen.Beep()
-		return
-	}
-
-	v.Render(true)
-}
-
-func (v *View) pageDown() {
-	var err error
-	for i := 0; i < v.viewHeight-1; i++ {
-		_, err = model.GetPipeline().ScrollDownLineBuffer(true)
-		if err != nil {
-			break
-		}
-	}
-
-	v.Render(true)
-	if err != nil {
-		screen.Beep()
-	}
-}
-
 func (v *View) scrollHorizontal(offset int) {
-	width, _, err := model.GetPipeline().Size()
-	if err != nil {
-		// TODO: rather fail than beep?
-		screen.Beep()
-		return
-	}
+	// width, _, err := model.GetFilterManager().Size()
+	// if err != nil {
+	// 	// TODO: rather fail than beep?
+	// 	screen.Beep()
+	// 	return
+	// }
 
-	newX, err := util.InBetween(v.curX+offset, 0, width)
-	if err != nil {
-		screen.Beep()
-		return
-	}
+	// newX, err := util.InBetween(v.curX+offset, 0, width)
+	// if err != nil {
+	// 	screen.Beep()
+	// 	return
+	// }
 
-	v.curX = newX
-	v.Render(true)
-}
-
-func (v *View) scrollHome() {
-	v.SetCursor(v.curX, 0)
-	v.Render(true)
-}
-
-func (v *View) scrollEnd() {
-
-	// TODO: this is *not* fast for large files!
-	for {
-		_, err := model.GetPipeline().ScrollDownLineBuffer(false)
-		if err != nil {
-			break
-		}
-	}
-
-	v.Render(true)
-
-	// this is hacky but gives a lot of speed improvement as we don't
-	// fire an event for every scrolled line
-	model.GetPipeline().InvalidateScreenBuffer()
-}
-
-func (v *View) unsetCurrentMatchLineNo() {
-	v.currentMatchLineNo = -1
+	// v.curX = newX
+	// v.Render(true)
 }

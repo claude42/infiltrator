@@ -1,6 +1,7 @@
 package config
 
 import (
+	"context"
 	"sync"
 )
 
@@ -11,9 +12,17 @@ var (
 
 type ConfigManager struct {
 	FileName        string
+	FilePath        string
+	Stdin           bool
 	ShowLineNumbers bool
 	FollowFile      bool
 	Debug           bool
+
+	Quit chan string
+
+	Context   context.Context
+	Cancel    context.CancelFunc
+	WaitGroup sync.WaitGroup
 }
 
 func GetConfiguration() *ConfigManager {

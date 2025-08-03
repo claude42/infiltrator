@@ -17,8 +17,8 @@ const nameWidth = 9
 const headerWidth = 24
 
 var filterModes = []string{
-	"match",
 	"focus",
+	"match",
 	"hide",
 }
 
@@ -31,7 +31,7 @@ type TinyPanel struct {
 	name          string
 	y             int
 	width         int
-	input         Input
+	input         *FilterInput
 	mode          *Select
 	caseSensitive *Select
 	colorIndex    uint8
@@ -42,7 +42,7 @@ type TinyPanel struct {
 
 func NewTinyPanel() *TinyPanel {
 	t := &TinyPanel{name: tinyPanelDefaultName}
-	t.input = NewInputField()
+	t.input = NewFilterInput()
 	t.mode = NewSelect(filterModes)
 	t.caseSensitive = NewSelect(caseSensitive)
 
@@ -97,7 +97,7 @@ func (t *TinyPanel) SetColorIndex(colorIndex uint8) {
 	t.mode.SetColorIndex(colorIndex)
 	t.caseSensitive.SetColorIndex(colorIndex)
 	if t.filter != nil {
-		t.filter.SetColorIndex(colorIndex)
+		model.GetFilterManager().UpdateFilterColorIndex(t.filter, colorIndex)
 	}
 }
 
@@ -162,6 +162,7 @@ func (t *TinyPanel) SetName(name string) {
 
 func (t *TinyPanel) SetFilter(filter model.Filter) {
 	t.filter = filter
+	t.input.SetFilter(filter)
 }
 
 func (t *TinyPanel) Filter() model.Filter {
@@ -177,7 +178,7 @@ func (t *TinyPanel) WatchInput(eh tcell.EventHandler) {
 }
 
 func (t *TinyPanel) toggleMode() {
-	t.filter.SetMode(t.mode.NextOption())
+	model.GetFilterManager().UpdateFilterMode(t.filter, t.mode.NextOption())
 
 	t.Render(true)
 }
@@ -194,7 +195,7 @@ func (t *TinyPanel) mouseToggleMode(ev *tcell.EventMouse) bool {
 }
 
 func (t *TinyPanel) toggleCaseSensitive() {
-	t.filter.SetCaseSensitive(t.caseSensitive.NextOption() == 1)
+	model.GetFilterManager().UpdateFilterCaseSensitiveUpdate(t.filter, t.caseSensitive.NextOption() != 0)
 
 	t.Render(true)
 }

@@ -8,7 +8,7 @@ import (
 )
 
 var FilterColors = [][2]tcell.Color{
-	{tcell.ColorGreen, tcell.ColorGreen}, // just to detect wither something went wrong
+	{tcell.ColorGreen, tcell.ColorGreen}, // just to detect wither something went wrong, should be tcell.ColorDefault
 	{tcell.ColorRed, tcell.ColorDarkRed},
 	{tcell.ColorLightPink, tcell.ColorPink},
 	{tcell.ColorGoldenrod, tcell.ColorDarkGoldenrod},
@@ -23,24 +23,6 @@ var FilterColors = [][2]tcell.Color{
 	{tcell.ColorKhaki, tcell.ColorDarkKhaki},
 	{tcell.ColorOrange, tcell.ColorDarkOrange},
 }
-
-// var FilterColors = []tcell.Color{
-// 	tcell.ColorBrown,
-// 	tcell.ColorMaroon,
-// 	tcell.ColorGreen,
-// 	tcell.ColorOlive,
-// 	tcell.ColorNavy,
-// 	tcell.ColorPurple,
-// 	tcell.ColorTeal,
-// 	tcell.ColorAliceBlue,
-// 	tcell.ColorAquaMarine,
-// 	tcell.ColorAzure,
-// 	tcell.ColorBeige,
-// 	tcell.ColorBisque,
-// 	tcell.ColorBlack,
-// 	tcell.ColorBlanchedAlmond,
-// 	tcell.ColorBlue,
-// }
 
 type colorManager struct {
 	colors []colorMap

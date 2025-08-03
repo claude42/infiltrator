@@ -6,6 +6,11 @@ import (
 	"github.com/gdamore/tcell/v2"
 )
 
+type Event interface {
+	tcell.Event
+	When() time.Time
+}
+
 type EventImpl struct {
 	t time.Time
 }
@@ -17,28 +22,6 @@ func (ev *EventImpl) SetWhen() {
 // When returns the time when the Event was created.
 func (ev *EventImpl) When() time.Time {
 	return ev.t
-}
-
-type EventText struct {
-	EventImpl
-
-	text string
-}
-
-// NewEventResize creates an EventResize with the new updated window size,
-// which is given in character cells.
-func NewEventText(text string) *EventText {
-	ev := &EventText{text: text}
-	ev.EventImpl.SetWhen()
-	return ev
-}
-
-func (ev *EventText) Text() string {
-	return ev.text
-}
-
-func (ev *EventText) SetText(text string) {
-	ev.text = text
 }
 
 // EventHandler

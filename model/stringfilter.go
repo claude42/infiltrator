@@ -6,14 +6,12 @@ import (
 
 	"log"
 	"strings"
-
-	"github.com/claude42/infiltrator/util"
-	"github.com/gdamore/tcell/v2"
+	// "github.com/claude42/infiltrator/util"
 )
 
 const (
-	FilterMatch int = iota
-	FilterFocus
+	FilterFocus int = iota
+	FilterMatch
 	FilterHide
 )
 
@@ -25,8 +23,6 @@ type StringFilter struct {
 	mode              int
 	key               string
 	caseSensitive     bool
-
-	util.ObservableImpl
 }
 
 type StringFilterFuncFactory func(key string, caseSensitive bool) (func(input string) (string, [][]int, bool), error)
@@ -100,31 +96,27 @@ func (s *StringFilter) updateFilterFunc(key string, caseSensitive bool) error {
 		}
 	}
 
-	s.PostEvent(NewEventFilterOutput())
-
 	return nil
 }
 
-func (s *StringFilter) SetKey(key string) error {
+func (s *StringFilter) setKey(key string) error {
 	s.key = key
 	return s.updateFilterFunc(s.key, s.caseSensitive)
 }
 
-func (s *StringFilter) SetCaseSensitive(on bool) error {
+func (s *StringFilter) setCaseSensitive(on bool) error {
 	s.caseSensitive = on
 	return s.updateFilterFunc(s.key, s.caseSensitive)
 }
 
-func (s *StringFilter) SetMode(mode int) {
+func (s *StringFilter) setMode(mode int) {
 	s.mode = mode
-
-	s.PostEvent(NewEventFilterOutput())
 }
 
 // ErrLineDidNotMatch errors are handled within GetLine() and will not
 // buble up.
-func (s *StringFilter) GetLine(line int) (Line, error) {
-	sourceLine, err := s.source.GetLine(line)
+func (s *StringFilter) getLine(line int) (Line, error) {
+	sourceLine, err := s.source.getLine(line)
 	if err != nil {
 		return sourceLine, err
 	}
@@ -137,9 +129,10 @@ func (s *StringFilter) GetLine(line int) (Line, error) {
 
 	_, indeces, matched := s.filterFunc(sourceLine.Str)
 
-	s.updateStatus(matched, indeces, &sourceLine)
+	s.updateStatusAndMatched(matched, indeces, &sourceLine)
 
 	if !matched {
+		// no further coloring necessary, bail out here
 		return sourceLine, nil
 	}
 
@@ -150,34 +143,62 @@ func (s *StringFilter) GetLine(line int) (Line, error) {
 	return sourceLine, nil
 }
 
-func (s *StringFilter) updateStatus(matched bool, indeces [][]int, sourceLine *Line) {
+func (s *StringFilter) updateStatusAndMatched(matched bool, indeces [][]int, sourceLine *Line) {
+	newStatus := sourceLine.Status
+	newMatched := sourceLine.Matched
 	switch s.mode {
 	case FilterMatch:
+		// Status
 		if sourceLine.Status == LineWithoutStatus && matched {
-			sourceLine.Status = LineMatched
+			newStatus = LineMatched
 		} else if !matched {
-			sourceLine.Status = LineHidden
+			newStatus = LineHidden
+		}
+
+		// Matched
+		if !sourceLine.Matched && matched &&
+			(sourceLine.Status == LineWithoutStatus || sourceLine.Status == LineDimmed) {
+
+			newMatched = true
 		}
 	case FilterFocus:
+		// Status
 		switch sourceLine.Status {
 		case LineWithoutStatus:
 			if matched {
-				sourceLine.Status = LineMatched
+				newStatus = LineMatched
 			} else {
-				sourceLine.Status = LineDimmed
+				newStatus = LineDimmed
 			}
 		case LineMatched:
 			if !matched {
-				sourceLine.Status = LineDimmed
+				newStatus = LineDimmed
 			}
 		}
+
+		// Matched
+		if !sourceLine.Matched && matched &&
+			(sourceLine.Status == LineWithoutStatus || sourceLine.Status == LineDimmed) {
+
+			newMatched = true
+		}
 	case FilterHide:
+		// Status
 		if matched && indeces[0][1] != 0 {
-			sourceLine.Status = LineHidden
+			newStatus = LineHidden
+		}
+
+		// Matched
+		if sourceLine.Matched && matched &&
+			(sourceLine.Status == LineMatched || sourceLine.Status == LineDimmed) {
+			newMatched = false
 		}
 	default:
 		log.Panicf("Unkwon filter mdoe %d", s.mode)
 	}
+
+	sourceLine.Status = newStatus
+	sourceLine.Matched = newMatched
 }
 
 func (s *StringFilter) colorizeLine(line Line, indeces [][]int) {
@@ -188,33 +209,14 @@ func (s *StringFilter) colorizeLine(line Line, indeces [][]int) {
 	}
 }
 
-func (s *StringFilter) Source() (Filter, error) {
-	if s.source == nil {
-		return nil, fmt.Errorf("no source defined")
-	}
-
-	return s.source, nil
-}
-
-func (s *StringFilter) SetSource(source Filter) {
+func (s *StringFilter) setSource(source Filter) {
 	s.source = source
 }
 
-func (s *StringFilter) Size() (int, int, error) {
-	//return 80, 0, nil // FIXME
-	return s.source.Size()
+func (s *StringFilter) size() (int, int, error) {
+	return s.source.size()
 }
 
-func (s *StringFilter) HandleEvent(ev tcell.Event) bool {
-	switch ev := ev.(type) {
-	case *util.EventText:
-		err := s.SetKey(ev.Text())
-		return err == nil
-	default:
-		return false
-	}
-}
-
-func (s *StringFilter) SetColorIndex(colorIndex uint8) {
+func (s *StringFilter) setColorIndex(colorIndex uint8) {
 	s.colorIndex = colorIndex
 }

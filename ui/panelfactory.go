@@ -23,9 +23,8 @@ func setupNewTinyPanel(fn model.StringFilterFuncFactory, name string) (*TinyPane
 	p := NewTinyPanel()
 	p.SetName(name)
 	filter := model.NewStringFilter(fn, p.Mode())
-	model.GetPipeline().AddFilter(filter)
+	model.GetFilterManager().AddFilter(filter)
 	p.SetFilter(filter)
-	p.WatchInput(filter)
 
 	// done last so both panel and filter get the same color index
 	colorIndex, err := GetColorManager().Add(p)
@@ -65,12 +64,12 @@ func DestroyPanel(panel Panel) {
 		return
 	}
 
-	pipeline := model.GetPipeline()
-	if pipeline == nil {
+	fm := model.GetFilterManager()
+	if fm == nil {
 		log.Panicln("DestroyPanel() called with nil pipeline")
 		return
 	}
 
-	pipeline.RemoveFilter(panel.Filter())
+	fm.RemoveFilter(panel.Filter())
 	GetColorManager().Remove(panel)
 }
