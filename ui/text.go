@@ -23,6 +23,11 @@ func renderText(x int, y int, text string, style tcell.Style) int {
 	return renderRunes(x, y, []rune(text), style)
 }
 
+func centerText(x int, width int, y int, text string, style tcell.Style) int {
+
+	return renderText(x+(width-len(text))/2, y, text, style)
+}
+
 func drawChars(x int, y int, width int, r rune, style tcell.Style) int {
 	screenWidth, _ := screen.Size()
 	i := 0

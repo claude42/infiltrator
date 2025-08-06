@@ -9,8 +9,10 @@ import (
 	// "github.com/claude42/infiltrator/util"
 )
 
+type FilterMode int
+
 const (
-	FilterFocus int = iota
+	FilterFocus FilterMode = iota
 	FilterMatch
 	FilterHide
 )
@@ -20,7 +22,7 @@ type StringFilter struct {
 	filterFunc        func(input string) (string, [][]int, bool)
 	filterFuncFactory StringFilterFuncFactory
 	colorIndex        uint8
-	mode              int
+	mode              FilterMode
 	key               string
 	caseSensitive     bool
 }
@@ -74,7 +76,7 @@ func DefaultStringFilterFuncFactory(key string, caseSensitive bool) (func(input 
 	}, nil
 }
 
-func NewStringFilter(fn StringFilterFuncFactory, mode int) *StringFilter {
+func NewStringFilter(fn StringFilterFuncFactory, mode FilterMode) *StringFilter {
 	k := &StringFilter{}
 
 	if fn != nil {
@@ -109,7 +111,7 @@ func (s *StringFilter) setCaseSensitive(on bool) error {
 	return s.updateFilterFunc(s.key, s.caseSensitive)
 }
 
-func (s *StringFilter) setMode(mode int) {
+func (s *StringFilter) setMode(mode FilterMode) {
 	s.mode = mode
 }
 
@@ -213,8 +215,12 @@ func (s *StringFilter) setSource(source Filter) {
 	s.source = source
 }
 
-func (s *StringFilter) size() (int, int, error) {
+func (s *StringFilter) size() (int, int) {
 	return s.source.size()
+}
+
+func (s *StringFilter) length() int {
+	return s.source.length()
 }
 
 func (s *StringFilter) setColorIndex(colorIndex uint8) {

@@ -7,13 +7,15 @@ import (
 	// "github.com/gdamore/tcell/v2"
 )
 
+type PanelType int
+
 const (
-	TypeKeyword int = iota
-	TypeRegex
-	Glob
-	Host
-	Facility
-	Date
+	PanelTypeKeyword PanelType = iota
+	PanelTypeRegex
+	PanelTypeGlob
+	PanelTypeHost
+	PanelTypeFacility
+	PanelTypeDate
 )
 
 const keywordPanelDefaultName = "Keyword"
@@ -36,12 +38,12 @@ func setupNewTinyPanel(fn model.StringFilterFuncFactory, name string) (*TinyPane
 	return p, nil
 }
 
-func NewPanel(panelType int) (Panel, error) {
+func NewPanel(panelType PanelType) (Panel, error) {
 	switch panelType {
-	case TypeKeyword:
+	case PanelTypeKeyword:
 		return setupNewTinyPanel(model.DefaultStringFilterFuncFactory, keywordPanelDefaultName)
 		// return createNewKeywordPanel()
-	case TypeRegex:
+	case PanelTypeRegex:
 		return setupNewTinyPanel(model.RegexFilterFuncFactory, regexPanelDefaultName)
 		// return createNewRegexPanel()
 	/*case Glob:

@@ -24,10 +24,13 @@ type Window struct {
 	panelsOpen   bool
 	activePanel  Panel
 	statusbar    *Statusbar
+	popup        Modal
 }
 
 func GetScreen() tcell.Screen {
 	once.Do(func() {
+		// switch to alternate buffer
+		fmt.Print("\x1b[?1049h")
 		var err error
 		screen, err = tcell.NewScreen()
 		if err != nil {
@@ -42,7 +45,6 @@ func InfiltPostEvent(ev util.Event) error {
 }
 
 func Setup() *Window {
-	log.Println("Setting up the UI")
 	GetScreen()
 
 	if window != nil {
@@ -58,6 +60,15 @@ func Setup() *Window {
 	window.mainView = NewView()
 
 	window.statusbar = NewStatusbar()
+
+	// window.popup = NewPanelSelection(40, 10)
+	window.popup = NewPanelSelection(`This is just some test
+to see if this is going to work a intended
+Some
+More
+Lines`, OrientationLeft)
+	window.popup.SetTitle("Testerli")
+	window.popup.SetActive(false)
 
 	setupScreen()
 
@@ -76,8 +87,9 @@ func setupScreen() {
 }
 
 func Cleanup() {
-	log.Println("Cleaning up ui")
 	screen.Fini()
+	// switch back to primary buffer
+	fmt.Print("\x1b[?1049l")
 }
 
 func (w *Window) Render() {
@@ -91,11 +103,12 @@ func (w *Window) Render() {
 
 	w.statusbar.Render(false)
 
+	w.popup.Render(false)
+
 	screen.Show()
 }
 
 func (w *Window) MetaEventLoop() {
-	log.Printf("Starting EventLoop")
 	defer func() {
 		if r := recover(); r != nil {
 			log.Printf("A panic occurred: %v\nStack trace:\n%s", r, debug.Stack())
@@ -108,19 +121,15 @@ func (w *Window) MetaEventLoop() {
 	defer cfg.WaitGroup.Done()
 
 	for {
-		log.Println("begin meta")
 		select {
 		case <-cfg.Context.Done():
 			log.Println("Received shutdown signal")
 			return
 		default:
-			log.Println("begin eventloop")
 			if w.EventLoop() {
 				return
 			}
-			log.Println("end eventloop")
 		}
-		log.Println("end meta")
 	}
 }
 
@@ -151,7 +160,6 @@ func (w *Window) EventLoop() bool {
 				w.SetPanelsOpen(true)
 				return false
 			case 'q':
-				log.Println("Q detected")
 				config.GetConfiguration().Quit <- "Good bye!"
 				close(config.GetConfiguration().Quit)
 				return true
@@ -227,6 +235,10 @@ func (w *Window) EventLoop() bool {
 		return false
 	}
 
+	if w.popup.HandleEvent(ev) {
+		return false
+	}
+
 	if w.statusbar.HandleEvent(ev) {
 		return false
 	}
@@ -239,7 +251,7 @@ func (w *Window) CreateAndAddPanel() {
 	if w.activePanel != nil && !w.panelsOpen {
 		return
 	}
-	panel, err := NewPanel(TypeRegex)
+	panel, err := NewPanel(PanelTypeRegex)
 	if err != nil {
 		log.Panicf("%+v", err)
 	}
@@ -279,6 +291,8 @@ func (w *Window) resize() {
 		}
 	}
 	w.statusbar.Resize(0, height-1, width, 0) // x and height ignored
+	// w.popup.Resize(0, 0, 40, 10)
+	w.popup.Resize(0, 0, 0, 0)
 }
 
 func (w *Window) totalPanelHeight() int {

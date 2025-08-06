@@ -38,12 +38,8 @@ func (r *Reader) ReadFromFile(filePath string, context context.Context,
 	log.Println("ReadFromFile()")
 	file, err := os.Open(filePath)
 	if err != nil {
-		log.Println("sending to quit channel")
-		//quit <- fmt.Sprintf("error opening file %s: %+v", filePath, err)
 		quit <- err.Error()
-		log.Println("send to quit channel")
 		close(quit)
-		log.Println("closed quit channel")
 		return
 	}
 	defer file.Close()
@@ -109,18 +105,43 @@ func (r *Reader) startWatching(filePath string, file *os.File,
 }
 
 func (r *Reader) ReadFromStdin(ch chan<- []Line) {
-	lineNo := 0
+	quit := config.GetConfiguration().Quit
 
+	yes, err := r.canUseStdin()
+	if err != nil {
+		quit <- err.Error()
+		close(quit)
+		return
+	} else if !yes {
+		quit <- "Missing filename"
+		close(quit)
+		return
+	}
+
+	lineNo := 0
 	scanner := bufio.NewScanner(os.Stdin)
 	for scanner.Scan() {
 		text := scanner.Text()
+		BusySpin()
 		ch <- []Line{{lineNo, LineWithoutStatus, false, text, make([]uint8, len(text))}}
 		lineNo++
 	}
 	if err := scanner.Err(); err != nil {
 		log.Printf("error reading file: %+v", err)
 	}
-	log.Println("ReadFromStdin ended")
+}
+
+func (r *Reader) canUseStdin() (bool, error) {
+	fileInfo, err := os.Stdin.Stat()
+	if err != nil {
+		return false, err
+	}
+
+	if (fileInfo.Mode() & os.ModeCharDevice) == os.ModeCharDevice {
+		return false, nil
+	}
+
+	return true, nil
 }
 
 func (r *Reader) keepWatching(watcher *fsnotify.Watcher, file *os.File,
@@ -175,6 +196,7 @@ func (r *Reader) readNewLines(file *os.File, ch chan<- []Line, lineNo int) (int,
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
 		text := scanner.Text()
+		BusySpin()
 		newLines = append(newLines,
 			Line{lineNo, LineWithoutStatus, false, text, make([]uint8, len(text))})
 		lineNo++

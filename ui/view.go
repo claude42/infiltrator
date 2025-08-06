@@ -26,7 +26,6 @@ func NewView() *View {
 }
 
 func (v *View) Render(display *model.Display, updateScreen bool) {
-	log.Printf("view.Render()")
 	// display will be nil if called from Windows.Render(). Only go ahead
 	// if there's already a v.currentDisplay
 	if display == nil && v.CurrentDisplay == nil {
@@ -170,6 +169,7 @@ func (v *View) HandleEvent(ev tcell.Event) bool {
 	case *model.EventDisplay:
 		log.Printf("DisplayEvent. totalLength: %d, percentage: %d", ev.Display.TotalLength, ev.Display.Percentage)
 		v.Render(&ev.Display, true)
+		return false
 	// completely handled in FileManager - no need to do something elaborate here
 	// case *model.EventFileChanged:
 	// 	log.Printf("EventFileChanged %d", ev.Length())
@@ -236,7 +236,7 @@ func (v *View) HandleEvent(ev tcell.Event) bool {
 		}
 	case *tcell.EventMouse:
 		buttons := ev.Buttons()
-		log.Printf("Wheel: %d", buttons)
+		// log.Printf("Wheel: %d", buttons)
 
 		// Horizontal mouse wheel doesn't seem to work with the terminals I
 		// have access to but we'll leave it in anyways...

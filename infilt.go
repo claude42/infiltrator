@@ -63,7 +63,7 @@ func run() error {
 	go window.MetaEventLoop()
 
 	fm := model.GetFilterManager()
-	fm.SetPostEventFunc(ui.InfiltPostEvent)
+	cfg.PostEventFunc = ui.InfiltPostEvent
 
 	switch len(flag.Args()) {
 	case 0:
@@ -82,13 +82,11 @@ func run() error {
 		return fmt.Errorf("try again")
 	}
 
-	log.Println("before calling event loop")
 	cfg.WaitGroup.Add(1)
 	go fm.EventLoop()
 
 	// wait for UI thread to finish
 
-	log.Println("beforeloop")
 	var message string
 	for message = range cfg.Quit {
 		log.Printf("in loop %s", message)

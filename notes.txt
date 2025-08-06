@@ -73,3 +73,88 @@ Events
 * EventFilterOutput - filter key, mode or case sensitivity changed filter's output (created by filter, posted to Watchers)
 
 * EventPositionInBuffer - (created by pipieline, posted to watchers)
+
+---
+
+package main
+
+import (
+	"fmt"
+	"os"
+)
+
+func main() {
+	// Get information about os.Stdin.
+	fileInfo, err := os.Stdin.Stat()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error getting file info: %v\n", err)
+		os.Exit(1)
+	}
+
+	// os.ModeCharDevice is the flag for a character device, which is typically a TTY.
+	if (fileInfo.Mode() & os.ModeCharDevice) == os.ModeCharDevice {
+		fmt.Println("os.Stdin is connected to a terminal (interactive mode).")
+		// Your logic for handling a filename from os.Args would go here.
+		// e.g. if len(os.Args) < 2 {
+		//          fmt.Fprintf(os.Stderr, "less: missing a filename\n")
+		//      } else {
+		//          // ... open file from os.Args[1]
+		//      }
+
+	} else {
+		fmt.Println("os.Stdin is connected to a pipe or file (non-interactive mode).")
+		// Your Tcell and bufio.Scanner logic to read from stdin would go here.
+		// This is where you would use the solution from our previous conversation.
+	}
+}
+
+func main() {
+    // Context that will cancel after 5 seconds if no line is read.
+    ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+    defer cancel()
+    
+    lineChan := make(chan string)
+    // Goroutine to do the blocking read.
+    go func() {
+        // scanner.Scan() will block here.
+        if scanner.Scan() {
+            lineChan <- scanner.Text()
+        }
+        close(lineChan)
+    }()
+
+    select {
+    case line := <-lineChan:
+        fmt.Println("Received line:", line)
+    case <-ctx.Done():
+        fmt.Println("Timed out while waiting for a line.")
+    }
+}
+
+---
+
+// This regex matches any character that has a special meaning in a regex pattern.
+var specialRegexChars = regexp.MustCompile(`[.^$|?*+(){}\[\]\\]`)
+
+// SmartSearch determines the best search method based on the pattern.
+func SmartSearch(text, pattern string) bool {
+	// Check if the pattern contains any special regex characters.
+	if !specialRegexChars.MatchString(pattern) {
+		// No special characters, use the fast substring search.
+		return strings.Contains(text, pattern)
+	}
+
+	// Special characters found, fall back to the regular expression engine.
+	match, _ := regexp.MatchString(pattern, text)
+	return match
+}
+
+func main() {
+	longText := "The quick brown fox jumps over the lazy dog."
+
+	// Case 1: Simple substring search.
+	fmt.Println("Searching for 'fox':", SmartSearch(longText, "fox")) // Uses fast strings.Contains()
+
+	// Case 2: Regex search with a special character.
+	fmt.Println("Searching for 'f.x':", SmartSearch(longText, "f.x")) // Uses slower regexp.MatchString()
+}

@@ -178,7 +178,7 @@ func (t *TinyPanel) WatchInput(eh tcell.EventHandler) {
 }
 
 func (t *TinyPanel) toggleMode() {
-	model.GetFilterManager().UpdateFilterMode(t.filter, t.mode.NextOption())
+	model.GetFilterManager().UpdateFilterMode(t.filter, model.FilterMode(t.mode.NextOption()))
 
 	t.Render(true)
 }
@@ -212,8 +212,8 @@ func (t *TinyPanel) mouseToggleCaseSensitive(ev *tcell.EventMouse) bool {
 	}
 }
 
-func (t *TinyPanel) Mode() int {
-	return t.mode.SelectedIndex()
+func (t *TinyPanel) Mode() model.FilterMode {
+	return model.FilterMode(t.mode.SelectedIndex())
 }
 
 func (t *TinyPanel) SetMode(mode int) {

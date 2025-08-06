@@ -7,9 +7,16 @@ import (
 )
 
 func RegexFilterFuncFactory(key string, caseSensitive bool) (func(input string) (string, [][]int, bool), error) {
+	// don't use regex if we don't have to
+	var specialRegexChars = regexp.MustCompile(`[.^$|?*+(){}\[\]\\]`)
+	if !specialRegexChars.MatchString(key) {
+		return DefaultStringFilterFuncFactory(key, caseSensitive)
+	}
+
 	if !caseSensitive {
 		key = fmt.Sprintf("(?i)%s", key)
 	}
+
 	re, err := regexp.Compile(key)
 	if err != nil {
 		return nil, err

@@ -24,8 +24,12 @@ func (s *Source) storeNewLines(newLines *[]Line) int {
 	return len(s.lines)
 }
 
-func (s *Source) size() (int, int, error) {
-	return s.width, len(s.lines), nil
+func (s *Source) size() (int, int) {
+	return s.width, len(s.lines)
+}
+
+func (s *Source) length() int {
+	return len(s.lines)
 }
 
 func (s *Source) getLine(line int) (Line, error) {
@@ -53,7 +57,7 @@ func (s *Source) setKey(key string) error {
 	return nil
 }
 
-func (s *Source) setMode(mode int) {
+func (s *Source) setMode(mode FilterMode) {
 	log.Panicln("SetMode() should never be called on a source!")
 }
 

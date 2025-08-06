@@ -104,7 +104,7 @@ func (d CommandFilterColorIndexUpdate) commandString() string {
 
 type CommandFilterModeUpdate struct {
 	Filter Filter
-	Mode   int
+	Mode   FilterMode
 }
 
 func (d CommandFilterModeUpdate) commandString() string {

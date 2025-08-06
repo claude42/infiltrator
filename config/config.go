@@ -3,6 +3,8 @@ package config
 import (
 	"context"
 	"sync"
+
+	"github.com/claude42/infiltrator/util"
 )
 
 var (
@@ -23,6 +25,8 @@ type ConfigManager struct {
 	Context   context.Context
 	Cancel    context.CancelFunc
 	WaitGroup sync.WaitGroup
+
+	PostEventFunc func(ev util.Event) error
 }
 
 func GetConfiguration() *ConfigManager {

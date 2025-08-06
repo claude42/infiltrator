@@ -1,7 +1,9 @@
 package model
 
+type LineStatus int
+
 const (
-	LineWithoutStatus int = iota
+	LineWithoutStatus LineStatus = iota
 	LineMatched
 	LineDimmed
 	LineHidden
@@ -10,7 +12,7 @@ const (
 
 type Line struct {
 	No      int
-	Status  int
+	Status  LineStatus
 	Matched bool
 	Str     string
 	// each byte in ColorIndex is a color index for each byte in Str

@@ -24,6 +24,8 @@ var CursorTextInputStyle = ActiveTextInputStyle.Reverse(true)
 
 var StatusBarStyle = tcell.StyleDefault.Reverse((true)).Bold((true))
 
+var ModalStyle = tcell.StyleDefault.Foreground(tcell.ColorRed).Reverse(true)
+
 // var TextInputStyle = tcell.StyleDefault.Background(tcell.ColorDarkBlue)
 // var ActiveTextInputStyle = tcell.StyleDefault.Background(tcell.ColorWhite).Foreground(tcell.ColorBlack).Bold(true)
 // var CursorTextInputStyle = ActiveTextInputStyle.Reverse(true)

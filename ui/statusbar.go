@@ -2,6 +2,8 @@ package ui
 
 import (
 	"fmt"
+	"sync"
+
 	// "log"
 
 	"github.com/claude42/infiltrator/config"
@@ -11,8 +13,10 @@ import (
 	"github.com/gdamore/tcell/v2"
 )
 
+type StatusBarState int
+
 const (
-	StatusDefault int = iota
+	StatusDefault StatusBarState = iota
 	SatusFollow
 	StatusPanelsOpen
 	StatusHelp
@@ -24,14 +28,16 @@ const StatusPanelOpenText = "[CTRL-S] change mode [CTRL-H] change case sensitive
 
 type Statusbar struct {
 	ComponentImpl
+	sync.Mutex
 
-	y             int
-	width         int
-	height        int
-	colorIndex    uint8
-	currentStatus int
-	percentage    int
-	panelsOpen    bool
+	y                      int
+	width                  int
+	height                 int
+	colorIndex             uint8
+	percentage             int
+	panelsOpen             bool
+	busyVisualizationIndex int
+	busyState              model.BusyState
 }
 
 func NewStatusbar() *Statusbar {
@@ -48,6 +54,7 @@ func (s *Statusbar) Resize(x, y, width, height int) {
 }
 
 func (s *Statusbar) Render(updateScreen bool) {
+	s.Mutex.Lock()
 	drawChars(0, s.y, s.width, ' ', StatusBarStyle)
 
 	if s.panelsOpen {
@@ -57,6 +64,9 @@ func (s *Statusbar) Render(updateScreen bool) {
 	} else {
 		s.renderDefaultStatusBar()
 	}
+
+	s.renderBusyVisualization()
+	s.Mutex.Unlock()
 
 	if updateScreen {
 		screen.Show()
@@ -114,6 +124,28 @@ func (s *Statusbar) renderFollow() {
 	renderText(s.width-9, s.y, "[follow]", StatusBarStyle)
 }
 
+func (s *Statusbar) renderBusyVisualization() {
+	var toRender rune
+	if s.busyState == model.Idle {
+		toRender = ' '
+	} else {
+		toRender = s.bumpBusyState()
+	}
+
+	screen.SetContent(s.width-1, s.y, toRender, nil, StatusBarStyle)
+}
+
+func (s *Statusbar) bumpBusyState() rune {
+	var busyVisualization = []rune{'|', '/', '-', '\\', '|', '/', '-', '\\'}
+
+	s.busyVisualizationIndex++
+	if s.busyVisualizationIndex >= len(busyVisualization) {
+		s.busyVisualizationIndex = 0
+	}
+
+	return busyVisualization[s.busyVisualizationIndex]
+}
+
 func (s *Statusbar) SetColorIndex(colorIndex uint8) {
 	s.colorIndex = colorIndex
 }
@@ -124,12 +156,22 @@ func (s *Statusbar) Height() int {
 
 func (s *Statusbar) HandleEvent(ev tcell.Event) bool {
 	switch ev := ev.(type) {
+	case *model.EventBusySpinnerUpdate:
+		s.busyState = ev.BusyState
+		s.renderBusyVisualization()
+		screen.Show()
 	case *model.EventDisplay:
 		s.percentage = ev.Display.Percentage
-		s.Render(true)
+		s.renderPercentage()
+		screen.Show()
 	case *model.EventFileChanged:
+		// don't call Render() here because otherwise the spinner would get
+		// updaten way to frequently.
+		// But the question is: shouldn't we not also limit the update rate
+		// of the percentage as well?
 		s.percentage = ev.Percentage()
-		s.Render(true)
+		s.renderPercentage()
+		screen.Show()
 	case *EventPanelStateChanged:
 		s.panelsOpen = ev.PanelsOpen()
 		s.Render(true)

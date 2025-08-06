@@ -11,9 +11,9 @@
             "mode": "auto",
             //"program": "${fileDirname}",
             "program": "${workspaceFolder}",
-            "args": ["--lines",
-                    "-d",
-                    "testerli"],
+            "args": ["-d",
+                    "-l",
+                    "../realjournal"],
             "console": "integratedTerminal"
         }
     ]
