@@ -19,12 +19,12 @@ func NewEventDisplay(display Display) *EventDisplay {
 type EventError struct {
 	util.EventImpl
 
-	beep         bool
-	errorMessage string
+	Beep         bool
+	ErrorMessage string
 }
 
 func NewEventError(beep bool, errorMessage string) *EventError {
-	ev := &EventError{beep: beep, errorMessage: errorMessage}
+	ev := &EventError{Beep: beep, ErrorMessage: errorMessage}
 	ev.EventImpl.SetWhen()
 	return ev
 }
@@ -48,4 +48,18 @@ func (ev *EventFileChanged) Percentage() int {
 
 func (ev *EventFileChanged) Length() int {
 	return ev.length
+}
+
+// created by busy
+
+type EventBusySpinnerUpdate struct {
+	util.EventImpl
+
+	BusyState BusyState
+}
+
+func NewEventBusySpinnerUpdate(busyState BusyState) *EventBusySpinnerUpdate {
+	ev := &EventBusySpinnerUpdate{BusyState: busyState}
+	ev.EventImpl.SetWhen()
+	return ev
 }

@@ -61,6 +61,14 @@ func (d CommandFindMatch) commandString() string {
 	return "FindMatch"
 }
 
+type CommandScrollHorizontal struct {
+	offset int
+}
+
+func (d CommandScrollHorizontal) commandString() string {
+	return "ScrollHorizontal"
+}
+
 type CommandAddFilter struct {
 	Filter Filter
 }

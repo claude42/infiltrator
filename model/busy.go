@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/claude42/infiltrator/config"
-	"github.com/claude42/infiltrator/util"
 )
 
 var (
@@ -58,16 +57,4 @@ func updateBusySpinner() {
 			return
 		}
 	}
-}
-
-type EventBusySpinnerUpdate struct {
-	util.EventImpl
-
-	BusyState BusyState
-}
-
-func NewEventBusySpinnerUpdate(busyState BusyState) *EventBusySpinnerUpdate {
-	ev := &EventBusySpinnerUpdate{BusyState: busyState}
-	ev.EventImpl.SetWhen()
-	return ev
 }

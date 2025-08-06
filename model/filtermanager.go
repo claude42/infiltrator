@@ -15,6 +15,7 @@ import (
 var (
 	filterManagerInstance *FilterManager
 	filterManagerOnce     sync.Once
+	ErrNotEnoughPanels    = errors.New("at least one buffer and one filter required")
 )
 
 type FilterManager struct {
@@ -42,7 +43,7 @@ func GetFilterManager() *FilterManager {
 func createNewFilterManager() *FilterManager {
 	fm := &FilterManager{}
 	fm.display = &Display{}
-	fm.display.CurrentMatch = -1
+	fm.display.UnsetCurrentMatch()
 	fm.contentUpdate = make(chan []Line, 10)
 	fm.commandChannel = make(chan Command, 10)
 
@@ -66,7 +67,6 @@ func (fm *FilterManager) ReadFromFile(filePath string) {
 }
 
 func (fm *FilterManager) ReadFromStdin() {
-	log.Println("are we here?")
 	defer func() {
 		if r := recover(); r != nil {
 			log.Printf("A panic occurred: %v\nStack trace:\n%s", r, debug.Stack())
@@ -96,6 +96,8 @@ func (fm *FilterManager) Source() *Source {
 }
 
 func (fm *FilterManager) outputFilter() (Filter, error) {
+	fm.Lock()
+	defer fm.Unlock()
 	if len(fm.filters) == 0 {
 		return nil, fmt.Errorf("pipeline empty")
 	}
@@ -112,7 +114,7 @@ func (fm *FilterManager) size() (int, int) {
 	return filter.size()
 }
 
-func (fm *FilterManager) length() int {
+func (fm *FilterManager) sourceLength() int {
 	filter, err := fm.outputFilter()
 	if err != nil {
 		return 0
@@ -175,10 +177,12 @@ func (fm *FilterManager) processContentUpdate(newLines []Line) {
 	if goToEnd {
 		// two times refreshDisplay() currently necessary because
 		// internalScrollEnd() depends on a correctly set up display.
-		fm.refreshDisplay()
+		// UPD: I think this should not be necessary anymore, let's still keep
+		// the comment here
+		// fm.refreshDisplay()
 		fm.internalScrollEnd()
 		fm.refreshDisplay()
-	} else if fm.displayAffected() {
+	} else if fm.isDisplayAffected() {
 		fm.refreshDisplay()
 	}
 
@@ -186,7 +190,7 @@ func (fm *FilterManager) processContentUpdate(newLines []Line) {
 	config.GetConfiguration().PostEventFunc(NewEventFileChanged(length, percentage))
 }
 
-func (fm *FilterManager) displayAffected() bool {
+func (fm *FilterManager) isDisplayAffected() bool {
 	// only if display is currently at the end and not all lines of the
 	// display are filled, then new lines in the file will affect the display.
 	if len(fm.display.Buffer) == 0 {
@@ -203,6 +207,10 @@ func (fm *FilterManager) ScrollDown() (Line, error) {
 func (fm *FilterManager) ScrollUp() (Line, error) {
 	fm.commandChannel <- CommandUp{}
 	return Line{}, nil
+}
+
+func (fm *FilterManager) ScrollHorizontal(offset int) {
+	fm.commandChannel <- CommandScrollHorizontal{offset}
 }
 
 func (fm *FilterManager) PageDown() {
@@ -267,41 +275,44 @@ func (fm *FilterManager) processCommand(command Command) {
 	// TODO let all these methods return an error, then send a beep indication
 	// through the channel in case of an error
 
+	var err error
 	switch command := command.(type) {
 	case CommandDown:
-		fm.internalScrollDownLineBuffer()
+		err = fm.internalScrollDownLineBuffer()
 	case CommandUp:
-		fm.internalScrollUpLineBuffer()
+		err = fm.internalScrollUpLineBuffer()
+	case CommandScrollHorizontal:
+		err = fm.internalScrollHorizontal(command.offset)
 	case CommandPgDown:
-		fm.internalPageDownLineBuffer()
+		err = fm.internalPageDownLineBuffer()
 	case CommandPgUp:
-		fm.internalPageUpLineBuffer()
+		err = fm.internalPageUpLineBuffer()
 	case CommandEnd:
 		fm.internalScrollEnd()
 	case CommandHome:
 		fm.internalScrollHome()
 	case CommandFindMatch:
-		fm.internalFindNextMatch(command.direction)
+		err = fm.internalFindNextMatch(command.direction)
 	case CommandAddFilter:
 		fm.internalAddFilter(command.Filter)
 	case CommandRemoveFilter:
-		fm.internalRemoveFilter(command.Filter)
+		err = fm.internalRemoveFilter(command.Filter)
 	case CommandSetDisplayHeight:
 		fm.display.SetHeight(command.Lines)
 	case CommandSetCurrentLine:
 		fm.internalSetCurrentLine(command.Line)
 	case CommandFilterColorIndexUpdate:
 		command.Filter.setColorIndex(command.ColorIndex)
-		fm.display.CurrentMatch = -1
+		fm.display.UnsetCurrentMatch()
 	case CommandFilterModeUpdate:
 		command.Filter.setMode(command.Mode)
-		fm.display.CurrentMatch = -1
+		fm.display.UnsetCurrentMatch()
 	case CommandFilterCaseSensitiveUpdate:
-		command.Filter.setCaseSensitive(command.CaseSensitive)
-		fm.display.CurrentMatch = -1
+		err = command.Filter.setCaseSensitive(command.CaseSensitive)
+		fm.display.UnsetCurrentMatch()
 	case CommandFilterKeyUpdate:
-		command.Filter.setKey(command.Key)
-		fm.display.CurrentMatch = -1
+		err = command.Filter.setKey(command.Key)
+		fm.display.UnsetCurrentMatch()
 	case CommandToggleFollowMode:
 		fm.internalToggleFollowMode()
 	default:
@@ -311,23 +322,29 @@ func (fm *FilterManager) processCommand(command Command) {
 	if refreshScreenBuffer {
 		fm.refreshDisplay()
 	}
+	if err == util.ErrOutOfBounds || err == util.ErrNotFound ||
+		err == ErrNotEnoughPanels {
+
+		config.GetConfiguration().PostEventFunc(NewEventError(true, ""))
+	} else if err != nil {
+		log.Panicf("Unknwon error %v+", err)
+	}
 }
 
 // ----------------------------------
 
 // will return the line it scrolled to
-func (fm *FilterManager) internalScrollDownLineBuffer() (Line, error) {
+func (fm *FilterManager) internalScrollDownLineBuffer() error {
 	var nextLine Line
 	var err error
 
 	if fm.display.Height() <= 0 {
-		// TODO: better error handling
-		return Line{}, util.ErrOutOfBounds
+		return util.ErrOutOfBounds
 	}
 
 	lastLineOnScreen := fm.display.Buffer[fm.display.Height()-1]
 	if lastLineOnScreen.Status == LineDoesNotExist {
-		return Line{}, util.ErrOutOfBounds
+		return util.ErrOutOfBounds
 	}
 
 	lineNo := lastLineOnScreen.No + 1
@@ -335,8 +352,7 @@ func (fm *FilterManager) internalScrollDownLineBuffer() (Line, error) {
 	for ; ; lineNo++ {
 		nextLine, err = fm.GetLine(lineNo)
 		if err != nil {
-			log.Printf("fm.ScrollDown error %+v", err)
-			return Line{}, util.ErrOutOfBounds
+			return util.ErrOutOfBounds
 		} else if nextLine.Status == LineWithoutStatus ||
 			nextLine.Status == LineMatched || nextLine.Status == LineDimmed {
 
@@ -352,7 +368,19 @@ func (fm *FilterManager) internalScrollDownLineBuffer() (Line, error) {
 
 	fm.currentLine = fm.display.Buffer[0].No
 
-	return nextLine, nil
+	return nil
+}
+
+func (fm *FilterManager) internalScrollHorizontal(offset int) error {
+	width, _ := fm.size()
+
+	newCol, err := util.InBetween(fm.display.CurrentCol+offset, 0, width)
+	if err != nil {
+		return util.ErrOutOfBounds
+	}
+
+	fm.display.SetCurrentCol(newCol)
+	return nil
 }
 
 func (fm *FilterManager) alreadyAtTheEnd() bool {
@@ -383,15 +411,19 @@ func (fm *FilterManager) alreadyAtTheEnd() bool {
 }
 
 // will return the line it scrolled to
-func (fm *FilterManager) internalScrollUpLineBuffer() (Line, error) {
+func (fm *FilterManager) internalScrollUpLineBuffer() error {
 	var prevLine Line
+	var err error
 
 	lineNo := fm.display.Buffer[0].No - 1
 
+	if lineNo < 0 {
+		return util.ErrOutOfBounds
+	}
+
 	for ; lineNo >= 0; lineNo-- {
-		// todo error handling
-		prevLine, _ = fm.GetLine(lineNo)
-		if prevLine.Status == LineWithoutStatus ||
+		prevLine, err = fm.GetLine(lineNo)
+		if err != nil || prevLine.Status == LineWithoutStatus ||
 			prevLine.Status == LineMatched || prevLine.Status == LineDimmed {
 
 			// matching line found
@@ -401,10 +433,11 @@ func (fm *FilterManager) internalScrollUpLineBuffer() (Line, error) {
 
 	// Could have also checked for err, not sure
 	// what's more elegant...
-	if lineNo < 0 {
-		log.Println("fm.ScrollUp ErrOutOfBounds")
-		return Line{}, util.ErrOutOfBounds
-	}
+	// Kept here just in case the change broke something
+	// if lineNo < 0 {
+	// 	log.Println("fm.ScrollUp ErrOutOfBounds")
+	// 	return util.ErrOutOfBounds
+	// }
 
 	if fm.display.Height() > 0 {
 		fm.display.Buffer = append([]Line{prevLine}, fm.display.Buffer[:fm.display.Height()-1]...)
@@ -414,31 +447,33 @@ func (fm *FilterManager) internalScrollUpLineBuffer() (Line, error) {
 
 	fm.currentLine = fm.display.Buffer[0].No
 
-	return prevLine, nil
+	return nil
 }
 
-func (fm *FilterManager) internalPageDownLineBuffer() {
+func (fm *FilterManager) internalPageDownLineBuffer() error {
 	for i := 0; i < fm.display.Height()-1; i++ {
-		_, err := fm.internalScrollDownLineBuffer()
+		err := fm.internalScrollDownLineBuffer()
 		if err != nil {
-			break
+			return err
 		}
 	}
+	return nil
 }
 
-func (fm *FilterManager) internalPageUpLineBuffer() {
+func (fm *FilterManager) internalPageUpLineBuffer() error {
 	for i := 0; i < fm.display.Height()-1; i++ {
-		_, err := fm.internalScrollUpLineBuffer()
+		err := fm.internalScrollUpLineBuffer()
 		if err != nil {
-			break
+			return err
 		}
 	}
+	return nil
 }
 
 func (fm *FilterManager) internalScrollEnd() {
 	// start with what might be the first line, add 1 to make the following
 	// for loop nicer
-	firstTry := fm.length() - len(fm.display.Buffer) + 1
+	firstTry := fm.sourceLength() - len(fm.display.Buffer) + 1
 
 	// this should be enough initialization to make internalScrollUpLinBuffer()
 	// work
@@ -448,7 +483,7 @@ func (fm *FilterManager) internalScrollEnd() {
 
 	// scroll until the last line of the screen is non-empty or we're at line 0
 	for {
-		_, err := fm.internalScrollUpLineBuffer()
+		err := fm.internalScrollUpLineBuffer()
 		lastLine := fm.display.Buffer[len(fm.display.Buffer)-1]
 
 		if err != nil || lastLine.Status == LineWithoutStatus ||
@@ -459,17 +494,8 @@ func (fm *FilterManager) internalScrollEnd() {
 	}
 }
 
-// func (fm *FilterManager) internalScrollEnd() {
-// 	for {
-// 		_, err := fm.internalScrollDownLineBuffer()
-// 		if err != nil {
-// 			break
-// 		}
-// 	}
-// }
-
 func (fm *FilterManager) internalScrollHome() {
-	fm.SetCurrentLine(0)
+	fm.internalSetCurrentLine(0)
 }
 
 func (fm *FilterManager) internalAddFilter(f Filter) {
@@ -487,8 +513,10 @@ func (fm *FilterManager) internalAddFilter(f Filter) {
 }
 
 func (fm *FilterManager) internalRemoveFilter(f Filter) error {
+	fm.Lock()
+	defer fm.Unlock()
 	if len(fm.filters) <= 2 {
-		return fmt.Errorf("at least one buffer and one filter required")
+		return ErrNotEnoughPanels
 	}
 	for i, filter := range fm.filters {
 		if filter == f {
@@ -541,7 +569,7 @@ func (fm *FilterManager) refreshDisplay() {
 	config.GetConfiguration().PostEventFunc(NewEventDisplay(*fm.display))
 }
 
-func (fm *FilterManager) internalFindNextMatch(direction int) {
+func (fm *FilterManager) internalFindNextMatch(direction int) error {
 	if direction != 1 && direction != -1 {
 		log.Panicf("Unknown direction %d", direction)
 	}
@@ -557,7 +585,9 @@ func (fm *FilterManager) internalFindNextMatch(direction int) {
 		found, err = fm.searchOnScreen(screenLine+direction, direction)
 		if err == nil {
 			fm.display.CurrentMatch = found.No
-			return
+			return nil
+		} else if err != util.ErrNotFound {
+			log.Panicf("Unkown error %v+", err)
 		}
 	} else if len(fm.display.Buffer) > 0 {
 		// no match on screen found, start searching through the filters either
@@ -565,12 +595,11 @@ func (fm *FilterManager) internalFindNextMatch(direction int) {
 		// how is this happening?!) start with the beginning of the file
 		startSearchWith = fm.display.Buffer[0].No
 	}
-	startSearchWith, _ = util.InBetween(startSearchWith+direction, 0, fm.length()-1)
+	startSearchWith, _ = util.InBetween(startSearchWith+direction, 0, fm.sourceLength()-1)
 
 	found, err = fm.search(startSearchWith, direction)
 	if err != nil {
-		// TODO error handling
-		return
+		return err
 	}
 
 	fm.display.CurrentMatch = found.No
@@ -585,6 +614,8 @@ func (fm *FilterManager) internalFindNextMatch(direction int) {
 		firstLine, _ := fm.arrangeLine(found.No, percentage)
 		fm.internalSetCurrentLine(firstLine)
 	}
+
+	return nil
 }
 
 func (fm *FilterManager) getLineOnScreen(lineNo int) (int, error) {
@@ -613,7 +644,7 @@ func (fm *FilterManager) isLineOnScreen(lineNo int) bool {
 	return false
 }
 func (fm *FilterManager) search(start int, direction int) (*Line, error) {
-	length := fm.length()
+	length := fm.sourceLength()
 
 	for i := start; ; i = i + direction {
 		BusySpin()
@@ -670,7 +701,7 @@ func (fm *FilterManager) internalToggleFollowMode() {
 }
 
 func (fm *FilterManager) percentage() (int, error) {
-	length := fm.length()
+	length := fm.sourceLength()
 	if length <= 0 || fm.currentLine < 0 || fm.currentLine > length {
 		return -1, util.ErrOutOfBounds
 	}
@@ -707,7 +738,7 @@ func (fm *FilterManager) findNonHiddenLine(lineNo int, direction int) (int, erro
 		log.Panicf("Unknown direction %d", direction)
 	}
 
-	length := fm.length()
+	length := fm.sourceLength()
 
 	for lineNo = lineNo + direction; lineNo >= 0 && lineNo < length; lineNo = lineNo + direction {
 		BusySpin()

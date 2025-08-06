@@ -15,7 +15,6 @@ type View struct {
 	ComponentImpl
 
 	viewWidth, viewHeight int
-	curX, curY            int
 	CurrentDisplay        *model.Display
 }
 
@@ -47,10 +46,6 @@ func (v *View) Render(display *model.Display, updateScreen bool) {
 		return
 	}
 
-	// If what the View thinks is the first line displayed on screen vs.
-	// what's in the buffer, adjust curY
-	v.curY = util.IntMax(v.CurrentDisplay.Buffer[0].No, 0)
-
 	// Guard clause above should catch this, but still: Make sure we don't
 	// render beyond v.viewHeight!
 	for y := 0; y < len(v.CurrentDisplay.Buffer) && y < v.viewHeight; y++ {
@@ -76,13 +71,13 @@ func (v *View) renderLine(line model.Line, y int) {
 	for x := start; x < v.viewWidth; x++ {
 		var r rune = ' '
 		style := lineStyle
-		var lineXPos = v.curX + x - start
+		var lineXPos = v.CurrentDisplay.CurrentCol + x - start
 
-		if v.curX+x < len(str)+start {
+		if v.CurrentDisplay.CurrentCol+x < len(str)+start {
 			r = rune(str[lineXPos])
 
 			// in case we're on the last screen column, render an inverse '>'
-			if x == v.viewWidth-1 && v.curX+x+1 < len(str) {
+			if x == v.viewWidth-1 && v.CurrentDisplay.CurrentCol+x+1 < len(str) {
 				r = '>'
 				style = style.Reverse(true)
 			} else if line.ColorIndex[lineXPos] > 0 {
@@ -152,10 +147,6 @@ func (v *View) determineLineNumberStyle(line model.Line, matched bool) tcell.Sty
 	}
 }
 
-func (v *View) GetCursor() (x, y int) {
-	return v.curX, v.curY
-}
-
 func (v *View) Resize(x, y, width, height int) {
 	// x, y ignored for now
 	v.viewWidth = width
@@ -170,10 +161,11 @@ func (v *View) HandleEvent(ev tcell.Event) bool {
 		log.Printf("DisplayEvent. totalLength: %d, percentage: %d", ev.Display.TotalLength, ev.Display.Percentage)
 		v.Render(&ev.Display, true)
 		return false
-	// completely handled in FileManager - no need to do something elaborate here
-	// case *model.EventFileChanged:
-	// 	log.Printf("EventFileChanged %d", ev.Length())
-	// 	return false
+	case *model.EventError:
+		if ev.Beep {
+			screen.Beep()
+			return true
+		}
 	case *tcell.EventKey:
 		switch ev.Key() {
 		case tcell.KeyRune:
@@ -191,10 +183,10 @@ func (v *View) HandleEvent(ev tcell.Event) bool {
 				model.GetFilterManager().ScrollUp()
 				return true
 			case 'h':
-				v.scrollHorizontal(-1)
+				model.GetFilterManager().ScrollHorizontal(-1)
 				return true
 			case 'l':
-				v.scrollHorizontal(1)
+				model.GetFilterManager().ScrollHorizontal(1)
 				return true
 			case ' ', 'f':
 				model.GetFilterManager().PageDown()
@@ -216,10 +208,10 @@ func (v *View) HandleEvent(ev tcell.Event) bool {
 			model.GetFilterManager().ScrollUp()
 			return true
 		case tcell.KeyRight:
-			v.scrollHorizontal(1)
+			model.GetFilterManager().ScrollHorizontal(1)
 			return true
 		case tcell.KeyLeft:
-			v.scrollHorizontal(-1)
+			model.GetFilterManager().ScrollHorizontal(-1)
 			return true
 		case tcell.KeyCtrlF, tcell.KeyPgDn:
 			model.GetFilterManager().PageDown()
@@ -247,31 +239,13 @@ func (v *View) HandleEvent(ev tcell.Event) bool {
 			model.GetFilterManager().ScrollDown()
 			return true
 		} else if buttons&tcell.WheelLeft != 0 {
-			v.scrollHorizontal(-1)
+			model.GetFilterManager().ScrollHorizontal(-1)
 			return true
 		} else if buttons&tcell.WheelRight != 0 {
-			v.scrollHorizontal(1)
+			model.GetFilterManager().ScrollHorizontal(1)
 			return true
 		}
 	}
 
 	return false
-}
-
-func (v *View) scrollHorizontal(offset int) {
-	// width, _, err := model.GetFilterManager().Size()
-	// if err != nil {
-	// 	// TODO: rather fail than beep?
-	// 	screen.Beep()
-	// 	return
-	// }
-
-	// newX, err := util.InBetween(v.curX+offset, 0, width)
-	// if err != nil {
-	// 	screen.Beep()
-	// 	return
-	// }
-
-	// v.curX = newX
-	// v.Render(true)
 }

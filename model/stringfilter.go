@@ -29,8 +29,6 @@ type StringFilter struct {
 
 type StringFilterFuncFactory func(key string, caseSensitive bool) (func(input string) (string, [][]int, bool), error)
 
-// TODO: include error handling?
-
 func DefaultStringFilterFuncFactory(key string, caseSensitive bool) (func(input string) (string, [][]int, bool), error) {
 	if !caseSensitive {
 		key = strings.ToLower(key)

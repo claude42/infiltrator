@@ -14,11 +14,8 @@ type Display struct {
 	// filters' output. Latter option obviously will be very expensive.
 	Percentage int
 
-	// indicates whether an error has occured that should be indicated with a
-	// beep
-	Beep bool
-
-	ErrorMessage string
+	// current column to dispaly in the first screen column
+	CurrentCol int
 
 	// the following parameters reference the source (or lines in the source) -
 	// NOT the screen buffer
@@ -42,4 +39,12 @@ func (d *Display) SetHeight(height int) {
 
 func (d *Display) SetTotalLength(length int) {
 	d.TotalLength = length
+}
+
+func (d *Display) UnsetCurrentMatch() {
+	d.CurrentMatch = -1
+}
+
+func (d *Display) SetCurrentCol(newCurrentCol int) {
+	d.CurrentCol = newCurrentCol
 }

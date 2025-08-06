@@ -43,8 +43,6 @@ Threads
 
 
 TODO
-* Follow! (includes EventFileUpdate or so)
-* Read from stdin
 * Beep
 * Display wrong Regex
 * Error Messages
