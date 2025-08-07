@@ -115,21 +115,19 @@ func (s *StringFilter) setMode(mode FilterMode) {
 
 // ErrLineDidNotMatch errors are handled within GetLine() and will not
 // buble up.
-func (s *StringFilter) getLine(line int) (Line, error) {
+func (s *StringFilter) getLine(line int) (*Line, error) {
 	sourceLine, err := s.source.getLine(line)
 	if err != nil {
 		return sourceLine, err
 	}
 
-	if s.filterFunc == nil {
-		// For now just return the sourceLine, don't touch its status
-		// We'll determine later if this is the right thing to do
+	if s.filterFunc == nil || s.key == "" {
 		return sourceLine, nil
 	}
 
 	_, indeces, matched := s.filterFunc(sourceLine.Str)
 
-	s.updateStatusAndMatched(matched, indeces, &sourceLine)
+	s.updateStatusAndMatched(matched, indeces, sourceLine)
 
 	if !matched {
 		// no further coloring necessary, bail out here
@@ -201,7 +199,7 @@ func (s *StringFilter) updateStatusAndMatched(matched bool, indeces [][]int, sou
 	sourceLine.Matched = newMatched
 }
 
-func (s *StringFilter) colorizeLine(line Line, indeces [][]int) {
+func (s *StringFilter) colorizeLine(line *Line, indeces [][]int) {
 	for _, index := range indeces {
 		for i := index[0]; i < index[1]; i++ {
 			line.ColorIndex[i] = s.colorIndex

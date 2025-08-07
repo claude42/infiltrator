@@ -7,7 +7,7 @@ import (
 )
 
 type Source struct {
-	lines []Line
+	lines []*Line
 	width int
 }
 
@@ -17,9 +17,9 @@ func (s *Source) calculateNewWidthFrom(start int) {
 	}
 }
 
-func (s *Source) storeNewLines(newLines *[]Line) int {
+func (s *Source) storeNewLines(newLines []*Line) int {
 	start := len(s.lines)
-	s.lines = append(s.lines, *newLines...)
+	s.lines = append(s.lines, newLines...)
 	s.calculateNewWidthFrom(start)
 	return len(s.lines)
 }
@@ -32,11 +32,11 @@ func (s *Source) length() int {
 	return len(s.lines)
 }
 
-func (s *Source) getLine(line int) (Line, error) {
+func (s *Source) getLine(line int) (*Line, error) {
 	length := len(s.lines)
 
 	if line < 0 || line >= length {
-		return Line{Str: "ErrOutOfBounds"}, util.ErrOutOfBounds
+		return &Line{Str: "ErrOutOfBounds"}, util.ErrOutOfBounds
 	}
 
 	s.lines[line].CleanUp()
@@ -70,6 +70,6 @@ func (s *Source) isEmpty() bool {
 	return len(s.lines) == 0
 }
 
-func (s *Source) LastLine() Line {
+func (s *Source) LastLine() *Line {
 	return s.lines[len(s.lines)-1]
 }

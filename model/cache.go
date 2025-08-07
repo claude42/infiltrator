@@ -3,18 +3,18 @@ package model
 import "log"
 
 type Cache struct {
-	lines  map[int]Line
+	lines  map[int]*Line
 	source Filter
 }
 
 func NewCache() *Cache {
 	c := &Cache{}
-	c.lines = make(map[int]Line)
+	c.lines = make(map[int]*Line)
 
 	return c
 }
 
-func (c *Cache) getLine(lineNo int) (Line, error) {
+func (c *Cache) getLine(lineNo int) (*Line, error) {
 	line, ok := c.lines[lineNo]
 	if ok {
 		return line, nil
@@ -32,7 +32,7 @@ func (c *Cache) getLine(lineNo int) (Line, error) {
 
 func (c *Cache) Invalidate() {
 	c.lines = nil
-	c.lines = make(map[int]Line)
+	c.lines = make(map[int]*Line)
 }
 
 func (c *Cache) setSource(source Filter) {

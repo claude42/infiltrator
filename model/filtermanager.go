@@ -24,7 +24,7 @@ type FilterManager struct {
 	readerContext context.Context
 	readerCancel  context.CancelFunc
 
-	contentUpdate  chan []Line
+	contentUpdate  chan []*Line
 	commandChannel chan Command
 
 	filters     []Filter
@@ -44,7 +44,7 @@ func createNewFilterManager() *FilterManager {
 	fm := &FilterManager{}
 	fm.display = &Display{}
 	fm.display.UnsetCurrentMatch()
-	fm.contentUpdate = make(chan []Line, 10)
+	fm.contentUpdate = make(chan []*Line, 10)
 	fm.commandChannel = make(chan Command, 10)
 
 	fm.internalAddFilter(&Source{})
@@ -125,10 +125,10 @@ func (fm *FilterManager) sourceLength() int {
 }
 
 // TODO: make private
-func (fm *FilterManager) GetLine(line int) (Line, error) {
+func (fm *FilterManager) GetLine(line int) (*Line, error) {
 	filter, err := fm.outputFilter()
 	if err != nil {
-		return Line{}, err
+		return &Line{}, err
 	}
 
 	BusySpin()
@@ -162,7 +162,7 @@ func (fm *FilterManager) EventLoop() {
 	}
 }
 
-func (fm *FilterManager) processContentUpdate(newLines []Line) {
+func (fm *FilterManager) processContentUpdate(newLines []*Line) {
 
 	// If we're in Follow mode we'll automatically jump to the new end of the
 	// file - but only in case we're already at the end
@@ -171,7 +171,7 @@ func (fm *FilterManager) processContentUpdate(newLines []Line) {
 		goToEnd = true
 	}
 
-	length := fm.Source().storeNewLines(&newLines)
+	length := fm.Source().storeNewLines(newLines)
 	fm.display.SetTotalLength(length)
 
 	// refresh display as necessary
@@ -340,7 +340,7 @@ func (fm *FilterManager) processCommand(command Command) {
 
 // will return the line it scrolled to
 func (fm *FilterManager) internalScrollDownLineBuffer() error {
-	var nextLine Line
+	var nextLine *Line
 	var err error
 
 	if fm.display.Height() <= 0 {
@@ -368,7 +368,7 @@ func (fm *FilterManager) internalScrollDownLineBuffer() error {
 	if fm.display.Height() > 0 {
 		fm.display.Buffer = append(fm.display.Buffer[1:], nextLine)
 	} else {
-		fm.display.Buffer = []Line{nextLine}
+		fm.display.Buffer = []*Line{nextLine}
 	}
 
 	fm.currentLine = fm.display.Buffer[0].No
@@ -417,7 +417,7 @@ func (fm *FilterManager) alreadyAtTheEnd() bool {
 
 // will return the line it scrolled to
 func (fm *FilterManager) internalScrollUpLineBuffer() error {
-	var prevLine Line
+	var prevLine *Line
 	var err error
 
 	lineNo := fm.display.Buffer[0].No - 1
@@ -445,9 +445,9 @@ func (fm *FilterManager) internalScrollUpLineBuffer() error {
 	// }
 
 	if fm.display.Height() > 0 {
-		fm.display.Buffer = append([]Line{prevLine}, fm.display.Buffer[:fm.display.Height()-1]...)
+		fm.display.Buffer = append([]*Line{prevLine}, fm.display.Buffer[:fm.display.Height()-1]...)
 	} else {
-		fm.display.Buffer = []Line{prevLine}
+		fm.display.Buffer = []*Line{prevLine}
 	}
 
 	fm.currentLine = fm.display.Buffer[0].No
@@ -588,7 +588,7 @@ func (fm *FilterManager) refreshDisplay() {
 	}
 
 	for ; y < displayHeight; y++ {
-		fm.display.Buffer[y] = Line{-1, LineDoesNotExist, false, "", []uint8{}}
+		fm.display.Buffer[y] = &Line{-1, LineDoesNotExist, false, "", []uint8{}}
 	}
 
 	fm.display.Percentage, _ = fm.percentage()
@@ -626,6 +626,8 @@ func (fm *FilterManager) internalFindNextMatch(direction int) error {
 
 	found, err = fm.search(startSearchWith, direction)
 	if err != nil {
+		// necessary?
+		// fm.display.UnsetCurrentMatch()
 		return err
 	}
 
@@ -679,7 +681,7 @@ func (fm *FilterManager) search(start int, direction int) (*Line, error) {
 		if err != nil || i < 0 || i >= length {
 			return nil, util.ErrNotFound
 		} else if newLine.Matched {
-			return &newLine, nil
+			return newLine, nil
 		}
 	}
 }
@@ -689,7 +691,7 @@ func (fm *FilterManager) searchOnScreen(startOnScreen int, direction int) (*Line
 
 	for i := startOnScreen; i >= 0 && i < height; i = i + direction {
 		if fm.display.Buffer[i].Matched {
-			return &fm.display.Buffer[i], nil
+			return fm.display.Buffer[i], nil
 		}
 	}
 

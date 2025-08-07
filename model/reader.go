@@ -29,13 +29,12 @@ func GetReader() *Reader {
 }
 
 func (r *Reader) ReadFromFile(filePath string, context context.Context,
-	ch chan<- []Line, follow bool) {
+	ch chan<- []*Line, follow bool) {
 
 	defer config.GetConfiguration().WaitGroup.Done()
 
 	quit := config.GetConfiguration().Quit
 
-	log.Println("ReadFromFile()")
 	file, err := os.Open(filePath)
 	if err != nil {
 		quit <- err.Error()
@@ -52,18 +51,16 @@ func (r *Reader) ReadFromFile(filePath string, context context.Context,
 	}
 
 	if !follow {
-		log.Println("ReadFromFile ended")
 		return
 	}
 
 	if config.GetConfiguration().FollowFile {
 		r.startWatching(filePath, file, context, ch, lineNo)
 	}
-	log.Println("ReadFromFile watching ended")
 }
 
 func (r *Reader) ReopenForWatching(filePath string, context context.Context,
-	ch chan<- []Line, lineNo int) {
+	ch chan<- []*Line, lineNo int) {
 
 	log.Println("ReopenForWatching")
 
@@ -87,7 +84,7 @@ func (r *Reader) ReopenForWatching(filePath string, context context.Context,
 }
 
 func (r *Reader) startWatching(filePath string, file *os.File,
-	context context.Context, ch chan<- []Line, lineNo int) {
+	context context.Context, ch chan<- []*Line, lineNo int) {
 
 	log.Println("Start watching")
 	watcher, err := r.initWatcher(filePath)
@@ -104,7 +101,7 @@ func (r *Reader) startWatching(filePath string, file *os.File,
 	}
 }
 
-func (r *Reader) ReadFromStdin(ch chan<- []Line) {
+func (r *Reader) ReadFromStdin(ch chan<- []*Line) {
 	quit := config.GetConfiguration().Quit
 
 	yes, err := r.canUseStdin()
@@ -123,7 +120,7 @@ func (r *Reader) ReadFromStdin(ch chan<- []Line) {
 	for scanner.Scan() {
 		text := scanner.Text()
 		BusySpin()
-		ch <- []Line{{lineNo, LineWithoutStatus, false, text, make([]uint8, len(text))}}
+		ch <- []*Line{{lineNo, LineWithoutStatus, false, text, make([]uint8, len(text))}}
 		lineNo++
 	}
 	if err := scanner.Err(); err != nil {
@@ -145,7 +142,7 @@ func (r *Reader) canUseStdin() (bool, error) {
 }
 
 func (r *Reader) keepWatching(watcher *fsnotify.Watcher, file *os.File,
-	context context.Context, ch chan<- []Line, lineNo int) error {
+	context context.Context, ch chan<- []*Line, lineNo int) error {
 	var err error
 	for {
 		select {
@@ -190,15 +187,15 @@ func (r *Reader) initWatcher(filePath string) (*fsnotify.Watcher, error) {
 	return watcher, nil
 }
 
-func (r *Reader) readNewLines(file *os.File, ch chan<- []Line, lineNo int) (int, error) {
-	var newLines []Line
+func (r *Reader) readNewLines(file *os.File, ch chan<- []*Line, lineNo int) (int, error) {
+	var newLines []*Line
 
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
 		text := scanner.Text()
 		BusySpin()
 		newLines = append(newLines,
-			Line{lineNo, LineWithoutStatus, false, text, make([]uint8, len(text))})
+			&Line{lineNo, LineWithoutStatus, false, text, make([]uint8, len(text))})
 		lineNo++
 	}
 

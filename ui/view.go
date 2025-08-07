@@ -57,7 +57,7 @@ func (v *View) Render(display *model.Display, updateScreen bool) {
 	}
 }
 
-func (v *View) renderLine(line model.Line, y int) {
+func (v *View) renderLine(line *model.Line, y int) {
 	str := line.Str
 	var start = 0
 	matched := line.No == v.CurrentDisplay.CurrentMatch
@@ -95,7 +95,7 @@ func (v *View) renderLine(line model.Line, y int) {
 	}
 }
 
-func (v *View) determineStyle(line model.Line, matched bool) tcell.Style {
+func (v *View) determineStyle(line *model.Line, matched bool) tcell.Style {
 	if matched {
 		return CurrentMatchStyle
 	} else {
@@ -113,7 +113,7 @@ func (v *View) determineStyle(line model.Line, matched bool) tcell.Style {
 	}
 }
 
-func (v *View) renderLineNumber(line model.Line, y int, matched bool) int {
+func (v *View) renderLineNumber(line *model.Line, y int, matched bool) int {
 	if line.No < 0 {
 		return 0 // TODO: 0 ok?
 	}
@@ -129,7 +129,7 @@ func (v *View) renderLineNumber(line model.Line, y int, matched bool) int {
 	return x
 }
 
-func (v *View) determineLineNumberStyle(line model.Line, matched bool) tcell.Style {
+func (v *View) determineLineNumberStyle(line *model.Line, matched bool) tcell.Style {
 	if matched {
 		return ViewCurrentMatchLineNumberStyle
 	} else {

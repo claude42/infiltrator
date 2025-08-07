@@ -7,7 +7,7 @@ type Display struct {
 	// happen that its size is out of sync with the actual screen size then
 	// its data should be ignored until there's an updated version with the
 	// correct dimensions
-	Buffer []Line
+	Buffer []*Line
 
 	// at what percentage of the whole buffer are we currently
 	// TODO: decide: display percentag in relation to whole file or to the
@@ -33,7 +33,7 @@ func (d *Display) SetHeight(height int) {
 	if height < currentHeight {
 		d.Buffer = d.Buffer[:height]
 	} else if height > currentHeight {
-		d.Buffer = append(d.Buffer, make([]Line, height-currentHeight)...)
+		d.Buffer = append(d.Buffer, make([]*Line, height-currentHeight)...)
 	}
 }
 

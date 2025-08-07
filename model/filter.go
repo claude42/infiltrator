@@ -1,7 +1,7 @@
 package model
 
 type Filter interface {
-	getLine(line int) (Line, error)
+	getLine(line int) (*Line, error)
 	setSource(source Filter)
 	size() (int, int)
 	length() int
