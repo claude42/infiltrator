@@ -48,10 +48,6 @@ func (s *Source) setSource(source Filter) {
 	log.Panicln("SetSource() should never be called on a source!")
 }
 
-func (s *Source) SetFilterFunc(fn func(input string, key string) (string, error)) {
-	log.Panicln("SetFilterFunc() should never be called on a source!")
-}
-
 func (s *Source) setKey(key string) error {
 	log.Panicln("SetKey() should never be called on a source!")
 	return nil

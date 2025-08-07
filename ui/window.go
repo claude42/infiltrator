@@ -316,8 +316,9 @@ func (w *Window) AddPanel(newPanel Panel) error {
 
 	// resize() doesn't sound right here but will actually recalculate where
 	// the panels should be placed and how big they are.
-	w.resize()
-	w.Render()
+	// Is this really necessary?
+	// w.resize()
+	// w.Render()
 	return nil
 }
 

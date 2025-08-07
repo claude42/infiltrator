@@ -1,10 +1,13 @@
 package model
 
 import (
+	"errors"
 	"fmt"
 	"regexp"
 	// "github.com/claude42/infiltrator/util"
 )
+
+var ErrRegex = errors.New("invalid regex")
 
 func RegexFilterFuncFactory(key string, caseSensitive bool) (func(input string) (string, [][]int, bool), error) {
 	// don't use regex if we don't have to
@@ -19,7 +22,7 @@ func RegexFilterFuncFactory(key string, caseSensitive bool) (func(input string) 
 
 	re, err := regexp.Compile(key)
 	if err != nil {
-		return nil, err
+		return nil, ErrRegex
 	}
 
 	return func(input string) (string, [][]int, bool) {

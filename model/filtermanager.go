@@ -48,6 +48,7 @@ func createNewFilterManager() *FilterManager {
 	fm.commandChannel = make(chan Command, 10)
 
 	fm.internalAddFilter(&Source{})
+	fm.internalAddFilter(NewCache())
 	return fm
 }
 
@@ -152,7 +153,7 @@ func (fm *FilterManager) EventLoop() {
 			// log.Printf("Received contentupdate")
 			fm.processContentUpdate(newLines)
 		case command := <-fm.commandChannel:
-			log.Printf("Received command %s", command.commandString())
+			log.Printf("Receuived Command: %T", command)
 			fm.processCommand(command)
 		case <-cfg.Context.Done():
 			log.Println("Received shutdown")
@@ -303,15 +304,19 @@ func (fm *FilterManager) processCommand(command Command) {
 		fm.internalSetCurrentLine(command.Line)
 	case CommandFilterColorIndexUpdate:
 		command.Filter.setColorIndex(command.ColorIndex)
+		fm.invalidateCaches()
 		fm.display.UnsetCurrentMatch()
 	case CommandFilterModeUpdate:
 		command.Filter.setMode(command.Mode)
+		fm.invalidateCaches()
 		fm.display.UnsetCurrentMatch()
 	case CommandFilterCaseSensitiveUpdate:
 		err = command.Filter.setCaseSensitive(command.CaseSensitive)
+		fm.invalidateCaches()
 		fm.display.UnsetCurrentMatch()
 	case CommandFilterKeyUpdate:
 		err = command.Filter.setKey(command.Key)
+		fm.invalidateCaches()
 		fm.display.UnsetCurrentMatch()
 	case CommandToggleFollowMode:
 		fm.internalToggleFollowMode()
@@ -323,7 +328,7 @@ func (fm *FilterManager) processCommand(command Command) {
 		fm.refreshDisplay()
 	}
 	if err == util.ErrOutOfBounds || err == util.ErrNotFound ||
-		err == ErrNotEnoughPanels {
+		err == ErrNotEnoughPanels || err == ErrRegex {
 
 		config.GetConfiguration().PostEventFunc(NewEventError(true, ""))
 	} else if err != nil {
@@ -499,17 +504,39 @@ func (fm *FilterManager) internalScrollHome() {
 }
 
 func (fm *FilterManager) internalAddFilter(f Filter) {
-	var last Filter
-
 	fm.Lock()
 	defer fm.Unlock()
-	if len(fm.filters) > 0 {
-		// remove pipeline itself as the event handler of previous
-		// filter, instead add new filter as event handler
-		last = fm.filters[len(fm.filters)-1]
-		f.setSource(last)
+
+	if len(fm.filters) == 0 {
+		fm.filters = append(fm.filters, f)
+		return
 	}
-	fm.filters = append(fm.filters, f)
+
+	var pos int
+	for pos = len(fm.filters) - 1; pos > 0; pos-- {
+		existingFilter := fm.filters[pos]
+		if _, ok := existingFilter.(*Cache); ok {
+			continue
+		} else if _, ok := existingFilter.(*Source); ok {
+			log.Panic("really?!?")
+		} else {
+			break
+		}
+	}
+
+	// if the whole for loop went through then pos should be 0 now. So new
+	// filter will be added add pos 1, right after the source.
+
+	f.setSource(fm.filters[pos])
+	if pos < len(fm.filters)-1 {
+		fm.filters[pos+1].setSource(f)
+		f.setSource(fm.filters[pos])
+		// insert right after fm.filters[pos]
+		fm.filters = append(fm.filters[:pos+2], fm.filters[pos+1:]...)
+		fm.filters[pos+1] = f
+	} else {
+		fm.filters = append(fm.filters, f)
+	}
 }
 
 func (fm *FilterManager) internalRemoveFilter(f Filter) error {
@@ -753,4 +780,13 @@ func (fm *FilterManager) findNonHiddenLine(lineNo int, direction int) (int, erro
 	}
 
 	return -1, util.ErrOutOfBounds
+}
+
+func (fm *FilterManager) invalidateCaches() {
+	for _, filter := range fm.filters {
+		cache, ok := filter.(*Cache)
+		if ok {
+			cache.Invalidate()
+		}
+	}
 }
