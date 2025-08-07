@@ -9,9 +9,10 @@ import (
 )
 
 var (
-	once        sync.Once
-	busyCounter int
-	busyState   atomic.Int32
+	once           sync.Once
+	busyCounter    int
+	busyState      atomic.Int32
+	busyPercentage atomic.Int32
 )
 
 type BusyState int
@@ -22,7 +23,7 @@ const (
 	BusyIdle
 )
 
-func BusySpin() {
+func BusySpinPercentage(percentage int) {
 	once.Do(func() {
 		go updateBusySpinner()
 	})
@@ -35,6 +36,11 @@ func BusySpin() {
 
 	busyCounter = 0
 	busyState.Store(Busy)
+	busyPercentage.Store(int32(percentage))
+}
+
+func BusySpin() {
+	BusySpinPercentage(-1)
 }
 
 func updateBusySpinner() {
@@ -45,11 +51,11 @@ func updateBusySpinner() {
 		case <-ticker.C:
 			switch busyState.Load() {
 			case Busy:
-				cfg.PostEventFunc(NewEventBusySpinnerUpdate(Busy))
+				cfg.PostEventFunc(NewEventBusySpinnerUpdate(Busy, int(busyPercentage.Load())))
 				busyState.Store(BusyIdle)
 			case BusyIdle:
 				busyState.Store(Idle)
-				cfg.PostEventFunc(NewEventBusySpinnerUpdate(Idle))
+				cfg.PostEventFunc(NewEventBusySpinnerUpdate(Idle, -1))
 			case Idle:
 				// nothing
 			}

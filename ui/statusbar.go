@@ -2,12 +2,14 @@ package ui
 
 import (
 	"fmt"
+	"log"
 	"sync"
 
 	// "log"
 
 	"github.com/claude42/infiltrator/config"
 	"github.com/claude42/infiltrator/model"
+	"github.com/claude42/infiltrator/util"
 
 	// "github.com/claude42/infiltrator/util"
 	"github.com/gdamore/tcell/v2"
@@ -111,13 +113,19 @@ func (s *Statusbar) renderFileName() {
 func (s *Statusbar) renderPercentage() {
 	var percentStr string
 
-	if s.percentage >= 0 && s.percentage <= 100 {
-		percentStr = fmt.Sprintf("%3d%%", s.percentage)
+	realPercentage, _ := util.InBetween(s.percentage, 0, 100)
+	percentStr = fmt.Sprintf("%3d%%", realPercentage)
+
+	var style tcell.Style
+
+	if s.busyState != model.Busy {
+		style = StatusBarStyle
 	} else {
-		percentStr = ""
+		log.Printf("ho (%s)", percentStr)
+		style = StatusBarBusyStyle
 	}
 
-	renderText(s.width-5, s.y, percentStr, StatusBarStyle)
+	renderText(s.width-5, s.y, percentStr, style)
 }
 
 func (s *Statusbar) renderFollow() {
@@ -125,17 +133,21 @@ func (s *Statusbar) renderFollow() {
 }
 
 func (s *Statusbar) renderBusyVisualization() {
+	log.Printf("renderBusyVisualization, state=%d", s.busyState)
 	var toRender rune
+	var style tcell.Style
 	if s.busyState == model.Idle {
 		toRender = ' '
+		style = StatusBarStyle
 	} else {
-		toRender = s.bumpBusyState()
+		toRender = s.bumpBusyVisualization()
+		style = StatusBarBusyStyle
 	}
 
-	screen.SetContent(s.width-1, s.y, toRender, nil, StatusBarStyle)
+	screen.SetContent(s.width-1, s.y, toRender, nil, style)
 }
 
-func (s *Statusbar) bumpBusyState() rune {
+func (s *Statusbar) bumpBusyVisualization() rune {
 	var busyVisualization = []rune{'|', '/', '-', '\\', '|', '/', '-', '\\'}
 
 	s.busyVisualizationIndex++
@@ -158,7 +170,11 @@ func (s *Statusbar) HandleEvent(ev tcell.Event) bool {
 	switch ev := ev.(type) {
 	case *model.EventBusySpinnerUpdate:
 		s.busyState = ev.BusyState
+		if ev.BusyPercentage != -1 {
+			s.percentage = int(ev.BusyPercentage)
+		}
 		s.renderBusyVisualization()
+		s.renderPercentage()
 		screen.Show()
 	case *model.EventDisplay:
 		s.percentage = ev.Display.Percentage
