@@ -1,4 +1,4 @@
-package model
+package busy
 
 import (
 	"sync"
@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/claude42/infiltrator/config"
+	"github.com/claude42/infiltrator/util"
 )
 
 var (
@@ -15,15 +16,7 @@ var (
 	busyPercentage atomic.Int32
 )
 
-type BusyState int
-
-const (
-	Idle = iota
-	Busy
-	BusyIdle
-)
-
-func BusySpinPercentage(percentage int) {
+func SpinWithPercentage(percentage int) {
 	once.Do(func() {
 		go updateBusySpinner()
 	})
@@ -39,8 +32,16 @@ func BusySpinPercentage(percentage int) {
 	busyPercentage.Store(int32(percentage))
 }
 
-func BusySpin() {
-	BusySpinPercentage(-1)
+func SpinWithFraction(a, b int) {
+	if b == 0 {
+		Spin()
+	} else {
+		SpinWithPercentage(100 * a / b)
+	}
+}
+
+func Spin() {
+	SpinWithPercentage(-1)
 }
 
 func updateBusySpinner() {
@@ -63,4 +64,27 @@ func updateBusySpinner() {
 			return
 		}
 	}
+}
+
+type State int
+
+const (
+	Idle = iota
+	Busy
+	BusyIdle
+)
+
+// created by busy
+
+type EventBusySpinnerUpdate struct {
+	util.EventImpl
+
+	BusyState      State
+	BusyPercentage int
+}
+
+func NewEventBusySpinnerUpdate(busyState State, percentage int) *EventBusySpinnerUpdate {
+	ev := &EventBusySpinnerUpdate{BusyState: busyState, BusyPercentage: percentage}
+	ev.EventImpl.SetWhen()
+	return ev
 }

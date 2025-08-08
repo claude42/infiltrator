@@ -9,6 +9,7 @@ import (
 	"sync"
 
 	"github.com/claude42/infiltrator/config"
+	"github.com/claude42/infiltrator/model/busy"
 	"github.com/claude42/infiltrator/util"
 )
 
@@ -134,7 +135,7 @@ func (fm *FilterManager) GetLine(line int) (*Line, error) {
 		return &Line{}, err
 	}
 
-	fm.busySpin(line)
+	busy.SpinWithFraction(line, fm.sourceLength())
 
 	return filter.getLine(line)
 }
@@ -672,7 +673,7 @@ func (fm *FilterManager) search(start int, direction int) (*Line, error) {
 	length := fm.sourceLength()
 
 	for i := start; ; i = i + direction {
-		fm.busySpin(i)
+		busy.SpinWithFraction(i, fm.sourceLength())
 		newLine, err := fm.GetLine(i)
 		if err != nil || i < 0 || i >= length {
 			return nil, util.ErrNotFound
@@ -746,7 +747,7 @@ func (fm *FilterManager) arrangeLine(lineNo int, percentage int) (int, error) {
 
 	var err error
 	for i := 1; i <= linesAbove; i++ {
-		fm.busySpin(lineNo)
+		busy.SpinWithFraction(lineNo, fm.sourceLength())
 		lineNo, err = fm.findNonHiddenLine(lineNo, -1)
 		if err != nil {
 			return 0, err
@@ -764,7 +765,7 @@ func (fm *FilterManager) findNonHiddenLine(lineNo int, direction int) (int, erro
 	length := fm.sourceLength()
 
 	for lineNo = lineNo + direction; lineNo >= 0 && lineNo < length; lineNo = lineNo + direction {
-		fm.busySpin(lineNo)
+		busy.SpinWithFraction(lineNo, fm.sourceLength())
 		prevLine, err := fm.GetLine(lineNo)
 		if err != nil {
 			return -1, err
@@ -785,13 +786,4 @@ func (fm *FilterManager) invalidateCaches() {
 			cache.Invalidate()
 		}
 	}
-}
-
-func (fm *FilterManager) busySpin(i int) {
-	if fm == nil || fm.sourceLength() == 0 {
-		BusySpin()
-		return
-	}
-
-	BusySpinPercentage(100 * i / fm.sourceLength())
 }

@@ -49,18 +49,3 @@ func (ev *EventFileChanged) Percentage() int {
 func (ev *EventFileChanged) Length() int {
 	return ev.length
 }
-
-// created by busy
-
-type EventBusySpinnerUpdate struct {
-	util.EventImpl
-
-	BusyState      BusyState
-	BusyPercentage int
-}
-
-func NewEventBusySpinnerUpdate(busyState BusyState, percentage int) *EventBusySpinnerUpdate {
-	ev := &EventBusySpinnerUpdate{BusyState: busyState, BusyPercentage: percentage}
-	ev.EventImpl.SetWhen()
-	return ev
-}

@@ -10,6 +10,7 @@ import (
 	"sync"
 
 	"github.com/claude42/infiltrator/config"
+	"github.com/claude42/infiltrator/model/busy"
 	"github.com/fsnotify/fsnotify"
 )
 
@@ -119,7 +120,7 @@ func (r *Reader) ReadFromStdin(ch chan<- []*Line) {
 	scanner := bufio.NewScanner(os.Stdin)
 	for scanner.Scan() {
 		text := scanner.Text()
-		BusySpin()
+		busy.Spin()
 		ch <- []*Line{{lineNo, LineWithoutStatus, false, text, make([]uint8, len(text))}}
 		lineNo++
 	}
@@ -193,7 +194,7 @@ func (r *Reader) readNewLines(file *os.File, ch chan<- []*Line, lineNo int) (int
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
 		text := scanner.Text()
-		BusySpin()
+		busy.Spin()
 		newLines = append(newLines,
 			&Line{lineNo, LineWithoutStatus, false, text, make([]uint8, len(text))})
 		lineNo++

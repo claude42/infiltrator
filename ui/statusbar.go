@@ -8,6 +8,7 @@ import (
 
 	"github.com/claude42/infiltrator/config"
 	"github.com/claude42/infiltrator/model"
+	"github.com/claude42/infiltrator/model/busy"
 	"github.com/claude42/infiltrator/util"
 
 	// "github.com/claude42/infiltrator/util"
@@ -38,7 +39,7 @@ type Statusbar struct {
 	percentage             int
 	panelsOpen             bool
 	busyVisualizationIndex int
-	busyState              model.BusyState
+	busyState              busy.State
 }
 
 func NewStatusbar() *Statusbar {
@@ -117,7 +118,7 @@ func (s *Statusbar) renderPercentage() {
 
 	var style tcell.Style
 
-	if s.busyState != model.Busy {
+	if s.busyState != busy.Busy {
 		style = StatusBarStyle
 	} else {
 		style = StatusBarBusyStyle
@@ -133,7 +134,7 @@ func (s *Statusbar) renderFollow() {
 func (s *Statusbar) renderBusyVisualization() {
 	var toRender rune
 	var style tcell.Style
-	if s.busyState == model.Idle {
+	if s.busyState == busy.Idle {
 		toRender = ' '
 		style = StatusBarStyle
 	} else {
@@ -165,7 +166,7 @@ func (s *Statusbar) Height() int {
 
 func (s *Statusbar) HandleEvent(ev tcell.Event) bool {
 	switch ev := ev.(type) {
-	case *model.EventBusySpinnerUpdate:
+	case *busy.EventBusySpinnerUpdate:
 		s.busyState = ev.BusyState
 		if ev.BusyPercentage != -1 {
 			s.percentage = int(ev.BusyPercentage)
