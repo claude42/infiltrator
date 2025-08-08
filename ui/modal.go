@@ -50,9 +50,8 @@ func (m *ModalImpl) SetTitle(title string) {
 }
 
 func (m *ModalImpl) HandleEvent(ev tcell.Event) bool {
-	switch ev := ev.(type) {
+	switch ev.(type) {
 	case *model.EventDisplay:
-		log.Printf("DisplayEvent. totalLength: %d, percentage: %d", ev.Display.TotalLength, ev.Display.Percentage)
 		m.Render(true)
 		return false
 	}

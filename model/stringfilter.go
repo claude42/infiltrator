@@ -3,6 +3,7 @@ package model
 import (
 	// "errors"
 	"fmt"
+	"sync"
 
 	"log"
 	"strings"
@@ -18,6 +19,7 @@ const (
 )
 
 type StringFilter struct {
+	sync.Mutex
 	source            Filter
 	filterFunc        func(input string) (string, [][]int, bool)
 	filterFuncFactory StringFilterFuncFactory
@@ -100,17 +102,24 @@ func (s *StringFilter) updateFilterFunc(key string, caseSensitive bool) error {
 }
 
 func (s *StringFilter) setKey(key string) error {
+	log.Printf("Search key: %s", key)
+	s.Lock()
 	s.key = key
+	s.Unlock()
 	return s.updateFilterFunc(s.key, s.caseSensitive)
 }
 
 func (s *StringFilter) setCaseSensitive(on bool) error {
+	s.Lock()
 	s.caseSensitive = on
+	s.Unlock()
 	return s.updateFilterFunc(s.key, s.caseSensitive)
 }
 
 func (s *StringFilter) setMode(mode FilterMode) {
+	s.Lock()
 	s.mode = mode
+	s.Unlock()
 }
 
 // ErrLineDidNotMatch errors are handled within GetLine() and will not
@@ -120,6 +129,9 @@ func (s *StringFilter) getLine(line int) (*Line, error) {
 	if err != nil {
 		return sourceLine, err
 	}
+
+	s.Lock()
+	defer s.Unlock()
 
 	if s.filterFunc == nil || s.key == "" {
 		return sourceLine, nil

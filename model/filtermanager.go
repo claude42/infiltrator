@@ -24,6 +24,9 @@ type FilterManager struct {
 	readerContext context.Context
 	readerCancel  context.CancelFunc
 
+	refresherCancelFunc context.CancelFunc
+	refesherWg          sync.WaitGroup
+
 	contentUpdate  chan []*Line
 	commandChannel chan Command
 
@@ -153,7 +156,7 @@ func (fm *FilterManager) EventLoop() {
 			// log.Printf("Received contentupdate")
 			fm.processContentUpdate(newLines)
 		case command := <-fm.commandChannel:
-			log.Printf("Receuived Command: %T", command)
+			log.Printf("Received Command: %T", command)
 			fm.processCommand(command)
 		case <-cfg.Context.Done():
 			log.Println("Received shutdown")
@@ -182,9 +185,9 @@ func (fm *FilterManager) processContentUpdate(newLines []*Line) {
 		// the comment here
 		// fm.refreshDisplay()
 		fm.internalScrollEnd()
-		fm.refreshDisplay()
+		fm.display.refreshDisplay(nil, nil, fm.currentLine, false)
 	} else if fm.isDisplayAffected() {
-		fm.refreshDisplay()
+		fm.display.refreshDisplay(nil, nil, fm.currentLine, false)
 	}
 
 	config.GetConfiguration().PostEventFunc(NewEventFileChanged(length, fm.percentage()))
@@ -271,6 +274,7 @@ func (fm *FilterManager) ToggleFollowMode() {
 
 func (fm *FilterManager) processCommand(command Command) {
 	refreshScreenBuffer := true
+	unsetCurrentMatch := false
 
 	// TODO let all these methods return an error, then send a beep indication
 	// through the channel in case of an error
@@ -304,19 +308,30 @@ func (fm *FilterManager) processCommand(command Command) {
 	case CommandFilterColorIndexUpdate:
 		command.Filter.setColorIndex(command.ColorIndex)
 		fm.invalidateCaches()
-		fm.display.UnsetCurrentMatch()
+		unsetCurrentMatch = true
+		refreshScreenBuffer = false
+		fm.asyncRefreshScreenBuffer(unsetCurrentMatch)
 	case CommandFilterModeUpdate:
 		command.Filter.setMode(command.Mode)
 		fm.invalidateCaches()
-		fm.display.UnsetCurrentMatch()
+		unsetCurrentMatch = true
+		refreshScreenBuffer = false
+		fm.asyncRefreshScreenBuffer(unsetCurrentMatch)
 	case CommandFilterCaseSensitiveUpdate:
 		err = command.Filter.setCaseSensitive(command.CaseSensitive)
 		fm.invalidateCaches()
-		fm.display.UnsetCurrentMatch()
+		unsetCurrentMatch = true
+		refreshScreenBuffer = false
+		fm.asyncRefreshScreenBuffer(unsetCurrentMatch)
 	case CommandFilterKeyUpdate:
-		err = command.Filter.setKey(command.Key)
+		log.Println("Invalidating caches")
 		fm.invalidateCaches()
-		fm.display.UnsetCurrentMatch()
+		log.Println("Setting key")
+		err = command.Filter.setKey(command.Key)
+		log.Println("Unsetting Current Match")
+		unsetCurrentMatch = true
+		refreshScreenBuffer = false
+		fm.asyncRefreshScreenBuffer(unsetCurrentMatch)
 	case CommandToggleFollowMode:
 		fm.internalToggleFollowMode()
 	default:
@@ -324,14 +339,16 @@ func (fm *FilterManager) processCommand(command Command) {
 	}
 	// Really for every command?
 	if refreshScreenBuffer {
-		fm.refreshDisplay()
+		fm.display.refreshDisplay(nil, nil, fm.currentLine, unsetCurrentMatch)
+
 	}
 	if err == util.ErrOutOfBounds || err == util.ErrNotFound ||
 		err == ErrNotEnoughPanels || err == ErrRegex {
 
 		config.GetConfiguration().PostEventFunc(NewEventError(true, ""))
 	} else if err != nil {
-		log.Panicf("Unknwon error %v+", err)
+		// TODO switch back on
+		// log.Panicf("Unknwon error %v+", err)
 	}
 }
 
@@ -482,7 +499,7 @@ func (fm *FilterManager) internalScrollEnd() {
 	// this should be enough initialization to make internalScrollUpLinBuffer()
 	// work
 	fm.currentLine = firstTry
-	fm.refreshDisplay()
+	fm.display.refreshDisplay(nil, nil, fm.currentLine, false)
 	// fm.display.Buffer[0] = Line{No: firstTry}
 
 	// scroll until the last line of the screen is non-empty or we're at line 0
@@ -560,39 +577,19 @@ func (fm *FilterManager) internalRemoveFilter(f Filter) error {
 	return fmt.Errorf("Filter not found in pipeline")
 }
 
-// Will return the new startLine - in case the original starting line (or subsequent
-// lines) didn't match the filters
-func (fm *FilterManager) refreshDisplay() {
+func (fm *FilterManager) asyncRefreshScreenBuffer(unsetCurrentMatch bool) {
+	var ctx context.Context
 
-	displayHeight := fm.display.Height()
-	if displayHeight == 0 {
-		return
+	if fm.refresherCancelFunc != nil {
+		fm.refresherCancelFunc()
+		fm.refresherCancelFunc = nil
+		fm.refesherWg.Wait()
 	}
 
-	lineNo := fm.currentLine
-	y := 0
-	for y < displayHeight {
-		line, err := fm.GetLine(lineNo)
-		lineNo++
-		if errors.Is(err, util.ErrOutOfBounds) {
-			break
-		} else if err != nil {
-			log.Panicf("fuck me: %v", err)
-		}
+	ctx, fm.refresherCancelFunc = context.WithCancel(config.GetConfiguration().Context)
 
-		if line.Status != LineHidden {
-			fm.display.Buffer[y] = line
-			y++
-		}
-	}
-
-	for ; y < displayHeight; y++ {
-		fm.display.Buffer[y] = &Line{-1, LineDoesNotExist, false, "", []uint8{}}
-	}
-
-	fm.display.Percentage = fm.percentage()
-
-	config.GetConfiguration().PostEventFunc(NewEventDisplay(*fm.display))
+	fm.refesherWg.Add(1)
+	go fm.display.refreshDisplay(ctx, &fm.refesherWg, fm.currentLine, unsetCurrentMatch)
 }
 
 func (fm *FilterManager) internalFindNextMatch(direction int) error {
@@ -716,13 +713,11 @@ func (fm *FilterManager) internalToggleFollowMode() {
 			cfg.FollowFile = false
 		} else {
 			fm.internalScrollEnd()
-			fm.refreshDisplay()
 		}
 	} else {
 		cfg.FollowFile = true
 		cfg.WaitGroup.Add(1)
 		fm.internalScrollEnd()
-		fm.refreshDisplay()
 		go GetReader().ReopenForWatching(cfg.FilePath, fm.readerContext,
 			fm.contentUpdate, fm.Source().LastLine().No+1)
 	}

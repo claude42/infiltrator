@@ -2,7 +2,6 @@ package ui
 
 import (
 	"fmt"
-	"log"
 
 	"github.com/claude42/infiltrator/config"
 	"github.com/claude42/infiltrator/model"
@@ -158,7 +157,7 @@ func (v *View) Resize(x, y, width, height int) {
 func (v *View) HandleEvent(ev tcell.Event) bool {
 	switch ev := ev.(type) {
 	case *model.EventDisplay:
-		log.Printf("DisplayEvent. totalLength: %d, percentage: %d", ev.Display.TotalLength, ev.Display.Percentage)
+		// log.Printf("DisplayEvent. totalLength: %d, percentage: %d", ev.Display.TotalLength, ev.Display.Percentage)
 		v.Render(&ev.Display, true)
 		return false
 	case *model.EventError:

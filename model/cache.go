@@ -1,8 +1,12 @@
 package model
 
-import "log"
+import (
+	"log"
+	"sync"
+)
 
 type Cache struct {
+	sync.Mutex
 	lines  map[int]*Line
 	source Filter
 }
@@ -15,6 +19,8 @@ func NewCache() *Cache {
 }
 
 func (c *Cache) getLine(lineNo int) (*Line, error) {
+	c.Lock()
+	defer c.Unlock()
 	line, ok := c.lines[lineNo]
 	if ok {
 		return line, nil
@@ -24,15 +30,16 @@ func (c *Cache) getLine(lineNo int) (*Line, error) {
 	if err != nil {
 		return sourceLine, err
 	}
-
 	c.lines[lineNo] = sourceLine
 
 	return sourceLine, nil
 }
 
 func (c *Cache) Invalidate() {
+	c.Lock()
 	c.lines = nil
 	c.lines = make(map[int]*Line)
+	c.Unlock()
 }
 
 func (c *Cache) setSource(source Filter) {

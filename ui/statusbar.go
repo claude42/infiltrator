@@ -2,7 +2,6 @@ package ui
 
 import (
 	"fmt"
-	"log"
 	"sync"
 
 	// "log"
@@ -121,7 +120,6 @@ func (s *Statusbar) renderPercentage() {
 	if s.busyState != model.Busy {
 		style = StatusBarStyle
 	} else {
-		log.Printf("ho (%s)", percentStr)
 		style = StatusBarBusyStyle
 	}
 
@@ -133,7 +131,6 @@ func (s *Statusbar) renderFollow() {
 }
 
 func (s *Statusbar) renderBusyVisualization() {
-	log.Printf("renderBusyVisualization, state=%d", s.busyState)
 	var toRender rune
 	var style tcell.Style
 	if s.busyState == model.Idle {
