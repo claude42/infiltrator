@@ -209,9 +209,15 @@ func (v *View) HandleEvent(ev tcell.Event) bool {
 			return true
 		case tcell.KeyRight:
 			model.GetFilterManager().ScrollHorizontal(1)
+			v.CurrentDisplay.CurrentCol++
+			v.Render(nil, true)
 			return true
 		case tcell.KeyLeft:
 			model.GetFilterManager().ScrollHorizontal(-1)
+			if v.CurrentDisplay.CurrentCol > 0 {
+				v.CurrentDisplay.CurrentCol--
+			}
+			v.Render(nil, true)
 			return true
 		case tcell.KeyCtrlF, tcell.KeyPgDn:
 			model.GetFilterManager().PageDown()

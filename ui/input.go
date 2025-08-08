@@ -128,7 +128,6 @@ func (i *InputImpl) setCursor(newCursor int) {
 		i.cursor = newCursor
 	}
 	i.Render(true)
-	i.updateWatchers()
 }
 
 func (i *InputImpl) backspaceRune() {

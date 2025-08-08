@@ -188,9 +188,9 @@ func (fm *FilterManager) processContentUpdate(newLines []*reader.Line) {
 		// the comment here
 		// fm.refreshDisplay()
 		fm.internalScrollEnd()
-		fm.display.refreshDisplay(nil, nil, fm.currentLine, false)
+		fm.display.refreshDisplay(nil, nil, fm.currentLine)
 	} else if fm.isDisplayAffected() {
-		fm.display.refreshDisplay(nil, nil, fm.currentLine, false)
+		fm.display.refreshDisplay(nil, nil, fm.currentLine)
 	}
 
 	config.GetConfiguration().PostEventFunc(NewEventFileChanged(length, fm.percentage()))
@@ -274,8 +274,6 @@ func (fm *FilterManager) ToggleFollowMode() {
 }
 
 func (fm *FilterManager) processCommand(command Command) {
-	refreshScreenBuffer := true
-	unsetCurrentMatch := false
 
 	// TODO let all these methods return an error, then send a beep indication
 	// through the channel in case of an error
@@ -284,65 +282,69 @@ func (fm *FilterManager) processCommand(command Command) {
 	switch command := command.(type) {
 	case CommandDown:
 		err = fm.internalScrollDownLineBuffer()
+		config.GetConfiguration().PostEventFunc(NewEventDisplay(*fm.display))
 	case CommandUp:
 		err = fm.internalScrollUpLineBuffer()
+		config.GetConfiguration().PostEventFunc(NewEventDisplay(*fm.display))
 	case CommandScrollHorizontal:
 		err = fm.internalScrollHorizontal(command.offset)
 	case CommandPgDown:
 		err = fm.internalPageDownLineBuffer()
+		config.GetConfiguration().PostEventFunc(NewEventDisplay(*fm.display))
 	case CommandPgUp:
 		err = fm.internalPageUpLineBuffer()
+		config.GetConfiguration().PostEventFunc(NewEventDisplay(*fm.display))
 	case CommandEnd:
 		fm.internalScrollEnd()
+		config.GetConfiguration().PostEventFunc(NewEventDisplay(*fm.display))
 	case CommandHome:
 		fm.internalScrollHome()
+		fm.display.refreshDisplay(nil, nil, fm.currentLine)
 	case CommandFindMatch:
-		err = fm.internalFindNextMatch(command.direction)
+		if refresh, _ := fm.internalFindNextMatch(command.direction); refresh {
+			fm.display.refreshDisplay(nil, nil, fm.currentLine)
+		} else {
+			config.GetConfiguration().PostEventFunc(NewEventDisplay(*fm.display))
+		}
 	case CommandAddFilter:
 		fm.internalAddFilter(command.Filter)
+		fm.display.refreshDisplay(nil, nil, fm.currentLine)
 	case CommandRemoveFilter:
 		err = fm.internalRemoveFilter(command.Filter)
+		fm.display.refreshDisplay(nil, nil, fm.currentLine)
 	case CommandSetDisplayHeight:
 		fm.display.SetHeight(command.Lines)
+		config.GetConfiguration().PostEventFunc(NewEventDisplay(*fm.display))
 	case CommandSetCurrentLine:
 		fm.internalSetCurrentLine(command.Line)
+		fm.display.refreshDisplay(nil, nil, fm.currentLine)
 	case CommandFilterColorIndexUpdate:
 		command.Filter.SetColorIndex(command.ColorIndex)
 		fm.invalidateCaches()
-		unsetCurrentMatch = true
-		refreshScreenBuffer = false
-		fm.asyncRefreshScreenBuffer(unsetCurrentMatch)
+		fm.display.UnsetCurrentMatch()
+		fm.asyncRefreshScreenBuffer()
 	case CommandFilterModeUpdate:
 		command.Filter.SetMode(command.Mode)
 		fm.invalidateCaches()
-		unsetCurrentMatch = true
-		refreshScreenBuffer = false
-		fm.asyncRefreshScreenBuffer(unsetCurrentMatch)
+		fm.display.UnsetCurrentMatch()
+		fm.asyncRefreshScreenBuffer()
 	case CommandFilterCaseSensitiveUpdate:
 		err = command.Filter.SetCaseSensitive(command.CaseSensitive)
 		fm.invalidateCaches()
-		unsetCurrentMatch = true
-		refreshScreenBuffer = false
-		fm.asyncRefreshScreenBuffer(unsetCurrentMatch)
+		fm.display.UnsetCurrentMatch()
+		fm.asyncRefreshScreenBuffer()
 	case CommandFilterKeyUpdate:
-		log.Println("Invalidating caches")
 		fm.invalidateCaches()
-		log.Println("Setting key")
 		err = command.Filter.SetKey(command.Key)
-		log.Println("Unsetting Current Match")
-		unsetCurrentMatch = true
-		refreshScreenBuffer = false
-		fm.asyncRefreshScreenBuffer(unsetCurrentMatch)
+		fm.display.UnsetCurrentMatch()
+		fm.asyncRefreshScreenBuffer()
 	case CommandToggleFollowMode:
 		fm.internalToggleFollowMode()
+		config.GetConfiguration().PostEventFunc(NewEventDisplay(*fm.display))
 	default:
 		log.Panicf("Command %s not implemented!", command.commandString())
 	}
-	// Really for every command?
-	if refreshScreenBuffer {
-		fm.display.refreshDisplay(nil, nil, fm.currentLine, unsetCurrentMatch)
 
-	}
 	if err == util.ErrOutOfBounds || err == util.ErrNotFound ||
 		err == ErrNotEnoughPanels || err == filter.ErrRegex {
 
@@ -503,7 +505,7 @@ func (fm *FilterManager) internalScrollEnd() {
 	// this should be enough initialization to make internalScrollUpLinBuffer()
 	// work
 	fm.currentLine = firstTry
-	fm.display.refreshDisplay(nil, nil, fm.currentLine, false)
+	fm.display.refreshDisplay(nil, nil, fm.currentLine)
 	// fm.display.Buffer[0] = Line{No: firstTry}
 
 	// scroll until the last line of the screen is non-empty or we're at line 0
@@ -582,7 +584,7 @@ func (fm *FilterManager) internalRemoveFilter(f filter.Filter) error {
 	return fmt.Errorf("Filter not found in pipeline")
 }
 
-func (fm *FilterManager) asyncRefreshScreenBuffer(unsetCurrentMatch bool) {
+func (fm *FilterManager) asyncRefreshScreenBuffer() {
 	var ctx context.Context
 
 	if fm.refresherCancelFunc != nil {
@@ -594,10 +596,10 @@ func (fm *FilterManager) asyncRefreshScreenBuffer(unsetCurrentMatch bool) {
 	ctx, fm.refresherCancelFunc = context.WithCancel(config.GetConfiguration().Context)
 
 	fm.refesherWg.Add(1)
-	go fm.display.refreshDisplay(ctx, &fm.refesherWg, fm.currentLine, unsetCurrentMatch)
+	go fm.display.refreshDisplay(ctx, &fm.refesherWg, fm.currentLine)
 }
 
-func (fm *FilterManager) internalFindNextMatch(direction int) error {
+func (fm *FilterManager) internalFindNextMatch(direction int) (bool, error) {
 	if direction != 1 && direction != -1 {
 		log.Panicf("Unknown direction %d", direction)
 	}
@@ -613,7 +615,7 @@ func (fm *FilterManager) internalFindNextMatch(direction int) error {
 		found, err = fm.searchOnScreen(screenLine+direction, direction)
 		if err == nil {
 			fm.display.CurrentMatch = found.No
-			return nil
+			return false, nil
 		} else if err != util.ErrNotFound {
 			log.Panicf("Unkown error %v+", err)
 		}
@@ -629,23 +631,24 @@ func (fm *FilterManager) internalFindNextMatch(direction int) error {
 	if err != nil {
 		// necessary?
 		// fm.display.UnsetCurrentMatch()
-		return err
+		return false, err
 	}
 
 	fm.display.CurrentMatch = found.No
 
-	if !fm.isLineOnScreen(found.No) {
-		var percentage int
-		if direction == 1 {
-			percentage = 25
-		} else {
-			percentage = 75
-		}
-		firstLine, _ := fm.arrangeLine(found.No, percentage)
-		fm.internalSetCurrentLine(firstLine)
+	// I think this if statement is not necessary anymore?!
+	// if !fm.isLineOnScreen(found.No) {
+	var percentage int
+	if direction == 1 {
+		percentage = 25
+	} else {
+		percentage = 75
 	}
+	firstLine, _ := fm.arrangeLine(found.No, percentage)
+	fm.internalSetCurrentLine(firstLine)
+	// }
 
-	return nil
+	return true, nil
 }
 
 func (fm *FilterManager) getLineOnScreen(lineNo int) (int, error) {

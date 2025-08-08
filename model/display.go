@@ -43,11 +43,45 @@ func (d *Display) Height() int {
 func (d *Display) SetHeight(height int) {
 	displayLock.Lock()
 	defer displayLock.Unlock()
+
 	currentHeight := len(d.Buffer)
-	if height < currentHeight {
+
+	if height == currentHeight {
+		return
+	} else if height < currentHeight {
 		d.Buffer = d.Buffer[:height]
-	} else if height > currentHeight {
-		d.Buffer = append(d.Buffer, make([]*reader.Line, height-currentHeight)...)
+		return
+	}
+
+	// so height > currentHeight
+	d.Buffer = append(d.Buffer, make([]*reader.Line, height-currentHeight)...)
+
+	var lineNo int
+	if currentHeight > 0 {
+		lineNo = d.Buffer[currentHeight-1].No + 1
+	} else {
+		lineNo = 0
+	}
+	// copied from refreshDisplay()
+	y := currentHeight
+	for y < height {
+		// log.Printf("doing line=%d", y)
+		line, err := GetFilterManager().GetLine(lineNo)
+		lineNo++
+		if errors.Is(err, util.ErrOutOfBounds) {
+			break
+		} else if err != nil {
+			log.Panicf("fuck me: %v", err)
+		}
+
+		if line.Status != reader.LineHidden {
+			d.Buffer[y] = line
+			y++
+		}
+	}
+
+	for ; y < height; y++ {
+		d.Buffer[y] = reader.NewLine(-1, "")
 	}
 }
 
@@ -73,7 +107,7 @@ func (d *Display) SetCurrentCol(newCurrentCol int) {
 // Will return the new startLine - in case the original starting line (or subsequent
 // lines) didn't match the filters
 func (d *Display) refreshDisplay(ctx context.Context, wg *sync.WaitGroup,
-	lineNo int, unsetCurrentMatch bool) {
+	lineNo int) {
 
 	if wg != nil {
 		defer wg.Done()
@@ -81,10 +115,6 @@ func (d *Display) refreshDisplay(ctx context.Context, wg *sync.WaitGroup,
 
 	displayLock.Lock()
 	defer displayLock.Unlock()
-
-	if unsetCurrentMatch {
-		d.UnsetCurrentMatch()
-	}
 
 	displayHeight := d.Height()
 	if displayHeight == 0 {
@@ -109,7 +139,6 @@ func (d *Display) refreshDisplay(ctx context.Context, wg *sync.WaitGroup,
 		if ctx != nil {
 			select {
 			case <-ctx.Done():
-				log.Println("cancelled")
 				return
 			default:
 				// continue
@@ -124,5 +153,4 @@ func (d *Display) refreshDisplay(ctx context.Context, wg *sync.WaitGroup,
 	d.Percentage = GetFilterManager().percentage()
 
 	config.GetConfiguration().PostEventFunc(NewEventDisplay(*d))
-	log.Println("went through")
 }
