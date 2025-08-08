@@ -69,7 +69,7 @@ func (fm *FilterManager) ReadFromFile(filePath string) {
 
 	fm.readerContext, fm.readerCancel = context.WithCancel(config.GetConfiguration().Context)
 	config.GetConfiguration().WaitGroup.Add(1)
-	go GetReader().ReadFromFile(filePath, fm.readerContext, fm.contentUpdate, config.GetConfiguration().FollowFile)
+	go reader.GetReader().ReadFromFile(filePath, fm.readerContext, fm.contentUpdate, config.GetConfiguration().FollowFile)
 	// GetLoremIpsumReader().Read(fm.contentUpdate)
 }
 
@@ -83,7 +83,7 @@ func (fm *FilterManager) ReadFromStdin() {
 
 	// do NOT add to wait group as the Go routine most likely will not
 	// return
-	go GetReader().ReadFromStdin(fm.contentUpdate)
+	go reader.GetReader().ReadFromStdin(fm.contentUpdate)
 	// GetLoremIpsumReader().Read(fm.contentUpdate)
 }
 
@@ -723,7 +723,7 @@ func (fm *FilterManager) internalToggleFollowMode() {
 		cfg.FollowFile = true
 		cfg.WaitGroup.Add(1)
 		fm.internalScrollEnd()
-		go GetReader().ReopenForWatching(cfg.FilePath, fm.readerContext,
+		go reader.GetReader().ReopenForWatching(cfg.FilePath, fm.readerContext,
 			fm.contentUpdate, fm.Source().LastLine().No+1)
 	}
 }
