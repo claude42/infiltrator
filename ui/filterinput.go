@@ -2,13 +2,14 @@ package ui
 
 import (
 	"github.com/claude42/infiltrator/model"
+	"github.com/claude42/infiltrator/model/filter"
 	"github.com/gdamore/tcell/v2"
 )
 
 type FilterInput struct {
 	InputImpl
 
-	filter model.Filter
+	filter filter.Filter
 }
 
 func NewFilterInput() *FilterInput {
@@ -35,7 +36,7 @@ func (fi *FilterInput) HandleEvent(ev tcell.Event) bool {
 	return fi.InputImpl.HandleEvent(ev)
 }
 
-func (fi *FilterInput) SetFilter(filter model.Filter) {
+func (fi *FilterInput) SetFilter(filter filter.Filter) {
 	fi.filter = filter
 }
 

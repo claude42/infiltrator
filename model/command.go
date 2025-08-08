@@ -1,5 +1,7 @@
 package model
 
+import "github.com/claude42/infiltrator/model/filter"
+
 type Command interface {
 	commandString() string
 }
@@ -70,7 +72,7 @@ func (d CommandScrollHorizontal) commandString() string {
 }
 
 type CommandAddFilter struct {
-	Filter Filter
+	Filter filter.Filter
 }
 
 func (d CommandAddFilter) commandString() string {
@@ -78,7 +80,7 @@ func (d CommandAddFilter) commandString() string {
 }
 
 type CommandRemoveFilter struct {
-	Filter Filter
+	Filter filter.Filter
 }
 
 func (d CommandRemoveFilter) commandString() string {
@@ -102,7 +104,7 @@ func (d CommandSetCurrentLine) commandString() string {
 }
 
 type CommandFilterColorIndexUpdate struct {
-	Filter     Filter
+	Filter     filter.Filter
 	ColorIndex uint8
 }
 
@@ -111,8 +113,8 @@ func (d CommandFilterColorIndexUpdate) commandString() string {
 }
 
 type CommandFilterModeUpdate struct {
-	Filter Filter
-	Mode   FilterMode
+	Filter filter.Filter
+	Mode   filter.FilterMode
 }
 
 func (d CommandFilterModeUpdate) commandString() string {
@@ -120,7 +122,7 @@ func (d CommandFilterModeUpdate) commandString() string {
 }
 
 type CommandFilterCaseSensitiveUpdate struct {
-	Filter        Filter
+	Filter        filter.Filter
 	CaseSensitive bool
 }
 
@@ -129,7 +131,7 @@ func (d CommandFilterCaseSensitiveUpdate) commandString() string {
 }
 
 type CommandFilterKeyUpdate struct {
-	Filter Filter
+	Filter filter.Filter
 	Key    string
 }
 

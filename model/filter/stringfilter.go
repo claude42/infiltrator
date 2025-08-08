@@ -1,4 +1,4 @@
-package model
+package filter
 
 import (
 	// "errors"
@@ -103,7 +103,7 @@ func (s *StringFilter) updateFilterFunc(key string, caseSensitive bool) error {
 	return nil
 }
 
-func (s *StringFilter) setKey(key string) error {
+func (s *StringFilter) SetKey(key string) error {
 	log.Printf("Search key: %s", key)
 	s.Lock()
 	s.key = key
@@ -111,14 +111,14 @@ func (s *StringFilter) setKey(key string) error {
 	return s.updateFilterFunc(s.key, s.caseSensitive)
 }
 
-func (s *StringFilter) setCaseSensitive(on bool) error {
+func (s *StringFilter) SetCaseSensitive(on bool) error {
 	s.Lock()
 	s.caseSensitive = on
 	s.Unlock()
 	return s.updateFilterFunc(s.key, s.caseSensitive)
 }
 
-func (s *StringFilter) setMode(mode FilterMode) {
+func (s *StringFilter) SetMode(mode FilterMode) {
 	s.Lock()
 	s.mode = mode
 	s.Unlock()
@@ -126,8 +126,8 @@ func (s *StringFilter) setMode(mode FilterMode) {
 
 // ErrLineDidNotMatch errors are handled within GetLine() and will not
 // buble up.
-func (s *StringFilter) getLine(line int) (*reader.Line, error) {
-	sourceLine, err := s.source.getLine(line)
+func (s *StringFilter) GetLine(line int) (*reader.Line, error) {
+	sourceLine, err := s.source.GetLine(line)
 	if err != nil {
 		return sourceLine, err
 	}
@@ -221,18 +221,18 @@ func (s *StringFilter) colorizeLine(line *reader.Line, indeces [][]int) {
 	}
 }
 
-func (s *StringFilter) setSource(source Filter) {
+func (s *StringFilter) SetSource(source Filter) {
 	s.source = source
 }
 
-func (s *StringFilter) size() (int, int) {
-	return s.source.size()
+func (s *StringFilter) Size() (int, int) {
+	return s.source.Size()
 }
 
-func (s *StringFilter) length() int {
-	return s.source.length()
+func (s *StringFilter) Length() int {
+	return s.source.Length()
 }
 
-func (s *StringFilter) setColorIndex(colorIndex uint8) {
+func (s *StringFilter) SetColorIndex(colorIndex uint8) {
 	s.colorIndex = colorIndex
 }

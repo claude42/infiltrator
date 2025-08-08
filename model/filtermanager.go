@@ -10,6 +10,7 @@ import (
 
 	"github.com/claude42/infiltrator/config"
 	"github.com/claude42/infiltrator/model/busy"
+	"github.com/claude42/infiltrator/model/filter"
 	"github.com/claude42/infiltrator/model/reader"
 	"github.com/claude42/infiltrator/util"
 )
@@ -32,7 +33,7 @@ type FilterManager struct {
 	contentUpdate  chan []*reader.Line
 	commandChannel chan Command
 
-	filters     []Filter
+	filters     []filter.Filter
 	currentLine int
 
 	display *Display
@@ -52,8 +53,8 @@ func createNewFilterManager() *FilterManager {
 	fm.contentUpdate = make(chan []*reader.Line, 10)
 	fm.commandChannel = make(chan Command, 10)
 
-	fm.internalAddFilter(&Source{})
-	fm.internalAddFilter(NewCache())
+	fm.internalAddFilter(&filter.Source{})
+	fm.internalAddFilter(filter.NewCache())
 	return fm
 }
 
@@ -86,7 +87,7 @@ func (fm *FilterManager) ReadFromStdin() {
 	// GetLoremIpsumReader().Read(fm.contentUpdate)
 }
 
-func (fm *FilterManager) Source() *Source {
+func (fm *FilterManager) Source() *filter.Source {
 	fm.Lock()
 	if len(fm.filters) < 1 {
 		log.Panic("No source in filter stack!")
@@ -94,14 +95,14 @@ func (fm *FilterManager) Source() *Source {
 	firstFilter := fm.filters[0]
 	fm.Unlock()
 
-	source, ok := firstFilter.(*Source)
+	source, ok := firstFilter.(*filter.Source)
 	if !ok {
 		log.Panic("First filter is not a Source!")
 	}
 	return source
 }
 
-func (fm *FilterManager) outputFilter() (Filter, error) {
+func (fm *FilterManager) outputFilter() (filter.Filter, error) {
 	fm.Lock()
 	defer fm.Unlock()
 	if len(fm.filters) == 0 {
@@ -117,7 +118,7 @@ func (fm *FilterManager) size() (int, int) {
 		return 0, 0
 	}
 
-	return filter.size()
+	return filter.Size()
 }
 
 func (fm *FilterManager) sourceLength() int {
@@ -126,7 +127,7 @@ func (fm *FilterManager) sourceLength() int {
 		return 0
 	}
 
-	return filter.length()
+	return filter.Length()
 }
 
 // TODO: make private
@@ -138,7 +139,7 @@ func (fm *FilterManager) GetLine(line int) (*reader.Line, error) {
 
 	busy.SpinWithFraction(line, fm.sourceLength())
 
-	return filter.getLine(line)
+	return filter.GetLine(line)
 }
 
 func (fm *FilterManager) EventLoop() {
@@ -176,7 +177,7 @@ func (fm *FilterManager) processContentUpdate(newLines []*reader.Line) {
 		goToEnd = true
 	}
 
-	length := fm.Source().storeNewLines(newLines)
+	length := fm.Source().StoreNewLines(newLines)
 	fm.display.SetTotalLength(length)
 
 	// refresh display as necessary
@@ -236,11 +237,11 @@ func (fm *FilterManager) FindMatch(direction int) {
 	fm.commandChannel <- CommandFindMatch{direction}
 }
 
-func (fm *FilterManager) AddFilter(filter Filter) {
+func (fm *FilterManager) AddFilter(filter filter.Filter) {
 	fm.commandChannel <- CommandAddFilter{filter}
 }
 
-func (fm *FilterManager) RemoveFilter(filter Filter) {
+func (fm *FilterManager) RemoveFilter(filter filter.Filter) {
 	fm.commandChannel <- CommandRemoveFilter{filter}
 }
 
@@ -252,19 +253,19 @@ func (fm *FilterManager) SetCurrentLine(line int) {
 	fm.commandChannel <- CommandSetCurrentLine{line}
 }
 
-func (fm *FilterManager) UpdateFilterColorIndex(filter Filter, colorIndex uint8) {
+func (fm *FilterManager) UpdateFilterColorIndex(filter filter.Filter, colorIndex uint8) {
 	fm.commandChannel <- CommandFilterColorIndexUpdate{filter, colorIndex}
 }
 
-func (fm *FilterManager) UpdateFilterMode(filter Filter, mode FilterMode) {
+func (fm *FilterManager) UpdateFilterMode(filter filter.Filter, mode filter.FilterMode) {
 	fm.commandChannel <- CommandFilterModeUpdate{filter, mode}
 }
 
-func (fm *FilterManager) UpdateFilterCaseSensitiveUpdate(filter Filter, caseSensitive bool) {
+func (fm *FilterManager) UpdateFilterCaseSensitiveUpdate(filter filter.Filter, caseSensitive bool) {
 	fm.commandChannel <- CommandFilterCaseSensitiveUpdate{filter, caseSensitive}
 }
 
-func (fm *FilterManager) UpdateFilterKey(filter Filter, key string) {
+func (fm *FilterManager) UpdateFilterKey(filter filter.Filter, key string) {
 	fm.commandChannel <- CommandFilterKeyUpdate{filter, key}
 }
 
@@ -306,19 +307,19 @@ func (fm *FilterManager) processCommand(command Command) {
 	case CommandSetCurrentLine:
 		fm.internalSetCurrentLine(command.Line)
 	case CommandFilterColorIndexUpdate:
-		command.Filter.setColorIndex(command.ColorIndex)
+		command.Filter.SetColorIndex(command.ColorIndex)
 		fm.invalidateCaches()
 		unsetCurrentMatch = true
 		refreshScreenBuffer = false
 		fm.asyncRefreshScreenBuffer(unsetCurrentMatch)
 	case CommandFilterModeUpdate:
-		command.Filter.setMode(command.Mode)
+		command.Filter.SetMode(command.Mode)
 		fm.invalidateCaches()
 		unsetCurrentMatch = true
 		refreshScreenBuffer = false
 		fm.asyncRefreshScreenBuffer(unsetCurrentMatch)
 	case CommandFilterCaseSensitiveUpdate:
-		err = command.Filter.setCaseSensitive(command.CaseSensitive)
+		err = command.Filter.SetCaseSensitive(command.CaseSensitive)
 		fm.invalidateCaches()
 		unsetCurrentMatch = true
 		refreshScreenBuffer = false
@@ -327,7 +328,7 @@ func (fm *FilterManager) processCommand(command Command) {
 		log.Println("Invalidating caches")
 		fm.invalidateCaches()
 		log.Println("Setting key")
-		err = command.Filter.setKey(command.Key)
+		err = command.Filter.SetKey(command.Key)
 		log.Println("Unsetting Current Match")
 		unsetCurrentMatch = true
 		refreshScreenBuffer = false
@@ -343,7 +344,7 @@ func (fm *FilterManager) processCommand(command Command) {
 
 	}
 	if err == util.ErrOutOfBounds || err == util.ErrNotFound ||
-		err == ErrNotEnoughPanels || err == ErrRegex {
+		err == ErrNotEnoughPanels || err == filter.ErrRegex {
 
 		config.GetConfiguration().PostEventFunc(NewEventError(true, ""))
 	} else if err != nil {
@@ -405,7 +406,7 @@ func (fm *FilterManager) internalScrollHorizontal(offset int) error {
 }
 
 func (fm *FilterManager) alreadyAtTheEnd() bool {
-	if fm.Source().isEmpty() {
+	if fm.Source().IsEmpty() {
 		return true
 	}
 
@@ -523,7 +524,7 @@ func (fm *FilterManager) internalScrollHome() {
 	fm.internalSetCurrentLine(0)
 }
 
-func (fm *FilterManager) internalAddFilter(f Filter) {
+func (fm *FilterManager) internalAddFilter(f filter.Filter) {
 	fm.Lock()
 	defer fm.Unlock()
 
@@ -535,9 +536,9 @@ func (fm *FilterManager) internalAddFilter(f Filter) {
 	var pos int
 	for pos = len(fm.filters) - 1; pos > 0; pos-- {
 		existingFilter := fm.filters[pos]
-		if _, ok := existingFilter.(*Cache); ok {
+		if _, ok := existingFilter.(*filter.Cache); ok {
 			continue
-		} else if _, ok := existingFilter.(*Source); ok {
+		} else if _, ok := existingFilter.(*filter.Source); ok {
 			log.Panic("really?!?")
 		} else {
 			break
@@ -547,10 +548,10 @@ func (fm *FilterManager) internalAddFilter(f Filter) {
 	// if the whole for loop went through then pos should be 0 now. So new
 	// filter will be added add pos 1, right after the source.
 
-	f.setSource(fm.filters[pos])
+	f.SetSource(fm.filters[pos])
 	if pos < len(fm.filters)-1 {
-		fm.filters[pos+1].setSource(f)
-		f.setSource(fm.filters[pos])
+		fm.filters[pos+1].SetSource(f)
+		f.SetSource(fm.filters[pos])
 		// insert right after fm.filters[pos]
 		fm.filters = append(fm.filters[:pos+2], fm.filters[pos+1:]...)
 		fm.filters[pos+1] = f
@@ -559,7 +560,7 @@ func (fm *FilterManager) internalAddFilter(f Filter) {
 	}
 }
 
-func (fm *FilterManager) internalRemoveFilter(f Filter) error {
+func (fm *FilterManager) internalRemoveFilter(f filter.Filter) error {
 	fm.Lock()
 	defer fm.Unlock()
 	if len(fm.filters) <= 2 {
@@ -572,7 +573,7 @@ func (fm *FilterManager) internalRemoveFilter(f Filter) error {
 			}
 			fm.filters = append(fm.filters[:i], fm.filters[i+1:]...)
 			if i < len(fm.filters) {
-				fm.filters[i].setSource(fm.filters[i-1])
+				fm.filters[i].SetSource(fm.filters[i-1])
 			}
 			return nil
 		}
@@ -784,8 +785,8 @@ func (fm *FilterManager) findNonHiddenLine(lineNo int, direction int) (int, erro
 }
 
 func (fm *FilterManager) invalidateCaches() {
-	for _, filter := range fm.filters {
-		cache, ok := filter.(*Cache)
+	for _, f := range fm.filters {
+		cache, ok := f.(*filter.Cache)
 		if ok {
 			cache.Invalidate()
 		}

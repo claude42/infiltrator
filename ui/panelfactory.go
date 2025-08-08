@@ -4,6 +4,7 @@ import (
 	"log"
 
 	"github.com/claude42/infiltrator/model"
+	"github.com/claude42/infiltrator/model/filter"
 	// "github.com/gdamore/tcell/v2"
 )
 
@@ -21,10 +22,10 @@ const (
 const keywordPanelDefaultName = "Keyword"
 const regexPanelDefaultName = "Regex"
 
-func setupNewTinyPanel(fn model.StringFilterFuncFactory, name string) (*TinyPanel, error) {
+func setupNewTinyPanel(fn filter.StringFilterFuncFactory, name string) (*TinyPanel, error) {
 	p := NewTinyPanel()
 	p.SetName(name)
-	filter := model.NewStringFilter(fn, p.Mode())
+	filter := filter.NewStringFilter(fn, p.Mode())
 	model.GetFilterManager().AddFilter(filter)
 	p.SetFilter(filter)
 
@@ -41,10 +42,10 @@ func setupNewTinyPanel(fn model.StringFilterFuncFactory, name string) (*TinyPane
 func NewPanel(panelType PanelType) (Panel, error) {
 	switch panelType {
 	case PanelTypeKeyword:
-		return setupNewTinyPanel(model.DefaultStringFilterFuncFactory, keywordPanelDefaultName)
+		return setupNewTinyPanel(filter.DefaultStringFilterFuncFactory, keywordPanelDefaultName)
 		// return createNewKeywordPanel()
 	case PanelTypeRegex:
-		return setupNewTinyPanel(model.RegexFilterFuncFactory, regexPanelDefaultName)
+		return setupNewTinyPanel(filter.RegexFilterFuncFactory, regexPanelDefaultName)
 		// return createNewRegexPanel()
 	/*case Glob:
 		return NewGlobPanel()

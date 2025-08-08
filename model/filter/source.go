@@ -1,4 +1,4 @@
-package model
+package filter
 
 import (
 	"log"
@@ -18,22 +18,22 @@ func (s *Source) calculateNewWidthFrom(start int) {
 	}
 }
 
-func (s *Source) storeNewLines(newLines []*reader.Line) int {
+func (s *Source) StoreNewLines(newLines []*reader.Line) int {
 	start := len(s.lines)
 	s.lines = append(s.lines, newLines...)
 	s.calculateNewWidthFrom(start)
 	return len(s.lines)
 }
 
-func (s *Source) size() (int, int) {
+func (s *Source) Size() (int, int) {
 	return s.width, len(s.lines)
 }
 
-func (s *Source) length() int {
+func (s *Source) Length() int {
 	return len(s.lines)
 }
 
-func (s *Source) getLine(line int) (*reader.Line, error) {
+func (s *Source) GetLine(line int) (*reader.Line, error) {
 	length := len(s.lines)
 
 	if line < 0 || line >= length {
@@ -45,29 +45,29 @@ func (s *Source) getLine(line int) (*reader.Line, error) {
 	return s.lines[line], nil
 }
 
-func (s *Source) setSource(source Filter) {
+func (s *Source) SetSource(source Filter) {
 	log.Panicln("SetSource() should never be called on a source!")
 }
 
-func (s *Source) setKey(key string) error {
+func (s *Source) SetKey(key string) error {
 	log.Panicln("SetKey() should never be called on a source!")
 	return nil
 }
 
-func (s *Source) setMode(mode FilterMode) {
+func (s *Source) SetMode(mode FilterMode) {
 	log.Panicln("SetMode() should never be called on a source!")
 }
 
-func (s *Source) setCaseSensitive(caseSensitive bool) error {
+func (s *Source) SetCaseSensitive(caseSensitive bool) error {
 	log.Panicln("SetCaseSensitive() should never be called on a source!")
 	return nil
 }
 
-func (s *Source) setColorIndex(colorIndex uint8) {
+func (s *Source) SetColorIndex(colorIndex uint8) {
 	// Buffers don't have a color
 }
 
-func (s *Source) isEmpty() bool {
+func (s *Source) IsEmpty() bool {
 	return len(s.lines) == 0
 }
 

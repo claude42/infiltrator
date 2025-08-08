@@ -6,6 +6,8 @@ import (
 	"log"
 
 	"github.com/claude42/infiltrator/model"
+	"github.com/claude42/infiltrator/model/filter"
+
 	//"github.com/claude42/infiltrator/util"
 
 	"github.com/gdamore/tcell/v2"
@@ -35,7 +37,7 @@ type TinyPanel struct {
 	mode          *Select
 	caseSensitive *Select
 	colorIndex    uint8
-	filter        model.Filter
+	filter        filter.Filter
 
 	ComponentImpl
 }
@@ -160,12 +162,12 @@ func (t *TinyPanel) SetName(name string) {
 	t.name = name
 }
 
-func (t *TinyPanel) SetFilter(filter model.Filter) {
+func (t *TinyPanel) SetFilter(filter filter.Filter) {
 	t.filter = filter
 	t.input.SetFilter(filter)
 }
 
-func (t *TinyPanel) Filter() model.Filter {
+func (t *TinyPanel) Filter() filter.Filter {
 	return t.filter
 }
 
@@ -178,7 +180,7 @@ func (t *TinyPanel) WatchInput(eh tcell.EventHandler) {
 }
 
 func (t *TinyPanel) toggleMode() {
-	model.GetFilterManager().UpdateFilterMode(t.filter, model.FilterMode(t.mode.NextOption()))
+	model.GetFilterManager().UpdateFilterMode(t.filter, filter.FilterMode(t.mode.NextOption()))
 
 	t.Render(true)
 }
@@ -212,8 +214,8 @@ func (t *TinyPanel) mouseToggleCaseSensitive(ev *tcell.EventMouse) bool {
 	}
 }
 
-func (t *TinyPanel) Mode() model.FilterMode {
-	return model.FilterMode(t.mode.SelectedIndex())
+func (t *TinyPanel) Mode() filter.FilterMode {
+	return filter.FilterMode(t.mode.SelectedIndex())
 }
 
 func (t *TinyPanel) SetMode(mode int) {
