@@ -3,22 +3,24 @@ package model
 import (
 	"log"
 	"sync"
+
+	"github.com/claude42/infiltrator/model/reader"
 )
 
 type Cache struct {
 	sync.Mutex
-	lines  map[int]*Line
+	lines  map[int]*reader.Line
 	source Filter
 }
 
 func NewCache() *Cache {
 	c := &Cache{}
-	c.lines = make(map[int]*Line)
+	c.lines = make(map[int]*reader.Line)
 
 	return c
 }
 
-func (c *Cache) getLine(lineNo int) (*Line, error) {
+func (c *Cache) getLine(lineNo int) (*reader.Line, error) {
 	c.Lock()
 	defer c.Unlock()
 	line, ok := c.lines[lineNo]
@@ -38,7 +40,7 @@ func (c *Cache) getLine(lineNo int) (*Line, error) {
 func (c *Cache) Invalidate() {
 	c.Lock()
 	c.lines = nil
-	c.lines = make(map[int]*Line)
+	c.lines = make(map[int]*reader.Line)
 	c.Unlock()
 }
 

@@ -7,6 +7,8 @@ import (
 
 	"log"
 	"strings"
+
+	"github.com/claude42/infiltrator/model/reader"
 	// "github.com/claude42/infiltrator/util"
 )
 
@@ -124,7 +126,7 @@ func (s *StringFilter) setMode(mode FilterMode) {
 
 // ErrLineDidNotMatch errors are handled within GetLine() and will not
 // buble up.
-func (s *StringFilter) getLine(line int) (*Line, error) {
+func (s *StringFilter) getLine(line int) (*reader.Line, error) {
 	sourceLine, err := s.source.getLine(line)
 	if err != nil {
 		return sourceLine, err
@@ -147,60 +149,60 @@ func (s *StringFilter) getLine(line int) (*Line, error) {
 	}
 
 	if (s.mode == FilterMatch || s.mode == FilterFocus) &&
-		sourceLine.Status != LineHidden {
+		sourceLine.Status != reader.LineHidden {
 		s.colorizeLine(sourceLine, indeces)
 	}
 	return sourceLine, nil
 }
 
-func (s *StringFilter) updateStatusAndMatched(matched bool, indeces [][]int, sourceLine *Line) {
+func (s *StringFilter) updateStatusAndMatched(matched bool, indeces [][]int, sourceLine *reader.Line) {
 	newStatus := sourceLine.Status
 	newMatched := sourceLine.Matched
 	switch s.mode {
 	case FilterMatch:
 		// Status
-		if sourceLine.Status == LineWithoutStatus && matched {
-			newStatus = LineMatched
+		if sourceLine.Status == reader.LineWithoutStatus && matched {
+			newStatus = reader.LineMatched
 		} else if !matched {
-			newStatus = LineHidden
+			newStatus = reader.LineHidden
 		}
 
 		// Matched
 		if !sourceLine.Matched && matched &&
-			(sourceLine.Status == LineWithoutStatus || sourceLine.Status == LineDimmed) {
+			(sourceLine.Status == reader.LineWithoutStatus || sourceLine.Status == reader.LineDimmed) {
 
 			newMatched = true
 		}
 	case FilterFocus:
 		// Status
 		switch sourceLine.Status {
-		case LineWithoutStatus:
+		case reader.LineWithoutStatus:
 			if matched {
-				newStatus = LineMatched
+				newStatus = reader.LineMatched
 			} else {
-				newStatus = LineDimmed
+				newStatus = reader.LineDimmed
 			}
-		case LineMatched:
+		case reader.LineMatched:
 			if !matched {
-				newStatus = LineDimmed
+				newStatus = reader.LineDimmed
 			}
 		}
 
 		// Matched
 		if !sourceLine.Matched && matched &&
-			(sourceLine.Status == LineWithoutStatus || sourceLine.Status == LineDimmed) {
+			(sourceLine.Status == reader.LineWithoutStatus || sourceLine.Status == reader.LineDimmed) {
 
 			newMatched = true
 		}
 	case FilterHide:
 		// Status
 		if matched && indeces[0][1] != 0 {
-			newStatus = LineHidden
+			newStatus = reader.LineHidden
 		}
 
 		// Matched
 		if sourceLine.Matched && matched &&
-			(sourceLine.Status == LineMatched || sourceLine.Status == LineDimmed) {
+			(sourceLine.Status == reader.LineMatched || sourceLine.Status == reader.LineDimmed) {
 			newMatched = false
 		}
 	default:
@@ -211,7 +213,7 @@ func (s *StringFilter) updateStatusAndMatched(matched bool, indeces [][]int, sou
 	sourceLine.Matched = newMatched
 }
 
-func (s *StringFilter) colorizeLine(line *Line, indeces [][]int) {
+func (s *StringFilter) colorizeLine(line *reader.Line, indeces [][]int) {
 	for _, index := range indeces {
 		for i := index[0]; i < index[1]; i++ {
 			line.ColorIndex[i] = s.colorIndex

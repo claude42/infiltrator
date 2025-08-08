@@ -1,4 +1,4 @@
-package model
+package reader
 
 type LineStatus int
 
@@ -17,6 +17,10 @@ type Line struct {
 	Str     string
 	// each byte in ColorIndex is a color index for each byte in Str
 	ColorIndex []uint8
+}
+
+func NewLine(lineNo int, text string) *Line {
+	return &Line{lineNo, LineWithoutStatus, false, text, make([]uint8, len(text))}
 }
 
 func (l *Line) CleanUp() {

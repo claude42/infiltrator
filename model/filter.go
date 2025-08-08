@@ -1,7 +1,9 @@
 package model
 
+import "github.com/claude42/infiltrator/model/reader"
+
 type Filter interface {
-	getLine(line int) (*Line, error)
+	getLine(line int) (*reader.Line, error)
 	setSource(source Filter)
 	size() (int, int)
 	length() int

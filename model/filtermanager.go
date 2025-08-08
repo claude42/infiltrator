@@ -10,6 +10,7 @@ import (
 
 	"github.com/claude42/infiltrator/config"
 	"github.com/claude42/infiltrator/model/busy"
+	"github.com/claude42/infiltrator/model/reader"
 	"github.com/claude42/infiltrator/util"
 )
 
@@ -28,7 +29,7 @@ type FilterManager struct {
 	refresherCancelFunc context.CancelFunc
 	refesherWg          sync.WaitGroup
 
-	contentUpdate  chan []*Line
+	contentUpdate  chan []*reader.Line
 	commandChannel chan Command
 
 	filters     []Filter
@@ -48,7 +49,7 @@ func createNewFilterManager() *FilterManager {
 	fm := &FilterManager{}
 	fm.display = &Display{}
 	fm.display.UnsetCurrentMatch()
-	fm.contentUpdate = make(chan []*Line, 10)
+	fm.contentUpdate = make(chan []*reader.Line, 10)
 	fm.commandChannel = make(chan Command, 10)
 
 	fm.internalAddFilter(&Source{})
@@ -129,10 +130,10 @@ func (fm *FilterManager) sourceLength() int {
 }
 
 // TODO: make private
-func (fm *FilterManager) GetLine(line int) (*Line, error) {
+func (fm *FilterManager) GetLine(line int) (*reader.Line, error) {
 	filter, err := fm.outputFilter()
 	if err != nil {
-		return &Line{}, err
+		return reader.NewLine(-1, ""), err
 	}
 
 	busy.SpinWithFraction(line, fm.sourceLength())
@@ -166,7 +167,7 @@ func (fm *FilterManager) EventLoop() {
 	}
 }
 
-func (fm *FilterManager) processContentUpdate(newLines []*Line) {
+func (fm *FilterManager) processContentUpdate(newLines []*reader.Line) {
 
 	// If we're in Follow mode we'll automatically jump to the new end of the
 	// file - but only in case we're already at the end
@@ -203,14 +204,12 @@ func (fm *FilterManager) isDisplayAffected() bool {
 	return fm.display.Buffer[len(fm.display.Buffer)-1].No == -1
 }
 
-func (fm *FilterManager) ScrollDown() (Line, error) {
+func (fm *FilterManager) ScrollDown() {
 	fm.commandChannel <- CommandDown{}
-	return Line{}, nil
 }
 
-func (fm *FilterManager) ScrollUp() (Line, error) {
+func (fm *FilterManager) ScrollUp() {
 	fm.commandChannel <- CommandUp{}
-	return Line{}, nil
 }
 
 func (fm *FilterManager) ScrollHorizontal(offset int) {
@@ -355,9 +354,8 @@ func (fm *FilterManager) processCommand(command Command) {
 
 // ----------------------------------
 
-// will return the line it scrolled to
 func (fm *FilterManager) internalScrollDownLineBuffer() error {
-	var nextLine *Line
+	var nextLine *reader.Line
 	var err error
 
 	if fm.display.Height() <= 0 {
@@ -365,7 +363,7 @@ func (fm *FilterManager) internalScrollDownLineBuffer() error {
 	}
 
 	lastLineOnScreen := fm.display.Buffer[fm.display.Height()-1]
-	if lastLineOnScreen.Status == LineDoesNotExist {
+	if lastLineOnScreen.Status == reader.LineDoesNotExist {
 		return util.ErrOutOfBounds
 	}
 
@@ -375,8 +373,9 @@ func (fm *FilterManager) internalScrollDownLineBuffer() error {
 		nextLine, err = fm.GetLine(lineNo)
 		if err != nil {
 			return util.ErrOutOfBounds
-		} else if nextLine.Status == LineWithoutStatus ||
-			nextLine.Status == LineMatched || nextLine.Status == LineDimmed {
+		} else if nextLine.Status == reader.LineWithoutStatus ||
+			nextLine.Status == reader.LineMatched ||
+			nextLine.Status == reader.LineDimmed {
 
 			break
 		}
@@ -385,7 +384,7 @@ func (fm *FilterManager) internalScrollDownLineBuffer() error {
 	if fm.display.Height() > 0 {
 		fm.display.Buffer = append(fm.display.Buffer[1:], nextLine)
 	} else {
-		fm.display.Buffer = []*Line{nextLine}
+		fm.display.Buffer = []*reader.Line{nextLine}
 	}
 
 	fm.currentLine = fm.display.Buffer[0].No
@@ -412,7 +411,7 @@ func (fm *FilterManager) alreadyAtTheEnd() bool {
 
 	lastLineOnScreen := fm.display.Buffer[len(fm.display.Buffer)-1]
 
-	if lastLineOnScreen.Status == LineDoesNotExist {
+	if lastLineOnScreen.Status == reader.LineDoesNotExist {
 		return true
 	}
 
@@ -424,8 +423,9 @@ func (fm *FilterManager) alreadyAtTheEnd() bool {
 		if err != nil {
 			return true
 		}
-		if nextLine.Status == LineWithoutStatus ||
-			nextLine.Status == LineMatched || nextLine.Status == LineDimmed {
+		if nextLine.Status == reader.LineWithoutStatus ||
+			nextLine.Status == reader.LineMatched ||
+			nextLine.Status == reader.LineDimmed {
 
 			return false
 		}
@@ -434,7 +434,7 @@ func (fm *FilterManager) alreadyAtTheEnd() bool {
 
 // will return the line it scrolled to
 func (fm *FilterManager) internalScrollUpLineBuffer() error {
-	var prevLine *Line
+	var prevLine *reader.Line
 	var err error
 
 	lineNo := fm.display.Buffer[0].No - 1
@@ -445,8 +445,9 @@ func (fm *FilterManager) internalScrollUpLineBuffer() error {
 
 	for ; lineNo >= 0; lineNo-- {
 		prevLine, err = fm.GetLine(lineNo)
-		if err != nil || prevLine.Status == LineWithoutStatus ||
-			prevLine.Status == LineMatched || prevLine.Status == LineDimmed {
+		if err != nil || prevLine.Status == reader.LineWithoutStatus ||
+			prevLine.Status == reader.LineMatched ||
+			prevLine.Status == reader.LineDimmed {
 
 			// matching line found
 			break
@@ -462,9 +463,10 @@ func (fm *FilterManager) internalScrollUpLineBuffer() error {
 	// }
 
 	if fm.display.Height() > 0 {
-		fm.display.Buffer = append([]*Line{prevLine}, fm.display.Buffer[:fm.display.Height()-1]...)
+		fm.display.Buffer = append([]*reader.Line{prevLine},
+			fm.display.Buffer[:fm.display.Height()-1]...)
 	} else {
-		fm.display.Buffer = []*Line{prevLine}
+		fm.display.Buffer = []*reader.Line{prevLine}
 	}
 
 	fm.currentLine = fm.display.Buffer[0].No
@@ -508,8 +510,9 @@ func (fm *FilterManager) internalScrollEnd() {
 		err := fm.internalScrollUpLineBuffer()
 		lastLine := fm.display.Buffer[len(fm.display.Buffer)-1]
 
-		if err != nil || lastLine.Status == LineWithoutStatus ||
-			lastLine.Status == LineMatched || lastLine.Status == LineDimmed {
+		if err != nil || lastLine.Status == reader.LineWithoutStatus ||
+			lastLine.Status == reader.LineMatched ||
+			lastLine.Status == reader.LineDimmed {
 
 			break
 		}
@@ -599,7 +602,7 @@ func (fm *FilterManager) internalFindNextMatch(direction int) error {
 	}
 
 	startSearchWith := 0
-	var found *Line
+	var found *reader.Line
 
 	// first see if the current match is on screen if yes, try if we can find
 	// the next match on screen already (much faster)
@@ -669,7 +672,7 @@ func (fm *FilterManager) isLineOnScreen(lineNo int) bool {
 	}
 	return false
 }
-func (fm *FilterManager) search(start int, direction int) (*Line, error) {
+func (fm *FilterManager) search(start int, direction int) (*reader.Line, error) {
 	length := fm.sourceLength()
 
 	for i := start; ; i = i + direction {
@@ -683,7 +686,7 @@ func (fm *FilterManager) search(start int, direction int) (*Line, error) {
 	}
 }
 
-func (fm *FilterManager) searchOnScreen(startOnScreen int, direction int) (*Line, error) {
+func (fm *FilterManager) searchOnScreen(startOnScreen int, direction int) (*reader.Line, error) {
 	height := len(fm.display.Buffer)
 
 	for i := startOnScreen; i >= 0 && i < height; i = i + direction {
@@ -770,8 +773,9 @@ func (fm *FilterManager) findNonHiddenLine(lineNo int, direction int) (int, erro
 		if err != nil {
 			return -1, err
 		}
-		if prevLine.Status == LineWithoutStatus || prevLine.Status == LineMatched ||
-			prevLine.Status == LineDimmed {
+		if prevLine.Status == reader.LineWithoutStatus ||
+			prevLine.Status == reader.LineMatched ||
+			prevLine.Status == reader.LineDimmed {
 			return prevLine.No, nil
 		}
 	}
