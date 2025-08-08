@@ -1,5 +1,7 @@
 package reader
 
+import "time"
+
 type LineStatus int
 
 const (
@@ -15,12 +17,19 @@ type Line struct {
 	Status  LineStatus
 	Matched bool
 	Str     string
+	When    time.Time
 	// each byte in ColorIndex is a color index for each byte in Str
 	ColorIndex []uint8
 }
 
 func NewLine(lineNo int, text string) *Line {
-	return &Line{lineNo, LineWithoutStatus, false, text, make([]uint8, len(text))}
+	return &Line{
+		No:         lineNo,
+		Status:     LineWithoutStatus,
+		Matched:    false,
+		Str:        text,
+		ColorIndex: make([]uint8, len(text)),
+	}
 }
 
 func (l *Line) CleanUp() {

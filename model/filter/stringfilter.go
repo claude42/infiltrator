@@ -21,8 +21,8 @@ const (
 )
 
 type StringFilter struct {
+	FilterImpl
 	sync.Mutex
-	source            Filter
 	filterFunc        func(input string) (string, [][]int, bool)
 	filterFuncFactory StringFilterFuncFactory
 	colorIndex        uint8
@@ -127,7 +127,7 @@ func (s *StringFilter) SetMode(mode FilterMode) {
 // ErrLineDidNotMatch errors are handled within GetLine() and will not
 // buble up.
 func (s *StringFilter) GetLine(line int) (*reader.Line, error) {
-	sourceLine, err := s.source.GetLine(line)
+	sourceLine, err := s.FilterImpl.GetLine(line)
 	if err != nil {
 		return sourceLine, err
 	}
@@ -219,18 +219,6 @@ func (s *StringFilter) colorizeLine(line *reader.Line, indeces [][]int) {
 			line.ColorIndex[i] = s.colorIndex
 		}
 	}
-}
-
-func (s *StringFilter) SetSource(source Filter) {
-	s.source = source
-}
-
-func (s *StringFilter) Size() (int, int) {
-	return s.source.Size()
-}
-
-func (s *StringFilter) Length() int {
-	return s.source.Length()
 }
 
 func (s *StringFilter) SetColorIndex(colorIndex uint8) {

@@ -1,16 +1,15 @@
 package filter
 
 import (
-	"log"
 	"sync"
 
 	"github.com/claude42/infiltrator/model/reader"
 )
 
 type Cache struct {
+	FilterImpl
 	sync.Mutex
-	lines  map[int]*reader.Line
-	source Filter
+	lines map[int]*reader.Line
 }
 
 func NewCache() *Cache {
@@ -42,34 +41,4 @@ func (c *Cache) Invalidate() {
 	c.lines = nil
 	c.lines = make(map[int]*reader.Line)
 	c.Unlock()
-}
-
-func (c *Cache) SetSource(source Filter) {
-	c.source = source
-}
-
-func (c *Cache) Size() (int, int) {
-	return c.source.Size()
-}
-
-func (c *Cache) Length() int {
-	return c.source.Length()
-}
-
-func (c *Cache) SetKey(key string) error {
-	log.Panicln("SetKey() should never be called on a cache!")
-	return nil
-}
-
-func (c *Cache) SetMode(mode FilterMode) {
-	log.Panicln("SetMode() should never be called on a cache!")
-}
-
-func (c *Cache) SetCaseSensitive(caseSensitive bool) error {
-	log.Panicln("SetCaseSensitive() should never be called on a cache!")
-	return nil
-}
-
-func (c *Cache) SetColorIndex(colorIndex uint8) {
-	log.Panicln("setColorIndex() should never be called on a cache!")
 }

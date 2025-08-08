@@ -15,6 +15,8 @@ import (
 	"github.com/claude42/infiltrator/model"
 	"github.com/claude42/infiltrator/ui"
 
+	// dateparser "github.com/markusmobius/go-dateparser"
+
 	flag "github.com/spf13/pflag"
 )
 
@@ -50,6 +52,14 @@ func run() error {
 		log.SetOutput(debug)
 		log.SetFlags(log.LstdFlags | log.Lshortfile)
 	}
+
+	// // d, err := dateparser.Parse(nil, flag.Args()[0])
+	// d, err := dateparser.Parse(nil, "-3d")
+	// if err != nil {
+	// 	log.Panicf("uhh %T", err)
+	// }
+
+	// fmt.Println(d.Time)
 
 	cfg := config.GetConfiguration()
 

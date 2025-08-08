@@ -8,6 +8,7 @@ import (
 )
 
 type Source struct {
+	FilterImpl
 	lines []*reader.Line
 	width int
 }
@@ -47,20 +48,6 @@ func (s *Source) GetLine(line int) (*reader.Line, error) {
 
 func (s *Source) SetSource(source Filter) {
 	log.Panicln("SetSource() should never be called on a source!")
-}
-
-func (s *Source) SetKey(key string) error {
-	log.Panicln("SetKey() should never be called on a source!")
-	return nil
-}
-
-func (s *Source) SetMode(mode FilterMode) {
-	log.Panicln("SetMode() should never be called on a source!")
-}
-
-func (s *Source) SetCaseSensitive(caseSensitive bool) error {
-	log.Panicln("SetCaseSensitive() should never be called on a source!")
-	return nil
 }
 
 func (s *Source) SetColorIndex(colorIndex uint8) {
