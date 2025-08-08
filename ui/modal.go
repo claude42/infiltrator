@@ -29,6 +29,7 @@ type ModalImpl struct {
 	title               string
 	orientation         Orientation
 	lines               []string
+	contentWidth        int
 }
 
 func NewModalImpl(width, height int) *ModalImpl {
@@ -120,14 +121,23 @@ func (m *ModalImpl) renderTextContent() {
 
 func (m *ModalImpl) SetContent(content string, orientation Orientation) {
 	m.lines = strings.Split(content, "\n")
-	var contentWidth int
+
+	m.contentWidth = 0
 	for _, line := range m.lines {
-		if len(line) > contentWidth {
-			contentWidth = len(line)
+		if len(line) > m.contentWidth {
+			m.contentWidth = len(line)
 		}
 	}
 
 	m.orientation = orientation
 
-	m.Resize(0, 0, contentWidth+4, len(m.lines)+3)
+	m.Fit()
+}
+
+func (m *ModalImpl) Fit() {
+	if len(m.lines) == 0 {
+		return
+	}
+
+	m.Resize(0, 0, m.contentWidth+4, len(m.lines)+3)
 }

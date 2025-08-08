@@ -19,12 +19,13 @@ var (
 )
 
 type Window struct {
-	mainView     *View
-	BottomPanels []Panel
-	panelsOpen   bool
-	activePanel  Panel
-	statusbar    *Statusbar
-	popup        Modal
+	mainView       *View
+	BottomPanels   []Panel
+	panelsOpen     bool
+	activePanel    Panel
+	statusbar      *Statusbar
+	popup          Modal
+	panelSelection *PanelSelection
 }
 
 func GetScreen() tcell.Screen {
@@ -61,20 +62,9 @@ func Setup() *Window {
 
 	window.statusbar = NewStatusbar()
 
-	// window.popup = NewPanelSelection(40, 10)
-	window.popup = NewPanelSelection(`This is just some test
-to see if this is going to work a intended
-Some
-More
-Lines`, OrientationLeft)
-	window.popup.SetTitle("Testerli")
-	window.popup.SetActive(false)
+	window.panelSelection = NewPanelSelection()
 
 	setupScreen()
-
-	// apparently an explizit resize() is not necessary in the beginning as
-	// there will be always a ResizeEvent coming from the EventLoop
-	// window.resize()
 
 	return window
 }
@@ -103,7 +93,9 @@ func (w *Window) Render() {
 
 	w.statusbar.Render(false)
 
-	w.popup.Render(false)
+	if w.popup != nil {
+		w.popup.Render(false)
+	}
 
 	screen.Show()
 }
@@ -138,6 +130,10 @@ func (w *Window) EventLoop() bool {
 	// log.Printf("Event: %T, %+v", ev, ev)
 	log.Printf("Main Loop: %T", ev)
 
+	if w.popup != nil && w.popup.IsActive() && w.popup.HandleEvent(ev) {
+		return false
+	}
+
 	if w.panelsOpen && w.activePanel != nil &&
 		w.activePanel.HandleEvent(ev) {
 
@@ -156,8 +152,8 @@ func (w *Window) EventLoop() bool {
 		case tcell.KeyRune:
 			switch ev.Rune() {
 			case '/':
-				w.CreateAndAddPanel()
-				w.SetPanelsOpen(true)
+				w.openPanelsOrPanelSelection()
+				w.Render()
 				return false
 			case 'q':
 				config.GetConfiguration().Quit <- "Good bye!"
@@ -177,8 +173,8 @@ func (w *Window) EventLoop() bool {
 			}
 			return false
 		case tcell.KeyCtrlP:
-			w.CreateAndAddPanel()
-			w.SetPanelsOpen(true)
+			w.openPanelsOrPanelSelection()
+			w.Render()
 			return false
 		case tcell.KeyCtrlO:
 			toBeDestroyed := w.activePanel
@@ -224,6 +220,9 @@ func (w *Window) EventLoop() bool {
 		// TODO: maybe change this in the future and let it trickle down
 		// instead of calling resize() manually
 		return false
+	case *EventPopupStateChanged:
+		w.Render()
+		return false
 	case *EventPressedEnterInInputField:
 		w.SetPanelsOpen(false)
 		// don't continue here so that view can handle this as well
@@ -235,10 +234,6 @@ func (w *Window) EventLoop() bool {
 		return false
 	}
 
-	if w.popup.HandleEvent(ev) {
-		return false
-	}
-
 	if w.statusbar.HandleEvent(ev) {
 		return false
 	}
@@ -246,12 +241,28 @@ func (w *Window) EventLoop() bool {
 	return false
 }
 
-func (w *Window) CreateAndAddPanel() {
+func (w *Window) openPanelsOrPanelSelection() {
+	// if panels are currently closed but at least one panel exists
+	// already, then just open the existing panels, don't open
+	// panel selection
+	if w.activePanel != nil && !w.statusbar.panelsOpen {
+		w.SetPanelsOpen(true)
+		return
+	} else {
+		if w.popup != nil {
+			w.popup.SetActive(false)
+		}
+		w.popup = w.panelSelection
+		w.popup.SetActive(true)
+	}
+}
+
+func (w *Window) CreateAndAddPanel(panelType PanelType) {
 	// TODO: really understand this next 3 lines?!?!
 	if w.activePanel != nil && !w.panelsOpen {
 		return
 	}
-	panel, err := NewPanel(PanelTypeRegex)
+	panel, err := NewPanel(panelType)
 	if err != nil {
 		log.Panicf("%+v", err)
 	}
@@ -291,8 +302,9 @@ func (w *Window) resize() {
 		}
 	}
 	w.statusbar.Resize(0, height-1, width, 0) // x and height ignored
-	// w.popup.Resize(0, 0, 40, 10)
-	w.popup.Resize(0, 0, 0, 0)
+	if w.popup != nil {
+		w.popup.Resize(0, 0, 0, 0)
+	}
 }
 
 func (w *Window) totalPanelHeight() int {

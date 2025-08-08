@@ -29,12 +29,10 @@ func (fi *FilterInput) HandleEvent(ev tcell.Event) bool {
 			screen.PostEvent(NewEventPressedEnterInInputField())
 			model.GetFilterManager().FindMatch(1)
 			return true
-		default:
-			return fi.InputImpl.HandleEvent(ev)
 		}
 	}
 
-	return false
+	return fi.InputImpl.HandleEvent(ev)
 }
 
 func (fi *FilterInput) SetFilter(filter model.Filter) {
