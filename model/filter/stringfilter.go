@@ -127,13 +127,17 @@ func (s *StringFilter) SetMode(mode FilterMode) {
 // ErrLineDidNotMatch errors are handled within GetLine() and will not
 // buble up.
 func (s *StringFilter) GetLine(line int) (*reader.Line, error) {
-	sourceLine, err := s.FilterImpl.GetLine(line)
+	sourceLine, err := s.source.GetLine(line)
 	if err != nil {
 		return sourceLine, err
 	}
 
 	s.Lock()
 	defer s.Unlock()
+
+	if sourceLine.Status == reader.LineHidden {
+		return sourceLine, nil
+	}
 
 	if s.filterFunc == nil || s.key == "" {
 		return sourceLine, nil

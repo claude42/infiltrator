@@ -8,11 +8,13 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"sync"
 
 	//"time"
 
 	"github.com/claude42/infiltrator/config"
 	"github.com/claude42/infiltrator/model"
+	"github.com/claude42/infiltrator/model/busy"
 	"github.com/claude42/infiltrator/ui"
 
 	// dateparser "github.com/markusmobius/go-dateparser"
@@ -62,18 +64,23 @@ func run() error {
 	// fmt.Println(d.Time)
 
 	cfg := config.GetConfiguration()
+	cfg.PostEventFunc = ui.InfiltPostEvent
 
-	cfg.Context, cfg.Cancel = context.WithCancel((context.Background()))
+	ctx, cancelFunc := context.WithCancel((context.Background()))
+	var wg sync.WaitGroup
+
+	// Busy spinner first :-)
+	wg.Add(1)
+	go busy.StartBusySpinner(ctx, &wg)
+
+	quit := make(chan string, 10)
+	fm := model.NewFilterManager(ctx, &wg, quit)
 
 	// Set up UI
 	window := ui.Setup()
 
-	cfg.Quit = make(chan string, 10)
-	cfg.WaitGroup.Add(1)
-	go window.MetaEventLoop()
-
-	fm := model.GetFilterManager()
-	cfg.PostEventFunc = ui.InfiltPostEvent
+	wg.Add(1)
+	go window.MetaEventLoop(ctx, &wg, quit)
 
 	switch len(flag.Args()) {
 	case 0:
@@ -89,21 +96,23 @@ func run() error {
 		fm.ReadFromFile(cm.FilePath)
 	default:
 		flag.Usage()
+		cancelFunc()
+		wg.Wait()
 		return fmt.Errorf("try again")
 	}
 
-	cfg.WaitGroup.Add(1)
+	wg.Add(1)
 	go fm.EventLoop()
 
 	// wait for UI thread to finish
 
 	var message string
-	for message = range cfg.Quit {
-		log.Printf("in loop %s", message)
+	for message = range quit {
+		log.Printf("Quit message: %s", message)
 	}
 
-	cfg.Cancel()
-	cfg.WaitGroup.Wait()
+	cancelFunc()
+	wg.Wait()
 
 	ui.Cleanup()
 

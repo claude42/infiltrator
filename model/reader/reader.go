@@ -29,12 +29,10 @@ func GetReader() *Reader {
 	return readerInstance
 }
 
-func (r *Reader) ReadFromFile(filePath string, context context.Context,
-	ch chan<- []*Line, follow bool) {
+func (r *Reader) ReadFromFile(ctx context.Context, wg *sync.WaitGroup,
+	quit chan<- string, filePath string, ch chan<- []*Line, follow bool) {
 
-	defer config.GetConfiguration().WaitGroup.Done()
-
-	quit := config.GetConfiguration().Quit
+	defer wg.Done()
 
 	file, err := os.Open(filePath)
 	if err != nil {
@@ -56,16 +54,16 @@ func (r *Reader) ReadFromFile(filePath string, context context.Context,
 	}
 
 	if config.GetConfiguration().FollowFile {
-		r.startWatching(filePath, file, context, ch, lineNo)
+		r.startWatching(ctx, filePath, file, ch, lineNo)
 	}
 }
 
-func (r *Reader) ReopenForWatching(filePath string, context context.Context,
-	ch chan<- []*Line, lineNo int) {
+func (r *Reader) ReopenForWatching(ctx context.Context, wg *sync.WaitGroup,
+	filePath string, ch chan<- []*Line, lineNo int) {
 
 	log.Println("ReopenForWatching")
 
-	defer config.GetConfiguration().WaitGroup.Done()
+	defer wg.Done()
 
 	file, err := os.Open(filePath)
 	if err != nil {
@@ -80,12 +78,12 @@ func (r *Reader) ReopenForWatching(filePath string, context context.Context,
 		return
 	}
 
-	r.startWatching(filePath, file, context, ch, lineNo)
+	r.startWatching(ctx, filePath, file, ch, lineNo)
 	log.Println("ReopenForWatching ended")
 }
 
-func (r *Reader) startWatching(filePath string, file *os.File,
-	context context.Context, ch chan<- []*Line, lineNo int) {
+func (r *Reader) startWatching(ctx context.Context, filePath string,
+	file *os.File, ch chan<- []*Line, lineNo int) {
 
 	log.Println("Start watching")
 	watcher, err := r.initWatcher(filePath)
@@ -95,15 +93,14 @@ func (r *Reader) startWatching(filePath string, file *os.File,
 	}
 	defer watcher.Close()
 
-	err = r.keepWatching(watcher, file, context, ch, lineNo)
+	err = r.keepWatching(ctx, watcher, file, ch, lineNo)
 	if err != nil {
 		log.Println(err)
 		return
 	}
 }
 
-func (r *Reader) ReadFromStdin(ch chan<- []*Line) {
-	quit := config.GetConfiguration().Quit
+func (r *Reader) ReadFromStdin(ch chan<- []*Line, quit chan<- string) {
 
 	yes, err := r.canUseStdin()
 	if err != nil {
@@ -142,8 +139,8 @@ func (r *Reader) canUseStdin() (bool, error) {
 	return true, nil
 }
 
-func (r *Reader) keepWatching(watcher *fsnotify.Watcher, file *os.File,
-	context context.Context, ch chan<- []*Line, lineNo int) error {
+func (r *Reader) keepWatching(ctx context.Context, watcher *fsnotify.Watcher,
+	file *os.File, ch chan<- []*Line, lineNo int) error {
 	var err error
 	for {
 		select {
@@ -168,7 +165,7 @@ func (r *Reader) keepWatching(watcher *fsnotify.Watcher, file *os.File,
 			}
 			log.Printf("Watcher error: %+v", err)
 			continue
-		case <-context.Done():
+		case <-ctx.Done():
 			log.Println("Reader received shutdown")
 			return nil
 		}

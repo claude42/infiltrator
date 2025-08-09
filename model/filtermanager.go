@@ -17,18 +17,20 @@ import (
 
 var (
 	filterManagerInstance *FilterManager
-	filterManagerOnce     sync.Once
 	ErrNotEnoughPanels    = errors.New("at least one buffer and one filter required")
 )
 
 type FilterManager struct {
 	util.ObservableImpl
 
-	readerContext context.Context
-	readerCancel  context.CancelFunc
+	ctx  context.Context
+	wg   *sync.WaitGroup
+	quit chan<- string
+
+	readerCancelFunc context.CancelFunc
 
 	refresherCancelFunc context.CancelFunc
-	refesherWg          sync.WaitGroup
+	refresherWg         sync.WaitGroup
 
 	contentUpdate  chan []*reader.Line
 	commandChannel chan Command
@@ -40,21 +42,30 @@ type FilterManager struct {
 }
 
 func GetFilterManager() *FilterManager {
-	filterManagerOnce.Do(func() {
-		filterManagerInstance = createNewFilterManager()
-	})
+	if filterManagerInstance == nil {
+		log.Panicln("Filtermanager missing!")
+	}
+
 	return filterManagerInstance
 }
 
-func createNewFilterManager() *FilterManager {
+func NewFilterManager(ctx context.Context, wg *sync.WaitGroup, quit chan<- string) *FilterManager {
 	fm := &FilterManager{}
+	fm.ctx = ctx
+	fm.wg = wg
+	fm.quit = quit
+
 	fm.display = &Display{}
 	fm.display.UnsetCurrentMatch()
+
 	fm.contentUpdate = make(chan []*reader.Line, 10)
 	fm.commandChannel = make(chan Command, 10)
 
-	fm.internalAddFilter(&filter.Source{})
+	fm.internalAddFilter(filter.NewSource())
+	fm.internalAddFilter(filter.NewDateFilter())
 	fm.internalAddFilter(filter.NewCache())
+
+	filterManagerInstance = fm
 	return fm
 }
 
@@ -67,9 +78,11 @@ func (fm *FilterManager) ReadFromFile(filePath string) {
 		}
 	}()
 
-	fm.readerContext, fm.readerCancel = context.WithCancel(config.GetConfiguration().Context)
-	config.GetConfiguration().WaitGroup.Add(1)
-	go reader.GetReader().ReadFromFile(filePath, fm.readerContext, fm.contentUpdate, config.GetConfiguration().FollowFile)
+	var readCtx context.Context
+	readCtx, fm.readerCancelFunc = context.WithCancel(fm.ctx)
+	fm.wg.Add(1)
+	go reader.GetReader().ReadFromFile(readCtx, fm.wg, fm.quit, filePath,
+		fm.contentUpdate, config.GetConfiguration().FollowFile)
 	// GetLoremIpsumReader().Read(fm.contentUpdate)
 }
 
@@ -83,7 +96,7 @@ func (fm *FilterManager) ReadFromStdin() {
 
 	// do NOT add to wait group as the Go routine most likely will not
 	// return
-	go reader.GetReader().ReadFromStdin(fm.contentUpdate)
+	go reader.GetReader().ReadFromStdin(fm.contentUpdate, fm.quit)
 	// GetLoremIpsumReader().Read(fm.contentUpdate)
 }
 
@@ -150,8 +163,7 @@ func (fm *FilterManager) EventLoop() {
 		}
 	}()
 
-	cfg := config.GetConfiguration()
-	defer cfg.WaitGroup.Done()
+	defer fm.wg.Done()
 
 	for {
 		select {
@@ -161,7 +173,7 @@ func (fm *FilterManager) EventLoop() {
 		case command := <-fm.commandChannel:
 			log.Printf("Received Command: %T", command)
 			fm.processCommand(command)
-		case <-cfg.Context.Done():
+		case <-fm.ctx.Done():
 			log.Println("Received shutdown")
 			return
 		}
@@ -590,13 +602,13 @@ func (fm *FilterManager) asyncRefreshScreenBuffer() {
 	if fm.refresherCancelFunc != nil {
 		fm.refresherCancelFunc()
 		fm.refresherCancelFunc = nil
-		fm.refesherWg.Wait()
+		fm.refresherWg.Wait()
 	}
 
-	ctx, fm.refresherCancelFunc = context.WithCancel(config.GetConfiguration().Context)
+	ctx, fm.refresherCancelFunc = context.WithCancel(fm.ctx)
 
-	fm.refesherWg.Add(1)
-	go fm.display.refreshDisplay(ctx, &fm.refesherWg, fm.currentLine)
+	fm.refresherWg.Add(1)
+	go fm.display.refreshDisplay(ctx, &fm.refresherWg, fm.currentLine)
 }
 
 func (fm *FilterManager) internalFindNextMatch(direction int) (bool, error) {
@@ -717,16 +729,18 @@ func (fm *FilterManager) internalToggleFollowMode() {
 	// TODO: handle stdin case
 	if cfg.FollowFile {
 		if fm.alreadyAtTheEnd() {
-			fm.readerCancel()
+			fm.readerCancelFunc()
 			cfg.FollowFile = false
 		} else {
 			fm.internalScrollEnd()
 		}
 	} else {
 		cfg.FollowFile = true
-		cfg.WaitGroup.Add(1)
+		fm.wg.Add(1)
 		fm.internalScrollEnd()
-		go reader.GetReader().ReopenForWatching(cfg.FilePath, fm.readerContext,
+		var ctx context.Context
+		ctx, fm.readerCancelFunc = context.WithCancel(fm.ctx)
+		go reader.GetReader().ReopenForWatching(ctx, fm.wg, cfg.FilePath,
 			fm.contentUpdate, fm.Source().LastLine().No+1)
 	}
 }
@@ -794,4 +808,15 @@ func (fm *FilterManager) invalidateCaches() {
 			cache.Invalidate()
 		}
 	}
+}
+
+func (fm *FilterManager) GetDateFilter() (*filter.DateFilter, error) {
+	for _, f := range fm.filters {
+		dateFilter, ok := f.(*filter.DateFilter)
+		if ok {
+			return dateFilter, nil
+		}
+	}
+
+	return nil, util.ErrNotFound
 }

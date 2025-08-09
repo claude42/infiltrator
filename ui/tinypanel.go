@@ -63,7 +63,8 @@ func (t *TinyPanel) Resize(x, y, width, height int) {
 	// x, height get ignored
 	t.y = y
 	t.width = width
-	t.input.Resize(x+headerWidth+2, y, width-len(t.name)-5, 1)
+
+	t.input.Resize(x+headerWidth+2, y, width-(x+headerWidth+2), 1)
 	t.mode.Resize(x+nameWidth, y, 1, 1)
 	t.caseSensitive.Resize(x+nameWidth+8, y, 1, 1)
 }

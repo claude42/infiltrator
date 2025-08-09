@@ -1,7 +1,6 @@
 package config
 
 import (
-	"context"
 	"sync"
 
 	"github.com/claude42/infiltrator/util"
@@ -19,12 +18,6 @@ type ConfigManager struct {
 	ShowLineNumbers bool
 	FollowFile      bool
 	Debug           bool
-
-	Quit chan string
-
-	Context   context.Context
-	Cancel    context.CancelFunc
-	WaitGroup sync.WaitGroup
 
 	PostEventFunc func(ev util.Event) error
 }

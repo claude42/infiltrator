@@ -11,6 +11,8 @@ import (
 	"github.com/gdamore/tcell/v2"
 )
 
+const inputElementMargin = 3
+
 type Input interface {
 	SetContent(content string)
 	Watch(eh tcell.EventHandler)
@@ -22,6 +24,7 @@ type Input interface {
 type InputImpl struct {
 	x, y, width int
 	cursor      int
+	start       int
 	content     []rune
 
 	inputCorrect bool
@@ -46,6 +49,7 @@ func (i *InputImpl) Resize(x, y, width, height int) {
 	i.x = x
 	i.y = y
 	i.width = width
+	i.checkBoundaries()
 
 }
 
@@ -60,12 +64,12 @@ func (i *InputImpl) SetContent(content string) {
 func (i *InputImpl) Render(updateScreen bool) {
 	style := i.determineStyle()
 
-	x := renderRunes(i.x, i.y, i.content, style)
+	x := renderRunes(i.x, i.y, i.width, i.content[i.start:], style)
 
-	drawChars(x, i.y, i.width-len(i.content), '‾', style)
+	drawChars(x, i.y, i.x-x+i.width, '‾', style)
 
 	if i.IsActive() {
-		changeStyle(i.x+i.cursor, i.y, CursorTextInputStyle)
+		changeStyle(i.x+i.cursor-i.start, i.y, CursorTextInputStyle)
 	}
 
 	if updateScreen {
@@ -98,6 +102,8 @@ func (i *InputImpl) HandleEvent(ev tcell.Event) bool {
 			i.backspaceRune()
 		case tcell.KeyDelete:
 			i.deleteRune()
+		case tcell.KeyCtrlU:
+			i.deleteAll()
 		default:
 			//log.Printf("%v, %s", ev.Key(), tcell.KeyNames[ev.Key()])
 		}
@@ -113,6 +119,7 @@ func (i *InputImpl) insertRune(r rune) {
 		log.Panic("Input field out of bounds?!")
 	}
 	i.cursor++
+	i.checkBoundaries()
 	i.Render(true)
 	i.updateWatchers()
 }
@@ -127,6 +134,7 @@ func (i *InputImpl) setCursor(newCursor int) {
 	} else {
 		i.cursor = newCursor
 	}
+	i.checkBoundaries()
 	i.Render(true)
 }
 
@@ -138,6 +146,7 @@ func (i *InputImpl) backspaceRune() {
 
 	i.content = append(i.content[:i.cursor-1], i.content[i.cursor:]...)
 	i.cursor--
+	i.checkBoundaries()
 	i.Render(true)
 	i.updateWatchers()
 }
@@ -149,8 +158,34 @@ func (i *InputImpl) deleteRune() {
 	}
 
 	i.content = append(i.content[:i.cursor], i.content[i.cursor+1:]...)
+	i.checkBoundaries()
 	i.Render(true)
 	i.updateWatchers()
+}
+
+func (i *InputImpl) deleteAll() {
+	i.content = i.content[:0]
+	i.cursor = 0
+	i.Render(true)
+	i.updateWatchers()
+}
+
+func (i *InputImpl) checkBoundaries() {
+	pos := i.cursor - i.start
+
+	if pos >= i.width-inputElementMargin {
+		i.start += pos - (i.width - inputElementMargin)
+	} else if pos <= inputElementMargin-1 {
+		i.start -= inputElementMargin - 1 - pos
+		i.start = util.IntMax(i.start, 0)
+	}
+
+	// if i.cursor+i.start >= i.width-2 {
+	// 	i.start = i.cursor - (i.width - 2)
+	// } else if i.cursor <= 2+i.start {
+	// 	i.start = i.cursor - 2
+	// }
+	// i.start, _ = util.InBetween(i.start, 0, util.IntMax(0, len(i.content)-i.width))
 }
 
 func (i *InputImpl) defaultUpdateWatchers() {

@@ -1,13 +1,15 @@
 package ui
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"runtime/debug"
 	"sync"
+	"time"
 
 	// "github.com/claude42/infiltrator/model"
-	"github.com/claude42/infiltrator/config"
+	"github.com/claude42/infiltrator/model"
 	"github.com/claude42/infiltrator/util"
 	"github.com/gdamore/tcell/v2"
 )
@@ -100,7 +102,7 @@ func (w *Window) Render() {
 	screen.Show()
 }
 
-func (w *Window) MetaEventLoop() {
+func (w *Window) MetaEventLoop(ctx context.Context, wg *sync.WaitGroup, quit chan<- string) {
 	defer func() {
 		if r := recover(); r != nil {
 			log.Printf("A panic occurred: %v\nStack trace:\n%s", r, debug.Stack())
@@ -108,24 +110,22 @@ func (w *Window) MetaEventLoop() {
 		}
 	}()
 
-	cfg := config.GetConfiguration()
-
-	defer cfg.WaitGroup.Done()
+	defer wg.Done()
 
 	for {
 		select {
-		case <-cfg.Context.Done():
+		case <-ctx.Done():
 			log.Println("Received shutdown signal")
 			return
 		default:
-			if w.EventLoop() {
+			if w.EventLoop(quit) {
 				return
 			}
 		}
 	}
 }
 
-func (w *Window) EventLoop() bool {
+func (w *Window) EventLoop(quit chan<- string) bool {
 	ev := screen.PollEvent()
 	// log.Printf("Event: %T, %+v", ev, ev)
 	log.Printf("Main Loop: %T", ev)
@@ -156,9 +156,13 @@ func (w *Window) EventLoop() bool {
 				w.Render()
 				return false
 			case 'q':
-				config.GetConfiguration().Quit <- "Good bye!"
-				close(config.GetConfiguration().Quit)
+				quit <- "Good bye!"
+				close(quit)
 				return true
+			case 'ä':
+				dateFilter, _ := model.GetFilterManager().GetDateFilter()
+				dateFilter.SetStart(time.Date(2025, 7, 1, 0, 0, 0, 0, time.Local))
+				dateFilter.SetEnd(time.Date(2025, 7, 15, 0, 0, 0, 0, time.Local))
 			}
 		case tcell.KeyBacktab:
 			err := w.switchPanel(-1)
@@ -193,11 +197,11 @@ func (w *Window) EventLoop() bool {
 			if w.panelsOpen {
 				w.SetPanelsOpen(false)
 			} else {
-				close(config.GetConfiguration().Quit)
+				close(quit)
 				return true
 			}
 		case tcell.KeyCtrlC:
-			close(config.GetConfiguration().Quit)
+			close(quit)
 			return true
 		case tcell.KeyCtrlL:
 			w.resizeAndRedraw()

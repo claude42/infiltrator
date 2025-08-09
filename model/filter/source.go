@@ -13,6 +13,12 @@ type Source struct {
 	width int
 }
 
+func NewSource() *Source {
+	s := &Source{}
+
+	return s
+}
+
 func (s *Source) calculateNewWidthFrom(start int) {
 	for _, line := range s.lines[start:] {
 		s.width = util.IntMax(s.width, len(line.Str))

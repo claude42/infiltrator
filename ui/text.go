@@ -6,21 +6,23 @@ import (
 	"github.com/gdamore/tcell/v2"
 )
 
-func renderRunes(x int, y int, runes []rune, style tcell.Style) int {
-	maxWidth, _ := screen.Size()
-	for _, r := range runes {
-		if x >= maxWidth {
+func renderRunes(x int, y int, width int, runes []rune, style tcell.Style) int {
+	var i int
+	var r rune
+	for i, r = range runes {
+		if i >= width {
 			break
 		}
-		screen.SetContent(x, y, r, nil, style)
-		x++
+		screen.SetContent(x+i, y, r, nil, style)
 	}
 
-	return x
+	return x + i + 1
 }
 
 func renderText(x int, y int, text string, style tcell.Style) int {
-	return renderRunes(x, y, []rune(text), style)
+	// TODO: should also integrate a width here at some point in time
+	width, _ := screen.Size()
+	return renderRunes(x, y, width, []rune(text), style)
 }
 
 func centerText(x int, width int, y int, text string, style tcell.Style) int {

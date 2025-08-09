@@ -1,6 +1,7 @@
 package busy
 
 import (
+	"context"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -10,20 +11,15 @@ import (
 )
 
 var (
-	once           sync.Once
 	busyCounter    int
 	busyState      atomic.Int32
 	busyPercentage atomic.Int32
 )
 
 func SpinWithPercentage(percentage int) {
-	once.Do(func() {
-		go updateBusySpinner()
-	})
-
 	// no need to do an atomic.Int32.Store() so frequently
 	busyCounter++
-	if busyCounter < 100000 {
+	if busyCounter < 100 {
 		return
 	}
 
@@ -44,7 +40,7 @@ func Spin() {
 	SpinWithPercentage(-1)
 }
 
-func updateBusySpinner() {
+func StartBusySpinner(ctx context.Context, wg *sync.WaitGroup) {
 	cfg := config.GetConfiguration()
 	ticker := time.NewTicker(200 * time.Millisecond)
 	for {
@@ -60,7 +56,8 @@ func updateBusySpinner() {
 			case Idle:
 				// nothing
 			}
-		case <-cfg.Context.Done():
+		case <-ctx.Done():
+			wg.Done()
 			return
 		}
 	}
