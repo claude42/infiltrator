@@ -22,8 +22,8 @@ const (
 const keywordPanelDefaultName = "Keyword"
 const regexPanelDefaultName = "Regex"
 
-func setupNewTinyPanel(fn filter.StringFilterFuncFactory, name string) (*TinyPanel, error) {
-	p := NewTinyPanel()
+func setupNewStringFilterPanel(fn filter.StringFilterFuncFactory, name string) (*StringFilterPanel, error) {
+	p := NewStringFilterPanel()
 	p.SetName(name)
 	filter := filter.NewStringFilter(fn, p.Mode())
 	model.GetFilterManager().AddFilter(filter)
@@ -42,10 +42,10 @@ func setupNewTinyPanel(fn filter.StringFilterFuncFactory, name string) (*TinyPan
 func NewPanel(panelType PanelType) (Panel, error) {
 	switch panelType {
 	case PanelTypeKeyword:
-		return setupNewTinyPanel(filter.DefaultStringFilterFuncFactory, keywordPanelDefaultName)
+		return setupNewStringFilterPanel(filter.DefaultStringFilterFuncFactory, keywordPanelDefaultName)
 		// return createNewKeywordPanel()
 	case PanelTypeRegex:
-		return setupNewTinyPanel(filter.RegexFilterFuncFactory, regexPanelDefaultName)
+		return setupNewStringFilterPanel(filter.RegexFilterFuncFactory, regexPanelDefaultName)
 		// return createNewRegexPanel()
 	/*case Glob:
 		return NewGlobPanel()
