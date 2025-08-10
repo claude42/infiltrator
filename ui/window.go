@@ -6,10 +6,9 @@ import (
 	"log"
 	"runtime/debug"
 	"sync"
-	"time"
 
 	// "github.com/claude42/infiltrator/model"
-	"github.com/claude42/infiltrator/model"
+
 	"github.com/claude42/infiltrator/util"
 	"github.com/gdamore/tcell/v2"
 )
@@ -159,10 +158,6 @@ func (w *Window) EventLoop(quit chan<- string) bool {
 				quit <- "Good bye!"
 				close(quit)
 				return true
-			case 'ä':
-				dateFilter, _ := model.GetFilterManager().GetDateFilter()
-				dateFilter.SetStart(time.Date(2025, 7, 1, 0, 0, 0, 0, time.Local))
-				dateFilter.SetEnd(time.Date(2025, 7, 15, 0, 0, 0, 0, time.Local))
 			}
 		case tcell.KeyBacktab:
 			err := w.switchPanel(-1)
@@ -262,19 +257,11 @@ func (w *Window) openPanelsOrPanelSelection() {
 }
 
 func (w *Window) CreateAndAddPanel(panelType PanelType) {
-	// TODO: really understand this next 3 lines?!?!
 	if w.activePanel != nil && !w.panelsOpen {
 		return
 	}
-	panel, err := NewPanel(panelType)
-	if err != nil {
-		log.Panicf("%+v", err)
-	}
-	w.AddPanel(panel)
-	if err != nil {
-		log.Panicf("%+v", err)
-		screen.Beep()
-	}
+
+	w.AddPanel(NewPanel(panelType))
 }
 
 func (w *Window) resizeAndRedraw() {

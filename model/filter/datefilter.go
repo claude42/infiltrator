@@ -2,12 +2,18 @@ package filter
 
 import (
 	"log"
+	"math"
 	"sort"
 	"time"
 
 	"github.com/claude42/infiltrator/model/reader"
 
 	dateparser "github.com/markusmobius/go-dateparser"
+)
+
+const (
+	DateFilterStart = "start"
+	DateFilterEnd   = "end"
 )
 
 type DateFilter struct {
@@ -17,9 +23,34 @@ type DateFilter struct {
 }
 
 func NewDateFilter() *DateFilter {
-	d := &DateFilter{}
+	d := &DateFilter{
+		endLineNo: math.MaxInt,
+	}
 
 	return d
+}
+
+func (d *DateFilter) SetKey(name string, key string) error {
+	keyTime, err := dateparser.Parse(nil, key)
+	if err != nil {
+		// TODO: error handling
+		if name == DateFilterStart {
+			d.startLineNo = 0
+		} else if name == DateFilterEnd {
+			d.endLineNo = math.MaxInt
+		}
+		return err
+	}
+
+	if name == DateFilterStart {
+		d.startLineNo = d.findFirstAfter(keyTime.Time)
+	} else if name == DateFilterEnd {
+		d.endLineNo = d.findLastBefore(keyTime.Time)
+	} else {
+		log.Panicf("Neither start nor end but '%s'", name)
+	}
+
+	return nil
 }
 
 func (d *DateFilter) GetLine(lineNo int) (*reader.Line, error) {
@@ -68,14 +99,6 @@ func (d *DateFilter) GetLine(lineNo int) (*reader.Line, error) {
 // 	return sourceLine, nil
 // }
 
-func (d *DateFilter) SetStart(startTime time.Time) {
-	d.startLineNo = d.findFirstAfter(startTime)
-}
-
-func (d *DateFilter) SetEnd(endTime time.Time) {
-	d.endLineNo = d.findLastBefore(endTime)
-}
-
 func (d *DateFilter) findFirstAfter(startTime time.Time) int {
 	lineNo := sort.Search(d.Length(), func(lineNo int) bool {
 		lineTime, err := d.getDateForLineNo(lineNo)
@@ -96,12 +119,12 @@ func (d *DateFilter) findLastBefore(endTime time.Time) int {
 			// TODO error handling
 			log.Panicf("Paaanik %T", err)
 		}
-		return endTime.After(lineTime)
+		return lineTime.After(endTime)
 	})
-	return lineNo
+	return lineNo - 1
 }
 
-func (d *DateFilter) getDate(line *reader.Line) (time.Time, error) {
+func (d *DateFilter) calculateLineDate(line *reader.Line) (time.Time, error) {
 	if !line.When.IsZero() {
 		return line.When, nil
 	}
@@ -125,5 +148,9 @@ func (d *DateFilter) getDateForLineNo(lineNo int) (time.Time, error) {
 		return time.Time{}, err
 	}
 
-	return d.getDate(line)
+	return d.calculateLineDate(line)
+}
+
+func (s *DateFilter) SetColorIndex(colorIndex uint8) {
+	// don't care, filter won't highlight anything
 }

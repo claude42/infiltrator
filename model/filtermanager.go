@@ -277,8 +277,8 @@ func (fm *FilterManager) UpdateFilterCaseSensitiveUpdate(filter filter.Filter, c
 	fm.commandChannel <- CommandFilterCaseSensitiveUpdate{filter, caseSensitive}
 }
 
-func (fm *FilterManager) UpdateFilterKey(filter filter.Filter, key string) {
-	fm.commandChannel <- CommandFilterKeyUpdate{filter, key}
+func (fm *FilterManager) UpdateFilterKey(filter filter.Filter, name string, key string) {
+	fm.commandChannel <- CommandFilterKeyUpdate{filter, name, key}
 }
 
 func (fm *FilterManager) ToggleFollowMode() {
@@ -347,7 +347,7 @@ func (fm *FilterManager) processCommand(command Command) {
 		fm.asyncRefreshScreenBuffer()
 	case CommandFilterKeyUpdate:
 		fm.invalidateCaches()
-		err = command.Filter.SetKey(command.Key)
+		err = command.Filter.SetKey(command.Name, command.Key)
 		fm.display.UnsetCurrentMatch()
 		fm.asyncRefreshScreenBuffer()
 	case CommandToggleFollowMode:

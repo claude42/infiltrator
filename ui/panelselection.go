@@ -39,6 +39,10 @@ func (p *PanelSelection) HandleEvent(ev tcell.Event) bool {
 				window.CreateAndAddPanel(PanelTypeKeyword)
 				window.SetPanelsOpen(true)
 				p.SetActive(false)
+			case 'd':
+				window.CreateAndAddPanel(PanelTypeDate)
+				window.SetPanelsOpen(true)
+				p.SetActive(false)
 			}
 			return true
 		case tcell.KeyEscape:

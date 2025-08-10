@@ -103,8 +103,8 @@ func (s *StringFilter) updateFilterFunc(key string, caseSensitive bool) error {
 	return nil
 }
 
-func (s *StringFilter) SetKey(key string) error {
-	log.Printf("Search key: %s", key)
+func (s *StringFilter) SetKey(name string, key string) error {
+	// don't care about the name
 	s.Lock()
 	s.key = key
 	s.Unlock()

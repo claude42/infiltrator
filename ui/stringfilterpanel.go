@@ -33,17 +33,15 @@ type StringFilterPanel struct {
 	input         *FilterInput
 	mode          *Select
 	caseSensitive *Select
-	filter        filter.Filter
 }
 
 func NewStringFilterPanel() *StringFilterPanel {
-	t := &StringFilterPanel{}
-	t.PanelImpl.name = PanelImplDefaultName
-	t.input = NewFilterInput()
-	t.mode = NewSelect(filterModes)
-	t.caseSensitive = NewSelect(caseSensitive)
-
-	return t
+	return &StringFilterPanel{
+		PanelImpl:     *NewPanelImpl(),
+		input:         NewFilterInput("string"),
+		mode:          NewSelect(filterModes),
+		caseSensitive: NewSelect(caseSensitive),
+	}
 }
 
 func (t *StringFilterPanel) Resize(x, y, width, height int) {
@@ -80,7 +78,7 @@ func (t *StringFilterPanel) Render(updateScreen bool) {
 }
 
 func (t *StringFilterPanel) SetColorIndex(colorIndex uint8) {
-	t.PanelImpl.SetColorIndex((colorIndex))
+	t.PanelImpl.SetColorIndex(colorIndex)
 
 	t.input.SetColorIndex(colorIndex)
 	t.mode.SetColorIndex(colorIndex)
@@ -132,27 +130,25 @@ func (t *StringFilterPanel) HandleEvent(ev tcell.Event) bool {
 
 func (t *StringFilterPanel) SetActive(active bool) {
 	t.PanelImpl.SetActive(active)
+
 	t.input.SetActive(active)
 	t.mode.SetActive(active)
 	t.caseSensitive.SetActive(active)
 }
 
 func (t *StringFilterPanel) SetFilter(filter filter.Filter) {
-	t.filter = filter
+	t.PanelImpl.SetFilter(filter)
+
 	t.input.SetFilter(filter)
 }
 
-func (t *StringFilterPanel) Filter() filter.Filter {
-	return t.filter
-}
-
-func (t *StringFilterPanel) WatchInput(eh tcell.EventHandler) {
-	if t.input == nil {
-		log.Panicln("StringFilterPanel.WatchInput() called without input field!")
-		return
-	}
-	t.input.Watch(eh)
-}
+// func (t *StringFilterPanel) WatchInput(eh tcell.EventHandler) {
+// 	if t.input == nil {
+// 		log.Panicln("StringFilterPanel.WatchInput() called without input field!")
+// 		return
+// 	}
+// 	t.input.Watch(eh)
+// }
 
 func (t *StringFilterPanel) toggleMode() {
 	model.GetFilterManager().UpdateFilterMode(t.filter, filter.FilterMode(t.mode.NextOption()))

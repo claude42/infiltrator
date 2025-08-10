@@ -7,6 +7,10 @@ import (
 )
 
 func renderRunes(x int, y int, width int, runes []rune, style tcell.Style) int {
+	if len(runes) == 0 {
+		return x
+	}
+
 	var i int
 	var r rune
 	for i, r = range runes {

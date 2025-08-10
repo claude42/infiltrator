@@ -1,7 +1,6 @@
 package ui
 
 import (
-	"fmt"
 	"log"
 
 	"github.com/gdamore/tcell/v2"
@@ -43,11 +42,11 @@ func GetColorManager() *colorManager {
 	return instance
 }
 
-func (c *colorManager) findNextUnassigendColorIndex() (uint8, error) {
+func (c *colorManager) findNextUnassigendColorIndex() uint8 {
 	// 0 is used as "no specific color"
 	for index := 1; index < len(FilterColors); index++ {
 		if index >= 256 {
-			return 0, fmt.Errorf("no unassigned color index found, maximum is 256")
+			log.Panic("No unassigned color index found, maximum is 256")
 		}
 		found := false
 		for _, cm := range c.colors {
@@ -57,27 +56,23 @@ func (c *colorManager) findNextUnassigendColorIndex() (uint8, error) {
 			}
 		}
 		if !found {
-			return uint8(index), nil
+			return uint8(index)
 		}
 	}
-	return 0, fmt.Errorf("no unassigned color index found")
+	log.Panic("No unassigned color index found, maximum is 256")
+	return 0
 }
 
-func (c *colorManager) Add(panel Panel) (uint8, error) {
+func (c *colorManager) Add(panel Panel) uint8 {
 	if panel == nil {
 		log.Panic("Add() called with nil panel")
-		return 0, nil
 	}
 
-	unassigned, err := c.findNextUnassigendColorIndex()
-	if err != nil {
-
-		return 0, fmt.Errorf("maximum number of panels")
-	}
+	unassigned := c.findNextUnassigendColorIndex()
 
 	c.colors = append(c.colors, colorMap{panel: panel, colorIndex: unassigned})
 
-	return unassigned, nil
+	return unassigned
 }
 
 func (c *colorManager) Remove(panel Panel) {

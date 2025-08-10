@@ -10,10 +10,12 @@ type FilterInput struct {
 	InputImpl
 
 	filter filter.Filter
+	name   string
 }
 
-func NewFilterInput() *FilterInput {
+func NewFilterInput(name string) *FilterInput {
 	fi := &FilterInput{}
+	fi.name = name
 	fi.InputImpl.inputCorrect = true
 	fi.InputImpl.updateWatchers = fi.updateWatchers
 
@@ -41,6 +43,6 @@ func (fi *FilterInput) SetFilter(filter filter.Filter) {
 }
 
 func (fi *FilterInput) updateWatchers() {
-	model.GetFilterManager().UpdateFilterKey(fi.filter, string(fi.InputImpl.content))
+	model.GetFilterManager().UpdateFilterKey(fi.filter, fi.name, string(fi.InputImpl.content))
 	fi.InputImpl.defaultUpdateWatchers()
 }

@@ -12,7 +12,7 @@ type Filter interface {
 	Size() (int, int)
 	Length() int
 
-	SetKey(key string) error
+	SetKey(name string, key string) error
 	SetColorIndex(colorIndex uint8)
 	SetMode(mode FilterMode)
 	SetCaseSensitive(on bool) error
@@ -43,7 +43,7 @@ func (f *FilterImpl) Length() int {
 	return f.source.Length()
 }
 
-func (f *FilterImpl) SetKey(key string) error {
+func (f *FilterImpl) SetKey(name string, key string) error {
 	log.Panicln("SetKey() not implemented!")
 	return nil
 }

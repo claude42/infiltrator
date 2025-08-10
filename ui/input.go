@@ -61,6 +61,12 @@ func (i *InputImpl) SetContent(content string) {
 	i.updateWatchers()
 }
 
+func (i *InputImpl) SetActive(active bool) {
+	i.ComponentImpl.SetActive(active)
+
+	i.Render(true)
+}
+
 func (i *InputImpl) Render(updateScreen bool) {
 	style := i.determineStyle()
 

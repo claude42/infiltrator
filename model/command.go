@@ -132,6 +132,7 @@ func (d CommandFilterCaseSensitiveUpdate) commandString() string {
 
 type CommandFilterKeyUpdate struct {
 	Filter filter.Filter
+	Name   string
 	Key    string
 }
 

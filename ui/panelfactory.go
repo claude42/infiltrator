@@ -21,8 +21,9 @@ const (
 
 const keywordPanelDefaultName = "Keyword"
 const regexPanelDefaultName = "Regex"
+const dateFilterDefaultName = "Date"
 
-func setupNewStringFilterPanel(fn filter.StringFilterFuncFactory, name string) (*StringFilterPanel, error) {
+func setupNewStringFilterPanel(fn filter.StringFilterFuncFactory, name string) *StringFilterPanel {
 	p := NewStringFilterPanel()
 	p.SetName(name)
 	filter := filter.NewStringFilter(fn, p.Mode())
@@ -30,34 +31,41 @@ func setupNewStringFilterPanel(fn filter.StringFilterFuncFactory, name string) (
 	p.SetFilter(filter)
 
 	// done last so both panel and filter get the same color index
-	colorIndex, err := GetColorManager().Add(p)
-	if err != nil {
-		return nil, err
-	}
+	colorIndex := GetColorManager().Add(p)
+
 	p.SetColorIndex(colorIndex)
 
-	return p, nil
+	return p
 }
 
-func NewPanel(panelType PanelType) (Panel, error) {
+func setupNewDateFilterPanel() *DateFilterPanel {
+	p := NewDateFilterPanel()
+	p.SetName(dateFilterDefaultName)
+	filter := filter.NewDateFilter()
+	model.GetFilterManager().AddFilter(filter)
+	p.SetFilter(filter)
+
+	return p
+}
+
+func NewPanel(panelType PanelType) Panel {
 	switch panelType {
 	case PanelTypeKeyword:
 		return setupNewStringFilterPanel(filter.DefaultStringFilterFuncFactory, keywordPanelDefaultName)
-		// return createNewKeywordPanel()
 	case PanelTypeRegex:
 		return setupNewStringFilterPanel(filter.RegexFilterFuncFactory, regexPanelDefaultName)
-		// return createNewRegexPanel()
-	/*case Glob:
-		return NewGlobPanel()
-	case Host:
-		return NewHostPanel()
-	case Facility:
-		return NewFacilityPanel()
-	case Date:
-		return NewDatePanel()*/
+	// case Glob:
+	// 	return NewGlobPanel()
+	// case Host:
+	// 	return NewHostPanel()
+	// case Facility:
+	// 	return NewFacilityPanel()
+	case PanelTypeDate:
+		// TODO: error handling
+		return setupNewDateFilterPanel()
 	default:
 		log.Panicln("NewPanel() called with unknown panel type:", panelType)
-		return nil, nil
+		return nil
 	}
 }
 
