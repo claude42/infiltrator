@@ -9,6 +9,7 @@ import (
 	"sync"
 
 	"github.com/claude42/infiltrator/config"
+	"github.com/claude42/infiltrator/fail"
 	"github.com/claude42/infiltrator/model/busy"
 	"github.com/claude42/infiltrator/model/filter"
 	"github.com/claude42/infiltrator/model/reader"
@@ -42,9 +43,7 @@ type FilterManager struct {
 }
 
 func GetFilterManager() *FilterManager {
-	if filterManagerInstance == nil {
-		log.Panicln("Filtermanager missing!")
-	}
+	fail.IfNil(filterManagerInstance, "Filtermanager missing!")
 
 	return filterManagerInstance
 }
@@ -102,16 +101,12 @@ func (fm *FilterManager) ReadFromStdin() {
 
 func (fm *FilterManager) Source() *filter.Source {
 	fm.Lock()
-	if len(fm.filters) < 1 {
-		log.Panic("No source in filter stack!")
-	}
+	fail.If(len(fm.filters) < 1, "No source in filter stack!")
 	firstFilter := fm.filters[0]
 	fm.Unlock()
 
 	source, ok := firstFilter.(*filter.Source)
-	if !ok {
-		log.Panic("First filter is not a Source!")
-	}
+	fail.If(!ok, "First filter is not a Source!")
 	return source
 }
 
@@ -582,9 +577,7 @@ func (fm *FilterManager) internalRemoveFilter(f filter.Filter) error {
 	}
 	for i, filter := range fm.filters {
 		if filter == f {
-			if i == 0 {
-				log.Panicln("Cannot remove source from pipeline")
-			}
+			fail.If(i == 0, "Cannot remove source from pipeline")
 			fm.filters = append(fm.filters[:i], fm.filters[i+1:]...)
 			if i < len(fm.filters) {
 				fm.filters[i].SetSource(fm.filters[i-1])
@@ -612,9 +605,7 @@ func (fm *FilterManager) asyncRefreshScreenBuffer() {
 }
 
 func (fm *FilterManager) internalFindNextMatch(direction int) (bool, error) {
-	if direction != 1 && direction != -1 {
-		log.Panicf("Unknown direction %d", direction)
-	}
+	fail.If(direction != 1 && direction != -1, "Unknown direction %d", direction)
 
 	startSearchWith := 0
 	var found *reader.Line
@@ -760,9 +751,7 @@ func (fm *FilterManager) percentage() int {
 }
 
 func (fm *FilterManager) arrangeLine(lineNo int, percentage int) (int, error) {
-	if len(fm.display.Buffer) <= 0 {
-		log.Panicf("arrangeLine() called with lineNo=%d but empty buffer?!?", lineNo)
-	}
+	fail.If(len(fm.display.Buffer) <= 0, "arrangeLine() called with lineNo=%d but empty buffer?!?", lineNo)
 
 	linesAbove := percentage*len(fm.display.Buffer)/100 - 1
 
@@ -779,9 +768,7 @@ func (fm *FilterManager) arrangeLine(lineNo int, percentage int) (int, error) {
 }
 
 func (fm *FilterManager) findNonHiddenLine(lineNo int, direction int) (int, error) {
-	if direction != -1 && direction != 1 {
-		log.Panicf("Unknown direction %d", direction)
-	}
+	fail.If(direction != -1 && direction != 1, "Unknown directionn %d", direction)
 
 	length := fm.sourceLength()
 

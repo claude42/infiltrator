@@ -3,6 +3,7 @@ package ui
 import (
 	"log"
 
+	"github.com/claude42/infiltrator/fail"
 	"github.com/claude42/infiltrator/model"
 	"github.com/claude42/infiltrator/model/filter"
 	// "github.com/gdamore/tcell/v2"
@@ -70,16 +71,10 @@ func NewPanel(panelType PanelType) Panel {
 }
 
 func DestroyPanel(panel Panel) {
-	if panel == nil {
-		log.Panicln("DestroyPanel() called with nil panel")
-		return
-	}
+	fail.IfNil(panel, "DestroyPanel() called with nil panel")
 
 	fm := model.GetFilterManager()
-	if fm == nil {
-		log.Panicln("DestroyPanel() called with nil pipeline")
-		return
-	}
+	fail.IfNil(fm, "DestroyPanel() called with nil pipeline")
 
 	fm.RemoveFilter(panel.Filter())
 	GetColorManager().Remove(panel)

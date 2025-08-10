@@ -3,6 +3,7 @@ package ui
 import (
 	"log"
 
+	"github.com/claude42/infiltrator/fail"
 	"github.com/gdamore/tcell/v2"
 )
 
@@ -45,9 +46,7 @@ func GetColorManager() *colorManager {
 func (c *colorManager) findNextUnassigendColorIndex() uint8 {
 	// 0 is used as "no specific color"
 	for index := 1; index < len(FilterColors); index++ {
-		if index >= 256 {
-			log.Panic("No unassigned color index found, maximum is 256")
-		}
+		fail.If(index >= 256, "No unassigned color index found, maximum is 256")
 		found := false
 		for _, cm := range c.colors {
 			if cm.colorIndex == uint8(index) {
@@ -64,9 +63,7 @@ func (c *colorManager) findNextUnassigendColorIndex() uint8 {
 }
 
 func (c *colorManager) Add(panel Panel) uint8 {
-	if panel == nil {
-		log.Panic("Add() called with nil panel")
-	}
+	fail.IfNil(panel, "Add() called with nil panel)")
 
 	unassigned := c.findNextUnassigendColorIndex()
 

@@ -6,6 +6,7 @@ import (
 	"sort"
 	"time"
 
+	"github.com/claude42/infiltrator/fail"
 	"github.com/claude42/infiltrator/model/reader"
 
 	dateparser "github.com/markusmobius/go-dateparser"
@@ -102,10 +103,8 @@ func (d *DateFilter) GetLine(lineNo int) (*reader.Line, error) {
 func (d *DateFilter) findFirstAfter(startTime time.Time) int {
 	lineNo := sort.Search(d.Length(), func(lineNo int) bool {
 		lineTime, err := d.getDateForLineNo(lineNo)
-		if err != nil {
-			// TODO error handling
-			log.Panicf("Paaanik %T", err)
-		}
+		// TODO error handling
+		fail.OnError(err, "Paaanik")
 		return startTime.Before(lineTime)
 	})
 	// TODO error handling
@@ -115,10 +114,8 @@ func (d *DateFilter) findFirstAfter(startTime time.Time) int {
 func (d *DateFilter) findLastBefore(endTime time.Time) int {
 	lineNo := sort.Search(d.source.Length(), func(lineNo int) bool {
 		lineTime, err := d.getDateForLineNo(lineNo)
-		if err != nil {
-			// TODO error handling
-			log.Panicf("Paaanik %T", err)
-		}
+		// TODO error handling
+		fail.OnError(err, "Paaanik")
 		return lineTime.After(endTime)
 	})
 	return lineNo - 1

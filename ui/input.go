@@ -3,9 +3,9 @@ package ui
 import (
 	//"log"
 
-	"log"
-
+	"github.com/claude42/infiltrator/fail"
 	"github.com/claude42/infiltrator/util"
+
 	// "github.com/claude42/infiltrator/model"
 
 	"github.com/gdamore/tcell/v2"
@@ -121,9 +121,8 @@ func (i *InputImpl) HandleEvent(ev tcell.Event) bool {
 func (i *InputImpl) insertRune(r rune) {
 	var err error
 	i.content, err = util.InsertRune(i.content, r, i.cursor)
-	if err != nil {
-		log.Panic("Input field out of bounds?!")
-	}
+	fail.OnError(err, "Input field out of bounds?!")
+
 	i.cursor++
 	i.checkBoundaries()
 	i.Render(true)

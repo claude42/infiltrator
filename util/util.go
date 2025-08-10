@@ -1,8 +1,6 @@
 package util
 
 import (
-	// "log"
-	"log"
 	"math"
 )
 
@@ -52,17 +50,4 @@ func InsertRune(runes []rune, r rune, index int) ([]rune, error) {
 	copy(result[index+1:], runes[index:])
 
 	return result, nil
-}
-
-func Must0(err error) {
-	if err != nil {
-		log.Panicf("%T", err)
-	}
-}
-
-func Must1[T any](x T, err error) T {
-	if err != nil {
-		log.Panicf("%T", err)
-	}
-	return x
 }

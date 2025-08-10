@@ -1,7 +1,6 @@
 package main
 
 import (
-	// "flag"
 	"context"
 	"fmt"
 	"io"
@@ -10,9 +9,8 @@ import (
 	"path/filepath"
 	"sync"
 
-	//"time"
-
 	"github.com/claude42/infiltrator/config"
+	"github.com/claude42/infiltrator/fail"
 	"github.com/claude42/infiltrator/model"
 	"github.com/claude42/infiltrator/model/busy"
 	"github.com/claude42/infiltrator/ui"
@@ -47,21 +45,11 @@ func run() error {
 		log.SetOutput(io.Discard)
 	} else {
 		debug, err := os.OpenFile("debug.log", os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
-		if err != nil {
-			log.Panicf("Failed to open debug log file: %v", err)
-		}
+		fail.OnError(err, "Failed to open debug log file")
 		defer debug.Close()
 		log.SetOutput(debug)
 		log.SetFlags(log.LstdFlags | log.Lshortfile)
 	}
-
-	// // d, err := dateparser.Parse(nil, flag.Args()[0])
-	// d, err := dateparser.Parse(nil, "-3d")
-	// if err != nil {
-	// 	log.Panicf("uhh %T", err)
-	// }
-
-	// fmt.Println(d.Time)
 
 	cfg := config.GetConfiguration()
 	cfg.PostEventFunc = ui.InfiltPostEvent

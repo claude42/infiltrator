@@ -3,8 +3,8 @@ package ui
 import (
 	//"fmt"
 	"fmt"
-	"log"
 
+	"github.com/claude42/infiltrator/fail"
 	"github.com/claude42/infiltrator/model"
 	"github.com/claude42/infiltrator/model/filter"
 
@@ -89,12 +89,9 @@ func (t *StringFilterPanel) SetColorIndex(colorIndex uint8) {
 }
 
 func (t *StringFilterPanel) SetContent(content string) {
-	if t.input == nil {
-		log.Panicln("StringFilterPanel.SetContent() called without input field!")
-		return
-	}
-	t.input.SetContent(content)
+	fail.IfNil(t.input, "StringFilterPanel.SetContent() called without input field!")
 
+	t.input.SetContent(content)
 }
 
 func (t *StringFilterPanel) HandleEvent(ev tcell.Event) bool {

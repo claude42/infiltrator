@@ -9,6 +9,7 @@ import (
 
 	// "github.com/claude42/infiltrator/model"
 
+	"github.com/claude42/infiltrator/fail"
 	"github.com/claude42/infiltrator/util"
 	"github.com/gdamore/tcell/v2"
 )
@@ -33,11 +34,7 @@ func GetScreen() tcell.Screen {
 	once.Do(func() {
 		// switch to alternate buffer
 		fmt.Print("\x1b[?1049h")
-		var err error
-		screen, err = tcell.NewScreen()
-		if err != nil {
-			log.Panicf("%+v", err)
-		}
+		screen = fail.Must1(tcell.NewScreen())
 	})
 	return screen
 }
@@ -49,15 +46,11 @@ func InfiltPostEvent(ev util.Event) error {
 func Setup() *Window {
 	GetScreen()
 
-	if window != nil {
-		log.Panicln("ui.setup() called twice!")
-	}
+	fail.If(window != nil, "ui.setup() called twice!")
 
 	window = &Window{}
 
-	if err := screen.Init(); err != nil {
-		log.Panicf("%+v", err)
-	}
+	fail.Must0(screen.Init())
 
 	window.mainView = NewView()
 
