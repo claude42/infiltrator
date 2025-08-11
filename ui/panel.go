@@ -20,8 +20,6 @@ type Panel interface {
 	SetName(name string)
 }
 
-const PanelImplDefaultName = "No name"
-
 type PanelImpl struct {
 	ComponentImpl
 
@@ -32,9 +30,9 @@ type PanelImpl struct {
 	filter     filter.Filter
 }
 
-func NewPanelImpl() *PanelImpl {
+func NewPanelImpl(name string) *PanelImpl {
 	return &PanelImpl{
-		name: PanelImplDefaultName,
+		name: name,
 	}
 }
 

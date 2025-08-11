@@ -11,25 +11,25 @@ import (
 type DateFilterPanel struct {
 	PanelImpl
 
-	start      *FilterInput
-	end        *FilterInput
+	from       *FilterInput
+	to         *FilterInput
 	lastActive *FilterInput
 }
 
-func NewDateFilterPanel() *DateFilterPanel {
+func NewDateFilterPanel(name string) *DateFilterPanel {
 	return &DateFilterPanel{
-		PanelImpl: *NewPanelImpl(),
-		start:     NewFilterInput(filter.DateFilterStart),
-		end:       NewFilterInput(filter.DateFilterEnd),
+		PanelImpl: *NewPanelImpl(name),
+		from:      NewFilterInput(filter.DateFilterFrom),
+		to:        NewFilterInput(filter.DateFilterTo),
 	}
 }
 
 func (d *DateFilterPanel) Resize(x, y, width, height int) {
 	d.PanelImpl.Resize(x, y, width, height)
 
-	d.start.Resize(x+26, y, 20, 1)
+	d.from.Resize(x+26, y, 20, 1)
 
-	d.end.Resize(x+60, y, 20, 1)
+	d.to.Resize(x+60, y, 20, 1)
 }
 
 func (d *DateFilterPanel) Render(updateScreen bool) {
@@ -39,12 +39,12 @@ func (d *DateFilterPanel) Render(updateScreen bool) {
 	x := renderText(0, d.y, header, style.Reverse(true))
 	drawChars(x, d.y, d.width-(len(d.name)+1), ' ', style.Reverse(true))
 
-	if d.start != nil {
-		d.start.Render(updateScreen)
+	if d.from != nil {
+		d.from.Render(updateScreen)
 	}
 
-	if d.end != nil {
-		d.end.Render(updateScreen)
+	if d.to != nil {
+		d.to.Render(updateScreen)
 	}
 
 	if updateScreen {
@@ -56,8 +56,8 @@ func (d *DateFilterPanel) Render(updateScreen bool) {
 func (d *DateFilterPanel) SetColorIndex(colorIndex uint8) {
 	d.PanelImpl.SetColorIndex(colorIndex)
 
-	d.start.SetColorIndex(colorIndex)
-	d.end.SetColorIndex(colorIndex)
+	d.from.SetColorIndex(colorIndex)
+	d.to.SetColorIndex(colorIndex)
 
 	if d.filter != nil {
 		model.GetFilterManager().UpdateFilterColorIndex(d.filter, colorIndex)
@@ -69,25 +69,25 @@ func (d *DateFilterPanel) HandleEvent(ev tcell.Event) bool {
 	case *tcell.EventKey:
 		switch ev.Key() {
 		case tcell.KeyTab:
-			if d.start.IsActive() {
-				d.start.SetActive(false)
-				d.end.SetActive(true)
+			if d.from.IsActive() {
+				d.from.SetActive(false)
+				d.to.SetActive(true)
 				return true
 			}
 		case tcell.KeyBacktab:
-			if d.end.IsActive() {
-				d.start.SetActive(true)
-				d.end.SetActive(false)
+			if d.to.IsActive() {
+				d.from.SetActive(true)
+				d.to.SetActive(false)
 				return true
 			}
 		}
 	}
 
-	if d.start.IsActive() && d.start.HandleEvent(ev) {
+	if d.from.IsActive() && d.from.HandleEvent(ev) {
 		return true
 	}
 
-	if d.end.IsActive() && d.end.HandleEvent(ev) {
+	if d.to.IsActive() && d.to.HandleEvent(ev) {
 		return true
 	}
 
@@ -97,28 +97,28 @@ func (d *DateFilterPanel) HandleEvent(ev tcell.Event) bool {
 func (d *DateFilterPanel) SetActive(active bool) {
 	d.PanelImpl.SetActive(active)
 
-	if active && !d.start.IsActive() && !d.end.IsActive() {
+	if active && !d.from.IsActive() && !d.to.IsActive() {
 		if d.lastActive != nil {
 			d.lastActive.SetActive(true)
 		} else {
-			d.start.SetActive(true)
+			d.from.SetActive(true)
 		}
 	} else if !active {
-		if d.start.IsActive() {
-			d.lastActive = d.start
-		} else if d.end.IsActive() {
-			d.lastActive = d.end
+		if d.from.IsActive() {
+			d.lastActive = d.from
+		} else if d.to.IsActive() {
+			d.lastActive = d.to
 		} else {
 			d.lastActive = nil
 		}
-		d.start.SetActive(false)
-		d.end.SetActive(false)
+		d.from.SetActive(false)
+		d.to.SetActive(false)
 	}
 }
 
 func (d *DateFilterPanel) SetFilter(filter filter.Filter) {
 	d.PanelImpl.SetFilter(filter)
 
-	d.start.SetFilter(filter)
-	d.end.SetFilter(filter)
+	d.from.SetFilter(filter)
+	d.to.SetFilter(filter)
 }

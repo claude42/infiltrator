@@ -4,22 +4,6 @@ import (
 	"math"
 )
 
-func IntMax(a, b int) int {
-	if a > b {
-		return a
-	} else {
-		return b
-	}
-}
-
-func IntMin(a, b int) int {
-	if a < b {
-		return a
-	} else {
-		return b
-	}
-}
-
 func InBetween(i, min, max int) (int, error) {
 	if i < min {
 		return min, ErrNotInBetween
@@ -50,4 +34,24 @@ func InsertRune(runes []rune, r rune, index int) ([]rune, error) {
 	copy(result[index+1:], runes[index:])
 
 	return result, nil
+}
+
+func Contains[T comparable](array []T, value T) bool {
+	for _, elem := range array {
+		if elem == value {
+			return true
+		}
+	}
+	return false
+}
+
+// returns true if element was present before
+func Remove[T comparable](array []T, value T) bool {
+	for i, elem := range array {
+		if elem == value {
+			array = append(array[:i], array[i+1:]...)
+			return true
+		}
+	}
+	return false
 }

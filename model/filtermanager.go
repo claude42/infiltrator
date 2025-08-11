@@ -667,18 +667,6 @@ func (fm *FilterManager) getLineOnScreen(lineNo int) (int, error) {
 	return -1, util.ErrOutOfBounds
 }
 
-func (fm *FilterManager) isLineOnScreen(lineNo int) bool {
-	if lineNo < 0 {
-		return false
-	}
-
-	for _, line := range fm.display.Buffer {
-		if lineNo == line.No {
-			return true
-		}
-	}
-	return false
-}
 func (fm *FilterManager) search(start int, direction int) (*reader.Line, error) {
 	length := fm.sourceLength()
 

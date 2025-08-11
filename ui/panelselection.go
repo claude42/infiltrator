@@ -3,6 +3,8 @@ package ui
 import (
 	"log"
 
+	"github.com/claude42/infiltrator/config"
+
 	"github.com/gdamore/tcell/v2"
 )
 
@@ -32,15 +34,15 @@ func (p *PanelSelection) HandleEvent(ev tcell.Event) bool {
 		case tcell.KeyRune:
 			switch ev.Rune() {
 			case 'r':
-				window.CreateAndAddPanel(PanelTypeRegex)
+				window.CreateAndAddPanel(config.FilterTypeRegex)
 				window.SetPanelsOpen(true)
 				p.SetActive(false)
 			case 'k':
-				window.CreateAndAddPanel(PanelTypeKeyword)
+				window.CreateAndAddPanel(config.FilterTypeKeyword)
 				window.SetPanelsOpen(true)
 				p.SetActive(false)
 			case 'd':
-				window.CreateAndAddPanel(PanelTypeDate)
+				window.CreateAndAddPanel(config.FilterTypeDate)
 				window.SetPanelsOpen(true)
 				p.SetActive(false)
 			}
@@ -49,7 +51,7 @@ func (p *PanelSelection) HandleEvent(ev tcell.Event) bool {
 			p.SetActive(false)
 			return true
 		case tcell.KeyEnter:
-			window.CreateAndAddPanel(PanelTypeRegex)
+			window.CreateAndAddPanel(config.FilterTypeRegex)
 			window.SetPanelsOpen(true)
 			p.SetActive(false)
 			return true

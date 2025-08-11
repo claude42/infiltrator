@@ -9,6 +9,7 @@ import (
 
 	// "github.com/claude42/infiltrator/model"
 
+	"github.com/claude42/infiltrator/config"
 	"github.com/claude42/infiltrator/fail"
 	"github.com/claude42/infiltrator/util"
 	"github.com/gdamore/tcell/v2"
@@ -249,7 +250,7 @@ func (w *Window) openPanelsOrPanelSelection() {
 	}
 }
 
-func (w *Window) CreateAndAddPanel(panelType PanelType) {
+func (w *Window) CreateAndAddPanel(panelType config.FilterType) {
 	if w.activePanel != nil && !w.panelsOpen {
 		return
 	}

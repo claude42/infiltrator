@@ -3,30 +3,15 @@ package ui
 import (
 	"log"
 
+	"github.com/claude42/infiltrator/config"
 	"github.com/claude42/infiltrator/fail"
 	"github.com/claude42/infiltrator/model"
 	"github.com/claude42/infiltrator/model/filter"
 	// "github.com/gdamore/tcell/v2"
 )
 
-type PanelType int
-
-const (
-	PanelTypeKeyword PanelType = iota
-	PanelTypeRegex
-	PanelTypeGlob
-	PanelTypeHost
-	PanelTypeFacility
-	PanelTypeDate
-)
-
-const keywordPanelDefaultName = "Keyword"
-const regexPanelDefaultName = "Regex"
-const dateFilterDefaultName = "Date"
-
 func setupNewStringFilterPanel(fn filter.StringFilterFuncFactory, name string) *StringFilterPanel {
-	p := NewStringFilterPanel()
-	p.SetName(name)
+	p := NewStringFilterPanel(name)
 	filter := filter.NewStringFilter(fn, p.Mode())
 	model.GetFilterManager().AddFilter(filter)
 	p.SetFilter(filter)
@@ -40,8 +25,7 @@ func setupNewStringFilterPanel(fn filter.StringFilterFuncFactory, name string) *
 }
 
 func setupNewDateFilterPanel() *DateFilterPanel {
-	p := NewDateFilterPanel()
-	p.SetName(dateFilterDefaultName)
+	p := NewDateFilterPanel(config.Filters[config.FilterTypeDate])
 	filter := filter.NewDateFilter()
 	model.GetFilterManager().AddFilter(filter)
 	p.SetFilter(filter)
@@ -49,19 +33,21 @@ func setupNewDateFilterPanel() *DateFilterPanel {
 	return p
 }
 
-func NewPanel(panelType PanelType) Panel {
+func NewPanel(panelType config.FilterType) Panel {
 	switch panelType {
-	case PanelTypeKeyword:
-		return setupNewStringFilterPanel(filter.DefaultStringFilterFuncFactory, keywordPanelDefaultName)
-	case PanelTypeRegex:
-		return setupNewStringFilterPanel(filter.RegexFilterFuncFactory, regexPanelDefaultName)
+	case config.FilterTypeKeyword:
+		return setupNewStringFilterPanel(filter.DefaultStringFilterFuncFactory,
+			config.Filters[config.FilterTypeKeyword])
+	case config.FilterTypeRegex:
+		return setupNewStringFilterPanel(filter.RegexFilterFuncFactory,
+			config.Filters[config.FilterTypeRegex])
 	// case Glob:
 	// 	return NewGlobPanel()
 	// case Host:
 	// 	return NewHostPanel()
 	// case Facility:
 	// 	return NewFacilityPanel()
-	case PanelTypeDate:
+	case config.FilterTypeDate:
 		// TODO: error handling
 		return setupNewDateFilterPanel()
 	default:

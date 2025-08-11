@@ -3,6 +3,8 @@ package ui
 import (
 	//"log"
 
+	"sync"
+
 	"github.com/claude42/infiltrator/fail"
 	"github.com/claude42/infiltrator/util"
 
@@ -22,6 +24,10 @@ type Input interface {
 }
 
 type InputImpl struct {
+	ComponentImpl
+	util.ObservableImpl
+	sync.Mutex
+
 	x, y, width int
 	cursor      int
 	start       int
@@ -30,18 +36,22 @@ type InputImpl struct {
 	inputCorrect bool
 	colorIndex   uint8
 
-	updateWatchers func()
-
-	ComponentImpl
-	util.ObservableImpl
+	delay              *util.Delay
+	updateWatchersFunc func()
 }
 
 func NewInputImpl() *InputImpl {
 	i := &InputImpl{}
 	i.inputCorrect = true
-	i.updateWatchers = i.defaultUpdateWatchers
+	i.delay = util.NewDelay(i.defaultUpdateWatchers)
+	i.updateWatchersFunc = i.defaultUpdateWatchers
 
 	return i
+}
+
+func (i *InputImpl) SetUpdateWatchersFunc(newFunc func()) {
+	i.updateWatchersFunc = newFunc
+	i.delay.SetInvokeFunc(newFunc)
 }
 
 func (i *InputImpl) Resize(x, y, width, height int) {
@@ -58,7 +68,7 @@ func (i *InputImpl) SetContent(content string) {
 	i.cursor = len(content)
 
 	i.Render(true)
-	i.updateWatchers()
+	i.updateWatchersFunc()
 }
 
 func (i *InputImpl) SetActive(active bool) {
@@ -126,7 +136,7 @@ func (i *InputImpl) insertRune(r rune) {
 	i.cursor++
 	i.checkBoundaries()
 	i.Render(true)
-	i.updateWatchers()
+	i.delay.Now()
 }
 
 func (i *InputImpl) setCursor(newCursor int) {
@@ -153,7 +163,7 @@ func (i *InputImpl) backspaceRune() {
 	i.cursor--
 	i.checkBoundaries()
 	i.Render(true)
-	i.updateWatchers()
+	i.delay.Now()
 }
 
 func (i *InputImpl) deleteRune() {
@@ -165,14 +175,14 @@ func (i *InputImpl) deleteRune() {
 	i.content = append(i.content[:i.cursor], i.content[i.cursor+1:]...)
 	i.checkBoundaries()
 	i.Render(true)
-	i.updateWatchers()
+	i.delay.Now()
 }
 
 func (i *InputImpl) deleteAll() {
 	i.content = i.content[:0]
 	i.cursor = 0
 	i.Render(true)
-	i.updateWatchers()
+	i.delay.Now()
 }
 
 func (i *InputImpl) checkBoundaries() {
@@ -182,15 +192,9 @@ func (i *InputImpl) checkBoundaries() {
 		i.start += pos - (i.width - inputElementMargin)
 	} else if pos <= inputElementMargin-1 {
 		i.start -= inputElementMargin - 1 - pos
-		i.start = util.IntMax(i.start, 0)
+		i.start = max(i.start, 0)
 	}
 
-	// if i.cursor+i.start >= i.width-2 {
-	// 	i.start = i.cursor - (i.width - 2)
-	// } else if i.cursor <= 2+i.start {
-	// 	i.start = i.cursor - 2
-	// }
-	// i.start, _ = util.InBetween(i.start, 0, util.IntMax(0, len(i.content)-i.width))
 }
 
 func (i *InputImpl) defaultUpdateWatchers() {

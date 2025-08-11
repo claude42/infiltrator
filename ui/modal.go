@@ -5,7 +5,6 @@ import (
 	"strings"
 
 	"github.com/claude42/infiltrator/model"
-	"github.com/claude42/infiltrator/util"
 	"github.com/gdamore/tcell/v2"
 )
 
@@ -74,8 +73,8 @@ func (m *ModalImpl) Resize(x, y, width, height int) {
 		m.height = height
 	}
 
-	m.x = util.IntMax((screenWidth-m.width)/2, 0)
-	m.y = util.IntMax((screenHeight-m.height)/2, 0)
+	m.x = max((screenWidth-m.width)/2, 0)
+	m.y = max((screenHeight-m.height)/2, 0)
 }
 
 func (m *ModalImpl) Render(updateScreen bool) {

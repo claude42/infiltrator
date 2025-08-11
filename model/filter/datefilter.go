@@ -13,19 +13,19 @@ import (
 )
 
 const (
-	DateFilterStart = "start"
-	DateFilterEnd   = "end"
+	DateFilterFrom = "From"
+	DateFilterTo   = "To"
 )
 
 type DateFilter struct {
 	FilterImpl
-	startLineNo int
-	endLineNo   int
+	fromLineNo int
+	toLineNo   int
 }
 
 func NewDateFilter() *DateFilter {
 	d := &DateFilter{
-		endLineNo: math.MaxInt,
+		toLineNo: math.MaxInt,
 	}
 
 	return d
@@ -35,20 +35,20 @@ func (d *DateFilter) SetKey(name string, key string) error {
 	keyTime, err := dateparser.Parse(nil, key)
 	if err != nil {
 		// TODO: error handling
-		if name == DateFilterStart {
-			d.startLineNo = 0
-		} else if name == DateFilterEnd {
-			d.endLineNo = math.MaxInt
+		if name == DateFilterFrom {
+			d.fromLineNo = 0
+		} else if name == DateFilterTo {
+			d.toLineNo = math.MaxInt
 		}
 		return err
 	}
 
-	if name == DateFilterStart {
-		d.startLineNo = d.findFirstAfter(keyTime.Time)
-	} else if name == DateFilterEnd {
-		d.endLineNo = d.findLastBefore(keyTime.Time)
+	if name == DateFilterFrom {
+		d.fromLineNo = d.findFirstAfter(keyTime.Time)
+	} else if name == DateFilterTo {
+		d.toLineNo = d.findLastBefore(keyTime.Time)
 	} else {
-		log.Panicf("Neither start nor end but '%s'", name)
+		log.Panicf("Neither from nor to but '%s'", name)
 	}
 
 	return nil
@@ -64,59 +64,34 @@ func (d *DateFilter) GetLine(lineNo int) (*reader.Line, error) {
 		return sourceLine, nil
 	}
 
-	if d.startLineNo == d.endLineNo {
+	if d.fromLineNo == d.toLineNo {
 		return sourceLine, nil
 	}
 
-	if sourceLine.No < d.startLineNo || sourceLine.No > d.endLineNo {
+	if sourceLine.No < d.fromLineNo || sourceLine.No > d.toLineNo {
 		sourceLine.Status = reader.LineHidden
 	}
 
 	return sourceLine, nil
 }
 
-// func (d *DateFilter) GetLine(lineNo int) (*reader.Line, error) {
-// 	sourceLine, err := d.source.GetLine(lineNo)
-// 	if err != nil {
-// 		return sourceLine, err
-// 	}
-
-// 	if sourceLine.Status == reader.LineHidden {
-// 		return sourceLine, nil
-// 	}
-
-// 	if !sourceLine.When.IsZero() {
-// 		return sourceLine, nil
-// 	}
-
-// 	_, err = d.getDate(sourceLine)
-// 	if err != nil {
-// 		// log.Printf("Date parsing error %T, %s", err, x)
-// 		log.Printf("Date parsing error %T", err)
-// 		return sourceLine, nil
-// 	}
-// 	log.Printf("Parsed line %d", sourceLine.No)
-
-// 	return sourceLine, nil
-// }
-
-func (d *DateFilter) findFirstAfter(startTime time.Time) int {
+func (d *DateFilter) findFirstAfter(fromTime time.Time) int {
 	lineNo := sort.Search(d.Length(), func(lineNo int) bool {
 		lineTime, err := d.getDateForLineNo(lineNo)
 		// TODO error handling
 		fail.OnError(err, "Paaanik")
-		return startTime.Before(lineTime)
+		return fromTime.Before(lineTime)
 	})
 	// TODO error handling
 	return lineNo
 }
 
-func (d *DateFilter) findLastBefore(endTime time.Time) int {
+func (d *DateFilter) findLastBefore(toTime time.Time) int {
 	lineNo := sort.Search(d.source.Length(), func(lineNo int) bool {
 		lineTime, err := d.getDateForLineNo(lineNo)
 		// TODO error handling
 		fail.OnError(err, "Paaanik")
-		return lineTime.After(endTime)
+		return lineTime.After(toTime)
 	})
 	return lineNo - 1
 }

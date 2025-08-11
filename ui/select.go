@@ -47,7 +47,7 @@ func (s *Select) SelectedOption() string {
 func (s *Select) updateWidth() {
 	s.width = 0
 	for _, option := range s.options {
-		s.width = util.IntMax(len(option), s.width)
+		s.width = max(len(option), s.width)
 	}
 }
 

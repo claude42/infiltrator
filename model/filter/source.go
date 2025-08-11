@@ -21,7 +21,7 @@ func NewSource() *Source {
 
 func (s *Source) calculateNewWidthFrom(start int) {
 	for _, line := range s.lines[start:] {
-		s.width = util.IntMax(s.width, len(line.Str))
+		s.width = max(s.width, len(line.Str))
 	}
 }
 

@@ -31,6 +31,8 @@ func main() {
 
 func run() error {
 	cm := config.GetConfiguration()
+	cm.ReadStateFile()
+	defer cm.WriteStateFile()
 
 	// Parse command line
 	flag.BoolVarP(&cm.ShowLineNumbers, "lines", "l", false, "Show line numbers")
@@ -107,43 +109,4 @@ func run() error {
 	fmt.Fprintln(os.Stderr, message)
 
 	return nil
-
-	// Set up filtering pipeline
-	// pipeline := model.GetPipeline()
-
-	// contentUpdate := make(chan []model.Line, 10)
-
-	// go model.GetFilterManager().EventLoop(contentUpdate)
-	// filePath := flag.Args()[0]
-	// go model.ReadFromFile(filePath, contentUpdate)
-
-	// for i := 0; i < 3; i++ {
-	// 	time.Sleep(time.Second)
-	// 	log.Println("waiting")
-	// }
-
-	// switch len(flag.Args()) {
-	// case 0:
-	// 	cm.FileName = "[stdin]"
-	// 	go buffer.ReadFromStdin(ui.GetScreen().PostEvent)
-	// case 1:
-	// 	filePath := flag.Args()[0]
-	// 	cm.FileName = filepath.Base(filePath)
-	// 	go buffer.ReadFromFile(filePath, ui.GetScreen().PostEvent)
-	// default:
-	// 	flag.Usage()
-	// 	return fmt.Errorf("Try again")
-	// }
-
-	// // Set up UI
-	// window := ui.Setup()
-	// defer ui.Cleanup()
-
-	// quit := make(chan struct{})
-	// go window.EventLoop(quit)
-
-	// // wait for UI thread to finish
-	// <-quit
-
-	// return nil
 }

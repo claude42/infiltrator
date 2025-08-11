@@ -35,10 +35,10 @@ type StringFilterPanel struct {
 	caseSensitive *Select
 }
 
-func NewStringFilterPanel() *StringFilterPanel {
+func NewStringFilterPanel(name string) *StringFilterPanel {
 	return &StringFilterPanel{
-		PanelImpl:     *NewPanelImpl(),
-		input:         NewFilterInput("string"),
+		PanelImpl:     *NewPanelImpl(name),
+		input:         NewFilterInput(name),
 		mode:          NewSelect(filterModes),
 		caseSensitive: NewSelect(caseSensitive),
 	}
@@ -188,4 +188,9 @@ func (t *StringFilterPanel) Mode() filter.FilterMode {
 
 func (t *StringFilterPanel) SetMode(mode int) {
 	t.mode.SetSelectedIndex(mode)
+}
+
+func (t *StringFilterPanel) SetName(name string) {
+	t.PanelImpl.SetName(name)
+	t.input.SetName(name)
 }

@@ -1,25 +1,61 @@
 package ui
 
 import (
+	"time"
+
+	"github.com/claude42/infiltrator/config"
 	"github.com/claude42/infiltrator/model"
 	"github.com/claude42/infiltrator/model/filter"
+	"github.com/claude42/infiltrator/util"
 	"github.com/gdamore/tcell/v2"
 )
 
 type FilterInput struct {
-	InputImpl
+	*InputImpl
 
 	filter filter.Filter
 	name   string
+
+	history             *[]string
+	currentHistoryIndex int
+	saveHistoryDelay    *util.Delay
 }
 
 func NewFilterInput(name string) *FilterInput {
 	fi := &FilterInput{}
 	fi.name = name
-	fi.InputImpl.inputCorrect = true
-	fi.InputImpl.updateWatchers = fi.updateWatchers
+	fi.currentHistoryIndex = -1
+	fi.InputImpl = NewInputImpl()
+	fi.InputImpl.SetUpdateWatchersFunc(fi.updateWatchers)
+
+	fi.saveHistoryDelay = util.NewCustomDelay(fi.storeInHistory, 2*time.Second)
 
 	return fi
+}
+
+func (fi *FilterInput) storeInHistory() {
+	// Certainly don't store empty lines in history
+	if string(fi.content) == "" {
+		return
+	}
+
+	// Also don't store anything when we're just browsing the history
+	// without making any modifications
+	if fi.currentHistoryIndex != -1 {
+		currentHistoryEntry, err := config.GetConfiguration().FromHistory(fi.name,
+			fi.currentHistoryIndex)
+		if err != nil {
+			// TODO: error handling
+			return
+		}
+		if string(fi.content) == currentHistoryEntry {
+			return
+		}
+	}
+
+	config.GetConfiguration().AddToHistory(fi.name, string(fi.content))
+	fi.currentHistoryIndex = 0
+
 }
 
 func (fi *FilterInput) HandleEvent(ev tcell.Event) bool {
@@ -31,6 +67,34 @@ func (fi *FilterInput) HandleEvent(ev tcell.Event) bool {
 			// the right thing to do
 			screen.PostEvent(NewEventPressedEnterInInputField())
 			model.GetFilterManager().FindMatch(1)
+			return true
+		case tcell.KeyUp:
+			content, err := config.GetConfiguration().FromHistory(fi.name,
+				fi.currentHistoryIndex+1)
+			if err != nil {
+				// TODO error handling / beep
+				return true
+			}
+			fi.currentHistoryIndex++
+			fi.SetContent(content)
+			return true
+		case tcell.KeyDown:
+			if fi.currentHistoryIndex <= -1 {
+				// TODO error handling / beep
+				return true
+			}
+			fi.currentHistoryIndex--
+			if fi.currentHistoryIndex == -1 {
+				fi.SetContent("")
+			} else {
+				content, err := config.GetConfiguration().FromHistory(fi.name,
+					fi.currentHistoryIndex)
+				if err != nil {
+					// TODO error handling / beep
+					return true
+				}
+				fi.SetContent(content)
+			}
 			return true
 		}
 	}
@@ -44,5 +108,14 @@ func (fi *FilterInput) SetFilter(filter filter.Filter) {
 
 func (fi *FilterInput) updateWatchers() {
 	model.GetFilterManager().UpdateFilterKey(fi.filter, fi.name, string(fi.InputImpl.content))
+	fi.saveHistoryDelay.Now()
 	fi.InputImpl.defaultUpdateWatchers()
+}
+
+func (fi *FilterInput) SetName(name string) {
+	fi.name = name
+}
+
+func (fi *FilterInput) SetHistory(history *[]string) {
+	fi.history = history
 }
