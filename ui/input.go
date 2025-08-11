@@ -65,7 +65,7 @@ func (i *InputImpl) Resize(x, y, width, height int) {
 
 func (i *InputImpl) SetContent(content string) {
 	i.content = []rune(content)
-	i.cursor = len(content)
+	i.cursor = len(i.content)
 
 	i.Render(true)
 	i.updateWatchersFunc()
@@ -119,7 +119,15 @@ func (i *InputImpl) HandleEvent(ev tcell.Event) bool {
 		case tcell.KeyDelete:
 			i.deleteRune()
 		case tcell.KeyCtrlU:
-			i.deleteAll()
+			i.deleteToTheLeft()
+		case tcell.KeyCtrlK:
+			i.deleteToTheRight()
+		case tcell.KeyCtrlA:
+			i.setCursor(0)
+			return true
+		case tcell.KeyCtrlE:
+			i.setCursor(int(len(i.content)))
+			return true
 		default:
 			//log.Printf("%v, %s", ev.Key(), tcell.KeyNames[ev.Key()])
 		}
@@ -178,9 +186,23 @@ func (i *InputImpl) deleteRune() {
 	i.delay.Now()
 }
 
-func (i *InputImpl) deleteAll() {
-	i.content = i.content[:0]
+func (i *InputImpl) deleteToTheLeft() {
+	if i.cursor >= len(i.content) {
+		i.content = []rune("")
+	} else {
+		i.content = i.content[i.cursor:]
+	}
 	i.cursor = 0
+	i.Render(true)
+	i.delay.Now()
+}
+
+func (i *InputImpl) deleteToTheRight() {
+	if i.cursor >= len(i.content) {
+		return
+	}
+
+	i.content = i.content[:i.cursor]
 	i.Render(true)
 	i.delay.Now()
 }
