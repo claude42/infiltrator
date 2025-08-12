@@ -2,12 +2,9 @@ package components
 
 import (
 	"fmt"
-	"log"
 
 	"github.com/claude42/infiltrator/model/filter"
 	"github.com/gdamore/tcell/v2"
-	//"github.com/claude42/infiltrator/util"
-	// "github.com/gdamore/tcell/v2"
 )
 
 type Panel interface {
@@ -105,7 +102,6 @@ func (p *PanelImpl) Name() string {
 }
 
 func (p *PanelImpl) StyleUsing(styler Styler) {
-	log.Printf("Styler: %T\n%+v\n%p", styler, styler, styler)
 	if p.CurrentStyler != nil {
 		p.OldStyler = p.CurrentStyler
 	}

@@ -8,7 +8,6 @@ import (
 	"github.com/claude42/infiltrator/fail"
 	"github.com/claude42/infiltrator/model"
 	"github.com/claude42/infiltrator/model/filter"
-	// "github.com/gdamore/tcell/v2"
 )
 
 func setupNewStringFilterPanel(fn filter.StringFilterFuncFactory, name string) *StringFilterPanel {
@@ -19,7 +18,6 @@ func setupNewStringFilterPanel(fn filter.StringFilterFuncFactory, name string) *
 
 	// done last so both panel and filter get the same color index
 	colorIndex := GetColorManager().Add(p)
-	log.Printf("Styler: %T\n%+v\n%p", p, p, p)
 	p.SetColorIndex(colorIndex)
 
 	return p
@@ -32,7 +30,6 @@ func setupNewDateFilterPanel() *DateFilterPanel {
 	p.SetFilter(filter)
 
 	colorIndex := GetColorManager().Add(p)
-	log.Printf("Styler: %T\n%+v\n%p", p, p, p)
 	p.SetColorIndex(colorIndex)
 
 	return p

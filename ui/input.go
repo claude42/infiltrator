@@ -1,15 +1,11 @@
 package ui
 
 import (
-	//"log"
-
 	"sync"
 
 	"github.com/claude42/infiltrator/components"
 	"github.com/claude42/infiltrator/fail"
 	"github.com/claude42/infiltrator/util"
-
-	// "github.com/claude42/infiltrator/model"
 
 	"github.com/gdamore/tcell/v2"
 )

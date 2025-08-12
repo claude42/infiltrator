@@ -12,6 +12,13 @@ const (
 	LineDoesNotExist = -1
 )
 
+var NonExistingLine = &Line{
+	No:      -1,
+	Status:  LineDoesNotExist,
+	Matched: false,
+	Str:     "",
+}
+
 type Line struct {
 	No      int
 	Status  LineStatus

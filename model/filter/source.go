@@ -44,7 +44,7 @@ func (s *Source) GetLine(line int) (*reader.Line, error) {
 	length := len(s.lines)
 
 	if line < 0 || line >= length {
-		return reader.NewLine(-1, "ErrOutOfBounds"), util.ErrOutOfBounds
+		return reader.NonExistingLine, util.ErrOutOfBounds
 	}
 
 	s.lines[line].CleanUp()

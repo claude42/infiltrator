@@ -142,7 +142,7 @@ func (fm *FilterManager) sourceLength() int {
 func (fm *FilterManager) GetLine(line int) (*reader.Line, error) {
 	filter, err := fm.outputFilter()
 	if err != nil {
-		return reader.NewLine(-1, ""), err
+		return reader.NonExistingLine, err
 	}
 
 	busy.SpinWithFraction(line, fm.sourceLength())
@@ -341,9 +341,6 @@ func (fm *FilterManager) processCommand(command Command) {
 		fm.display.UnsetCurrentMatch()
 		fm.asyncRefreshScreenBuffer()
 	case CommandFilterKeyUpdate:
-		log.Printf("No panic occurred: \nStack trace:\n%s", debug.Stack())
-		log.Printf("%v", command)
-		log.Printf("%s, %s", command.Name, command.Key)
 		fm.invalidateCaches()
 		err = command.Filter.SetKey(command.Name, command.Key)
 		fm.display.UnsetCurrentMatch()
@@ -360,7 +357,7 @@ func (fm *FilterManager) processCommand(command Command) {
 
 		config.GetConfiguration().PostEventFunc(NewEventError(true, ""))
 	} else if err != nil {
-		// TODO switch back on
+		// TODO switch back on, problem was the regex errors ended up here
 		// log.Panicf("Unknwon error %v+", err)
 	}
 }
@@ -467,13 +464,9 @@ func (fm *FilterManager) internalScrollUpLineBuffer() error {
 		}
 	}
 
-	// Could have also checked for err, not sure
-	// what's more elegant...
-	// Kept here just in case the change broke something
-	// if lineNo < 0 {
-	// 	log.Println("fm.ScrollUp ErrOutOfBounds")
-	// 	return util.ErrOutOfBounds
-	// }
+	if lineNo < 0 {
+		return util.ErrOutOfBounds
+	}
 
 	if fm.display.Height() > 0 {
 		fm.display.Buffer = append([]*reader.Line{prevLine},
@@ -508,28 +501,31 @@ func (fm *FilterManager) internalPageUpLineBuffer() error {
 }
 
 func (fm *FilterManager) internalScrollEnd() {
-	// start with what might be the first line, add 1 to make the following
-	// for loop nicer
-	firstTry := fm.sourceLength() - len(fm.display.Buffer) + 1
+	y := fm.display.Height() - 1
+	lineNo := fm.sourceLength() - 1
+	for ; y >= 0 && lineNo >= 0; lineNo-- {
+		line, _ := fm.GetLine(lineNo)
+		if line.Status != reader.LineHidden &&
+			line.Status != reader.LineDoesNotExist {
 
-	// this should be enough initialization to make internalScrollUpLinBuffer()
-	// work
-	fm.currentLine = firstTry
-	fm.display.refreshDisplay(nil, nil, fm.currentLine)
-	// fm.display.Buffer[0] = Line{No: firstTry}
-
-	// scroll until the last line of the screen is non-empty or we're at line 0
-	for {
-		err := fm.internalScrollUpLineBuffer()
-		lastLine := fm.display.Buffer[len(fm.display.Buffer)-1]
-
-		if err != nil || lastLine.Status == reader.LineWithoutStatus ||
-			lastLine.Status == reader.LineMatched ||
-			lastLine.Status == reader.LineDimmed {
-
-			break
+			fm.display.Buffer[y] = line
+			y--
 		}
 	}
+
+	if y >= 0 {
+		y++
+		y0 := 0
+		for ; y < fm.display.Height(); y, y0 = y+1, y0+1 {
+			fm.display.Buffer[y0] = fm.display.Buffer[y]
+		}
+
+		fm.display.fillRestOfBufferWithNonExistingLines(y0)
+	}
+
+	// really, does this belong here?
+	// and shouldn't we send an event instead?!
+	fm.display.Percentage = GetFilterManager().percentage()
 }
 
 func (fm *FilterManager) internalScrollHome() {

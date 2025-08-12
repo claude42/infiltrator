@@ -1,16 +1,12 @@
 package ui
 
 import (
-	//"fmt"
 	"fmt"
-	"log"
 
 	"github.com/claude42/infiltrator/components"
 	"github.com/claude42/infiltrator/fail"
 	"github.com/claude42/infiltrator/model"
 	"github.com/claude42/infiltrator/model/filter"
-
-	//"github.com/claude42/infiltrator/util"
 
 	"github.com/gdamore/tcell/v2"
 )
@@ -57,7 +53,6 @@ func (t *StringFilterPanel) Resize(x, y, width, height int) {
 }
 
 func (t *StringFilterPanel) Render(updateScreen bool) {
-	log.Printf("Styler: %T\n%+v\n%p", t, t, t)
 	style := t.ColoredPanel.CurrentStyler.Style()
 
 	header := fmt.Sprintf(" %s", t.Name())
@@ -84,7 +79,6 @@ func (t *StringFilterPanel) Render(updateScreen bool) {
 }
 
 func (s *StringFilterPanel) SetColorIndex(colorIndex uint8) {
-	log.Printf("Styler: %T\n%+v\n%p", s, s, s)
 	s.ColoredPanel.SetColorIndex(colorIndex)
 
 	s.input.SetColorIndex(colorIndex)

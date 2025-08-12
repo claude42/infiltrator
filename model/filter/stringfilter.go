@@ -1,7 +1,6 @@
 package filter
 
 import (
-	// "errors"
 	"fmt"
 	"sync"
 
@@ -9,7 +8,6 @@ import (
 	"strings"
 
 	"github.com/claude42/infiltrator/model/reader"
-	// "github.com/claude42/infiltrator/util"
 )
 
 type FilterMode int

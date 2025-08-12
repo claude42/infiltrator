@@ -7,8 +7,6 @@ import (
 	"runtime/debug"
 	"sync"
 
-	// "github.com/claude42/infiltrator/model"
-
 	"github.com/claude42/infiltrator/components"
 	"github.com/claude42/infiltrator/config"
 	"github.com/claude42/infiltrator/fail"

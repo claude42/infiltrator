@@ -4,15 +4,12 @@ import (
 	"fmt"
 	"sync"
 
-	// "log"
-
 	"github.com/claude42/infiltrator/components"
 	"github.com/claude42/infiltrator/config"
 	"github.com/claude42/infiltrator/model"
 	"github.com/claude42/infiltrator/model/busy"
 	"github.com/claude42/infiltrator/util"
 
-	// "github.com/claude42/infiltrator/util"
 	"github.com/gdamore/tcell/v2"
 )
 

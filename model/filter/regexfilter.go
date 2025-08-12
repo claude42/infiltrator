@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"regexp"
-	// "github.com/claude42/infiltrator/util"
 )
 
 var ErrRegex = errors.New("invalid regex")

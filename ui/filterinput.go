@@ -55,7 +55,6 @@ func (fi *FilterInput) storeInHistory() {
 
 	config.GetConfiguration().AddToHistory(fi.name, string(fi.content))
 	fi.currentHistoryIndex = 0
-
 }
 
 func (fi *FilterInput) HandleEvent(ev tcell.Event) bool {

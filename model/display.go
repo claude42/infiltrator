@@ -59,6 +59,10 @@ func (d *Display) SetHeight(height int) {
 	var lineNo int
 	if currentHeight > 0 {
 		lineNo = d.Buffer[currentHeight-1].No + 1
+		if lineNo == 0 {
+			d.fillRestOfBufferWithNonExistingLines(currentHeight - 1)
+			return
+		}
 	} else {
 		lineNo = 0
 	}
@@ -81,7 +85,15 @@ func (d *Display) SetHeight(height int) {
 	}
 
 	for ; y < height; y++ {
-		d.Buffer[y] = reader.NewLine(-1, "")
+		d.Buffer[y] = reader.NonExistingLine
+	}
+
+	d.Percentage = GetFilterManager().percentage()
+}
+
+func (d *Display) fillRestOfBufferWithNonExistingLines(y int) {
+	for ; y < len(d.Buffer); y++ {
+		d.Buffer[y] = reader.NonExistingLine
 	}
 }
 
@@ -146,9 +158,7 @@ func (d *Display) refreshDisplay(ctx context.Context, wg *sync.WaitGroup,
 		}
 	}
 
-	for ; y < displayHeight; y++ {
-		d.Buffer[y] = reader.NewLine(-1, "")
-	}
+	d.fillRestOfBufferWithNonExistingLines(y)
 
 	d.Percentage = GetFilterManager().percentage()
 

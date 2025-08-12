@@ -2,7 +2,6 @@ package ui
 
 import (
 	"fmt"
-	"log"
 
 	"github.com/claude42/infiltrator/components"
 	"github.com/claude42/infiltrator/model"
@@ -37,7 +36,6 @@ func (d *DateFilterPanel) Resize(x, y, width, height int) {
 }
 
 func (d *DateFilterPanel) Render(updateScreen bool) {
-	log.Printf("Styler: %T\n%+v\n%p", d, d, d)
 	style := d.ColoredPanel.CurrentStyler.Style()
 
 	header := fmt.Sprintf(" %s", d.Name())
@@ -60,7 +58,6 @@ func (d *DateFilterPanel) Render(updateScreen bool) {
 }
 
 func (d *DateFilterPanel) SetColorIndex(colorIndex uint8) {
-	log.Printf("Styler: %T\n%+v\n%p", d, d, d)
 	d.ColoredPanel.SetColorIndex(colorIndex)
 
 	d.from.SetColorIndex(colorIndex)
