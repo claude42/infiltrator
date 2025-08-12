@@ -2,14 +2,16 @@ package ui
 
 import (
 	"fmt"
+	"log"
 
+	"github.com/claude42/infiltrator/components"
 	"github.com/claude42/infiltrator/model"
 	"github.com/claude42/infiltrator/model/filter"
 	"github.com/gdamore/tcell/v2"
 )
 
 type DateFilterPanel struct {
-	PanelImpl
+	*ColoredPanel
 
 	from       *FilterInput
 	to         *FilterInput
@@ -17,15 +19,17 @@ type DateFilterPanel struct {
 }
 
 func NewDateFilterPanel(name string) *DateFilterPanel {
-	return &DateFilterPanel{
-		PanelImpl: *NewPanelImpl(name),
-		from:      NewFilterInput(filter.DateFilterFrom),
-		to:        NewFilterInput(filter.DateFilterTo),
+	d := &DateFilterPanel{
+		ColoredPanel: NewColoredPanel(name),
+		from:         NewFilterInput(filter.DateFilterFrom),
+		to:           NewFilterInput(filter.DateFilterTo),
 	}
+
+	return d
 }
 
 func (d *DateFilterPanel) Resize(x, y, width, height int) {
-	d.PanelImpl.Resize(x, y, width, height)
+	d.ColoredPanel.Resize(x, y, width, height)
 
 	d.from.Resize(x+26, y, 20, 1)
 
@@ -33,11 +37,13 @@ func (d *DateFilterPanel) Resize(x, y, width, height int) {
 }
 
 func (d *DateFilterPanel) Render(updateScreen bool) {
-	style := d.determinePanelStyle()
+	log.Printf("Styler: %T\n%+v\n%p", d, d, d)
+	style := d.ColoredPanel.CurrentStyler.Style()
 
-	header := fmt.Sprintf(" %s", d.name)
-	x := renderText(0, d.y, header, style.Reverse(true))
-	drawChars(x, d.y, d.width-(len(d.name)+1), ' ', style.Reverse(true))
+	header := fmt.Sprintf(" %s", d.Name())
+	_, y := d.Position()
+	x := components.RenderText(0, y, header, style.Reverse(true))
+	components.DrawChars(x, y, d.Width()-(len(d.Name())+1), ' ', style.Reverse(true))
 
 	if d.from != nil {
 		d.from.Render(updateScreen)
@@ -54,13 +60,14 @@ func (d *DateFilterPanel) Render(updateScreen bool) {
 }
 
 func (d *DateFilterPanel) SetColorIndex(colorIndex uint8) {
-	d.PanelImpl.SetColorIndex(colorIndex)
+	log.Printf("Styler: %T\n%+v\n%p", d, d, d)
+	d.ColoredPanel.SetColorIndex(colorIndex)
 
 	d.from.SetColorIndex(colorIndex)
 	d.to.SetColorIndex(colorIndex)
 
-	if d.filter != nil {
-		model.GetFilterManager().UpdateFilterColorIndex(d.filter, colorIndex)
+	if d.Filter() != nil {
+		model.GetFilterManager().UpdateFilterColorIndex(d.Filter(), colorIndex)
 	}
 }
 
@@ -95,7 +102,7 @@ func (d *DateFilterPanel) HandleEvent(ev tcell.Event) bool {
 }
 
 func (d *DateFilterPanel) SetActive(active bool) {
-	d.PanelImpl.SetActive(active)
+	d.ColoredPanel.SetActive(active)
 
 	if active && !d.from.IsActive() && !d.to.IsActive() {
 		if d.lastActive != nil {
@@ -117,7 +124,7 @@ func (d *DateFilterPanel) SetActive(active bool) {
 }
 
 func (d *DateFilterPanel) SetFilter(filter filter.Filter) {
-	d.PanelImpl.SetFilter(filter)
+	d.ColoredPanel.SetFilter(filter)
 
 	d.from.SetFilter(filter)
 	d.to.SetFilter(filter)

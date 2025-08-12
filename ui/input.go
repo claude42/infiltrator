@@ -81,12 +81,12 @@ func (i *InputImpl) SetActive(active bool) {
 func (i *InputImpl) Render(updateScreen bool) {
 	style := i.determineStyle()
 
-	x := renderRunes(i.x, i.y, i.width, i.content[i.start:], style)
+	x := components.RenderRunes(i.x, i.y, i.width, i.content[i.start:], style)
 
-	drawChars(x, i.y, i.x-x+i.width, '‾', style)
+	components.DrawChars(x, i.y, i.x-x+i.width, '‾', style)
 
 	if i.IsActive() {
-		changeStyle(i.x+i.cursor-i.start, i.y, CursorTextInputStyle)
+		components.ChangeStyle(i.x+i.cursor-i.start, i.y, CursorTextInputStyle)
 	}
 
 	if updateScreen {

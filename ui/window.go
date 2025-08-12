@@ -9,6 +9,7 @@ import (
 
 	// "github.com/claude42/infiltrator/model"
 
+	"github.com/claude42/infiltrator/components"
 	"github.com/claude42/infiltrator/config"
 	"github.com/claude42/infiltrator/fail"
 	"github.com/claude42/infiltrator/util"
@@ -23,11 +24,11 @@ var (
 
 type Window struct {
 	mainView       *View
-	BottomPanels   []Panel
+	BottomPanels   []components.Panel
 	panelsOpen     bool
-	activePanel    Panel
+	activePanel    components.Panel
 	statusbar      *Statusbar
-	popup          Modal
+	popup          components.Modal
 	panelSelection *PanelSelection
 }
 
@@ -45,7 +46,7 @@ func InfiltPostEvent(ev util.Event) error {
 }
 
 func Setup() *Window {
-	GetScreen()
+	components.Screen = GetScreen()
 
 	fail.If(window != nil, "ui.setup() called twice!")
 
@@ -306,7 +307,7 @@ func (w *Window) totalPanelHeight() int {
 	return totalPanelHeight
 }
 
-func (w *Window) AddPanel(newPanel Panel) error {
+func (w *Window) AddPanel(newPanel components.Panel) error {
 	// TODO: return error if total height of panels would exceed screen height
 	w.BottomPanels = append(w.BottomPanels, newPanel)
 	w.SetActivePanel(newPanel)
@@ -324,7 +325,7 @@ func (w *Window) RemovePanel() error {
 		return fmt.Errorf("cannot remove last panel")
 	}
 
-	var newActivePanel Panel
+	var newActivePanel components.Panel
 	activePanelIndex := w.activePanelIndex()
 
 	if activePanelIndex > 0 {
@@ -343,7 +344,7 @@ func (w *Window) RemovePanel() error {
 	return nil
 }
 
-func (w *Window) SetActivePanel(p Panel) {
+func (w *Window) SetActivePanel(p components.Panel) {
 	if w.activePanel != nil {
 		w.activePanel.SetActive(false)
 	}

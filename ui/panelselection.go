@@ -3,6 +3,7 @@ package ui
 import (
 	"log"
 
+	"github.com/claude42/infiltrator/components"
 	"github.com/claude42/infiltrator/config"
 
 	"github.com/gdamore/tcell/v2"
@@ -14,13 +15,13 @@ const content = `[ R ] Regular expression
 [ D ] Date filter`
 
 type PanelSelection struct {
-	ModalImpl
+	components.ModalImpl
 }
 
 func NewPanelSelection() *PanelSelection {
 	p := &PanelSelection{}
 	p.SetTitle("Choose type of filter")
-	p.SetContent(content, OrientationLeft)
+	p.SetContent(content, components.OrientationLeft)
 	// p.ModalImpl.Resize(0, 0, 0, 0)
 
 	return p

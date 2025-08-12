@@ -1,10 +1,9 @@
-package ui
+package components
 
 import (
 	"log"
 	"strings"
 
-	"github.com/claude42/infiltrator/components"
 	"github.com/claude42/infiltrator/model"
 	"github.com/gdamore/tcell/v2"
 )
@@ -18,12 +17,12 @@ const (
 )
 
 type Modal interface {
-	components.Component
+	Component
 	SetTitle(title string)
 }
 
 type ModalImpl struct {
-	components.ComponentImpl
+	ComponentImpl
 
 	x, y, width, height int
 	title               string
@@ -65,7 +64,7 @@ func (m *ModalImpl) HandleEvent(ev tcell.Event) bool {
 func (m *ModalImpl) Resize(x, y, width, height int) {
 	// x and y are ignore - modal will always be centered
 	// TODO: change Resize() interface so it can return an error
-	screenWidth, screenHeight := screen.Size()
+	screenWidth, screenHeight := Screen.Size()
 
 	if width != 0 {
 		m.width = width
@@ -85,7 +84,7 @@ func (m *ModalImpl) Render(updateScreen bool) {
 
 	for x := m.x; x < m.x+m.width; x++ {
 		for y := m.y; y < m.y+m.height; y++ {
-			screen.SetContent(x, y, ' ', nil, ModalStyle)
+			Screen.SetContent(x, y, ' ', nil, ModalStyle)
 		}
 	}
 
@@ -96,7 +95,7 @@ func (m *ModalImpl) Render(updateScreen bool) {
 	}
 
 	if updateScreen {
-		screen.Show()
+		Screen.Show()
 	}
 }
 
@@ -114,7 +113,7 @@ func (m *ModalImpl) renderTextContent() {
 		case OrientationLeft:
 			fallthrough
 		default:
-			renderText(m.x+2, m.y+2+i, line, ModalStyle)
+			RenderText(m.x+2, m.y+2+i, line, ModalStyle)
 		}
 	}
 }

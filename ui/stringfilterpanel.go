@@ -3,7 +3,9 @@ package ui
 import (
 	//"fmt"
 	"fmt"
+	"log"
 
+	"github.com/claude42/infiltrator/components"
 	"github.com/claude42/infiltrator/fail"
 	"github.com/claude42/infiltrator/model"
 	"github.com/claude42/infiltrator/model/filter"
@@ -28,24 +30,26 @@ var caseSensitive = []string{
 }
 
 type StringFilterPanel struct {
-	PanelImpl
+	*ColoredPanel
 
 	input         *FilterInput
-	mode          *Select
-	caseSensitive *Select
+	mode          *ColoredSelect
+	caseSensitive *ColoredSelect
 }
 
 func NewStringFilterPanel(name string) *StringFilterPanel {
-	return &StringFilterPanel{
-		PanelImpl:     *NewPanelImpl(name),
+	s := &StringFilterPanel{
+		ColoredPanel:  NewColoredPanel(name),
 		input:         NewFilterInput(name),
-		mode:          NewSelect(filterModes),
-		caseSensitive: NewSelect(caseSensitive),
+		mode:          NewColoredSelect(filterModes),
+		caseSensitive: NewColoredSelect(caseSensitive),
 	}
+
+	return s
 }
 
 func (t *StringFilterPanel) Resize(x, y, width, height int) {
-	t.PanelImpl.Resize(x, y, width, height)
+	t.ColoredPanel.Resize(x, y, width, height)
 
 	t.input.Resize(x+headerWidth+2, y, width-(x+headerWidth+2), 1)
 	t.mode.Resize(x+nameWidth, y, 1, 1)
@@ -53,12 +57,14 @@ func (t *StringFilterPanel) Resize(x, y, width, height int) {
 }
 
 func (t *StringFilterPanel) Render(updateScreen bool) {
-	style := t.determinePanelStyle()
+	log.Printf("Styler: %T\n%+v\n%p", t, t, t)
+	style := t.ColoredPanel.CurrentStyler.Style()
 
-	header := fmt.Sprintf(" %s", t.name)
-	x := renderText(0, t.y, header, style.Reverse(true))
-	drawChars(x, t.y, headerWidth-x, ' ', style.Reverse((true)))
-	renderText(headerWidth, t.y, "► ", style)
+	header := fmt.Sprintf(" %s", t.Name())
+	_, y := t.Position()
+	x := components.RenderText(0, y, header, style.Reverse(true))
+	components.DrawChars(x, y, headerWidth-x, ' ', style.Reverse((true)))
+	components.RenderText(headerWidth, y, "► ", style)
 
 	if t.input != nil {
 		t.input.Render(updateScreen)
@@ -77,14 +83,15 @@ func (t *StringFilterPanel) Render(updateScreen bool) {
 	}
 }
 
-func (t *StringFilterPanel) SetColorIndex(colorIndex uint8) {
-	t.PanelImpl.SetColorIndex(colorIndex)
+func (s *StringFilterPanel) SetColorIndex(colorIndex uint8) {
+	log.Printf("Styler: %T\n%+v\n%p", s, s, s)
+	s.ColoredPanel.SetColorIndex(colorIndex)
 
-	t.input.SetColorIndex(colorIndex)
-	t.mode.SetColorIndex(colorIndex)
-	t.caseSensitive.SetColorIndex(colorIndex)
-	if t.filter != nil {
-		model.GetFilterManager().UpdateFilterColorIndex(t.filter, colorIndex)
+	s.input.SetColorIndex(colorIndex)
+	s.mode.SetColorIndex(colorIndex)
+	s.caseSensitive.SetColorIndex(colorIndex)
+	if s.Filter() != nil {
+		model.GetFilterManager().UpdateFilterColorIndex(s.Filter(), colorIndex)
 	}
 }
 
@@ -126,7 +133,7 @@ func (t *StringFilterPanel) HandleEvent(ev tcell.Event) bool {
 }
 
 func (t *StringFilterPanel) SetActive(active bool) {
-	t.PanelImpl.SetActive(active)
+	t.ColoredPanel.SetActive(active)
 
 	t.input.SetActive(active)
 	t.mode.SetActive(active)
@@ -134,7 +141,7 @@ func (t *StringFilterPanel) SetActive(active bool) {
 }
 
 func (t *StringFilterPanel) SetFilter(filter filter.Filter) {
-	t.PanelImpl.SetFilter(filter)
+	t.ColoredPanel.SetFilter(filter)
 
 	t.input.SetFilter(filter)
 }
@@ -148,15 +155,16 @@ func (t *StringFilterPanel) SetFilter(filter filter.Filter) {
 // }
 
 func (t *StringFilterPanel) toggleMode() {
-	model.GetFilterManager().UpdateFilterMode(t.filter, filter.FilterMode(t.mode.NextOption()))
+	model.GetFilterManager().UpdateFilterMode(t.Filter(), filter.FilterMode(t.mode.NextOption()))
 
 	t.Render(true)
 }
 
 func (t *StringFilterPanel) mouseToggleMode(ev *tcell.EventMouse) bool {
 	mouseX, mouseY := ev.Position()
-	if mouseX >= t.mode.x && mouseX <= t.mode.x+t.mode.width &&
-		mouseY == t.mode.y {
+	modeX, modeY := t.mode.Position()
+	if mouseX >= modeX && mouseX <= modeX+t.mode.Width() &&
+		mouseY == modeY {
 		t.toggleMode()
 		return true
 	} else {
@@ -165,16 +173,17 @@ func (t *StringFilterPanel) mouseToggleMode(ev *tcell.EventMouse) bool {
 }
 
 func (t *StringFilterPanel) toggleCaseSensitive() {
-	model.GetFilterManager().UpdateFilterCaseSensitiveUpdate(t.filter, t.caseSensitive.NextOption() != 0)
+	model.GetFilterManager().UpdateFilterCaseSensitiveUpdate(t.Filter(), t.caseSensitive.NextOption() != 0)
 
 	t.Render(true)
 }
 
 func (t *StringFilterPanel) mouseToggleCaseSensitive(ev *tcell.EventMouse) bool {
 	mouseX, mouseY := ev.Position()
-	if mouseX >= t.caseSensitive.x &&
-		mouseX <= t.caseSensitive.x+t.caseSensitive.width &&
-		mouseY == t.caseSensitive.y {
+	caseSensitiveX, caseSensitiveY := t.caseSensitive.Position()
+	if mouseX >= caseSensitiveX &&
+		mouseX <= caseSensitiveX+t.caseSensitive.Width() &&
+		mouseY == caseSensitiveY {
 		t.toggleCaseSensitive()
 		return true
 	} else {
@@ -191,6 +200,6 @@ func (t *StringFilterPanel) SetMode(mode int) {
 }
 
 func (t *StringFilterPanel) SetName(name string) {
-	t.PanelImpl.SetName(name)
+	t.ColoredPanel.SetName(name)
 	t.input.SetName(name)
 }

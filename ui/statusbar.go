@@ -58,7 +58,7 @@ func (s *Statusbar) Resize(x, y, width, height int) {
 
 func (s *Statusbar) Render(updateScreen bool) {
 	s.Mutex.Lock()
-	drawChars(0, s.y, s.width, ' ', StatusBarStyle)
+	components.DrawChars(0, s.y, s.width, ' ', StatusBarStyle)
 
 	if s.panelsOpen {
 		s.renderPanelOpenStatusBar()
@@ -75,7 +75,7 @@ func (s *Statusbar) Render(updateScreen bool) {
 		screen.Show()
 	}
 	// str := fmt.Sprintf("[%-*s]", s.width, s.options[s.selected])
-	// renderText(s.x, s.y, str, s.determineStyle())
+	// components.RenderText(s.x, s.y, str, s.determineStyle())
 }
 
 func (s *Statusbar) renderDefaultStatusBar() {
@@ -83,7 +83,7 @@ func (s *Statusbar) renderDefaultStatusBar() {
 
 	s.renderFileName()
 
-	renderText(0, s.y, StatusDefaultText, StatusBarStyle)
+	components.RenderText(0, s.y, StatusDefaultText, StatusBarStyle)
 }
 
 func (s *Statusbar) renderFollowStausBar() {
@@ -91,14 +91,14 @@ func (s *Statusbar) renderFollowStausBar() {
 
 	s.renderFileName()
 
-	renderText(0, s.y, StatusDefaultText, StatusBarStyle)
+	components.RenderText(0, s.y, StatusDefaultText, StatusBarStyle)
 }
 func (s *Statusbar) renderPanelOpenStatusBar() {
 	s.renderPercentage()
 
 	s.renderFileName()
 
-	renderText(0, s.y, StatusPanelOpenText, StatusBarStyle)
+	components.RenderText(0, s.y, StatusPanelOpenText, StatusBarStyle)
 }
 
 func (s *Statusbar) renderFileName() {
@@ -108,7 +108,7 @@ func (s *Statusbar) renderFileName() {
 	length := len(fileNameStr)
 	start := s.width - length - spacer - percentLength
 
-	renderText(start, s.y, fileNameStr, StatusBarStyle)
+	components.RenderText(start, s.y, fileNameStr, StatusBarStyle)
 }
 
 func (s *Statusbar) renderPercentage() {
@@ -125,11 +125,11 @@ func (s *Statusbar) renderPercentage() {
 		style = StatusBarBusyStyle
 	}
 
-	renderText(s.width-5, s.y, percentStr, style)
+	components.RenderText(s.width-5, s.y, percentStr, style)
 }
 
 func (s *Statusbar) renderFollow() {
-	renderText(s.width-9, s.y, "[follow]", StatusBarStyle)
+	components.RenderText(s.width-9, s.y, "[follow]", StatusBarStyle)
 }
 
 func (s *Statusbar) renderBusyVisualization() {

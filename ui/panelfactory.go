@@ -3,6 +3,7 @@ package ui
 import (
 	"log"
 
+	"github.com/claude42/infiltrator/components"
 	"github.com/claude42/infiltrator/config"
 	"github.com/claude42/infiltrator/fail"
 	"github.com/claude42/infiltrator/model"
@@ -18,7 +19,7 @@ func setupNewStringFilterPanel(fn filter.StringFilterFuncFactory, name string) *
 
 	// done last so both panel and filter get the same color index
 	colorIndex := GetColorManager().Add(p)
-
+	log.Printf("Styler: %T\n%+v\n%p", p, p, p)
 	p.SetColorIndex(colorIndex)
 
 	return p
@@ -30,10 +31,14 @@ func setupNewDateFilterPanel() *DateFilterPanel {
 	model.GetFilterManager().AddFilter(filter)
 	p.SetFilter(filter)
 
+	colorIndex := GetColorManager().Add(p)
+	log.Printf("Styler: %T\n%+v\n%p", p, p, p)
+	p.SetColorIndex(colorIndex)
+
 	return p
 }
 
-func NewPanel(panelType config.FilterType) Panel {
+func NewPanel(panelType config.FilterType) components.Panel {
 	switch panelType {
 	case config.FilterTypeKeyword:
 		return setupNewStringFilterPanel(filter.DefaultStringFilterFuncFactory,
@@ -56,7 +61,7 @@ func NewPanel(panelType config.FilterType) Panel {
 	}
 }
 
-func DestroyPanel(panel Panel) {
+func DestroyPanel(panel components.Panel) {
 	fail.IfNil(panel, "DestroyPanel() called with nil panel")
 
 	fm := model.GetFilterManager()

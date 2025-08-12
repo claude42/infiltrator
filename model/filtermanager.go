@@ -341,6 +341,9 @@ func (fm *FilterManager) processCommand(command Command) {
 		fm.display.UnsetCurrentMatch()
 		fm.asyncRefreshScreenBuffer()
 	case CommandFilterKeyUpdate:
+		log.Printf("No panic occurred: \nStack trace:\n%s", debug.Stack())
+		log.Printf("%v", command)
+		log.Printf("%s, %s", command.Name, command.Key)
 		fm.invalidateCaches()
 		err = command.Filter.SetKey(command.Name, command.Key)
 		fm.display.UnsetCurrentMatch()

@@ -1,36 +1,48 @@
-package ui
+package components
 
 import (
 	"fmt"
+	"log"
 
-	"github.com/claude42/infiltrator/components"
 	"github.com/claude42/infiltrator/util"
 	"github.com/gdamore/tcell/v2"
 )
 
 type Select struct {
-	x, y, width int
-	options     []string
-	selected    int
-	colorIndex  uint8
+	ComponentImpl
 
-	components.ComponentImpl
+	x, y, width int
+	Options     []string
+	selected    int
+
+	OldStyler     Styler
+	CurrentStyler Styler
 }
 
 func NewSelect(options []string) *Select {
 	s := &Select{}
-	s.options = options
+	s.Options = options
 	s.updateWidth()
+	s.StyleUsing(s)
 
 	return s
 }
 
+func (s *Select) Position() (int, int) {
+	return s.x, s.y
+}
+
+func (s *Select) Width() int {
+	return s.width
+}
+
 func (s *Select) SetOptions(options []string) {
-	s.options = options
+	log.Printf("SetOptions(%+v)", options)
+	s.Options = options
 }
 
 func (s *Select) SetSelectedIndex(selected int) error {
-	if selected >= len(s.options) {
+	if selected >= len(s.Options) {
 		return util.ErrOutOfBounds
 	}
 	s.selected = selected
@@ -42,12 +54,12 @@ func (s *Select) SelectedIndex() int {
 }
 
 func (s *Select) SelectedOption() string {
-	return s.options[s.selected]
+	return s.Options[s.selected]
 }
 
 func (s *Select) updateWidth() {
 	s.width = 0
-	for _, option := range s.options {
+	for _, option := range s.Options {
 		s.width = max(len(option), s.width)
 	}
 }
@@ -59,30 +71,31 @@ func (s *Select) Resize(x, y, width, height int) {
 }
 
 func (s *Select) Render(updateScreen bool) {
-	str := fmt.Sprintf("[%-*s]", s.width, s.options[s.selected])
-	renderText(s.x, s.y, str, s.determineStyle())
+	str := fmt.Sprintf("[%-*s]", s.width, s.Options[s.selected])
+	RenderText(s.x, s.y, str, s.CurrentStyler.Style())
 }
 
-func (s *Select) SetColorIndex(colorIndex uint8) {
-	s.colorIndex = colorIndex
-}
-
-func (s *Select) determineStyle() tcell.Style {
+func (s *Select) Style() tcell.Style {
 	style := tcell.StyleDefault.Reverse(true)
 
 	if s.IsActive() {
-		style = style.Foreground((FilterColors[s.colorIndex][0])).Bold(true)
+		return style.Bold(true)
 	} else {
-		style = style.Foreground((FilterColors[s.colorIndex][1]))
+		return style
 	}
-
-	return style
 }
 
 func (s *Select) NextOption() int {
 	s.selected++
-	if s.selected >= len(s.options) {
+	if s.selected >= len(s.Options) {
 		s.selected = 0
 	}
 	return s.selected
+}
+
+func (s *Select) StyleUsing(styler Styler) {
+	if s.CurrentStyler != nil {
+		s.OldStyler = s.CurrentStyler
+	}
+	s.CurrentStyler = styler
 }

@@ -3,6 +3,7 @@ package ui
 import (
 	"log"
 
+	"github.com/claude42/infiltrator/components"
 	"github.com/claude42/infiltrator/fail"
 	"github.com/gdamore/tcell/v2"
 )
@@ -29,7 +30,7 @@ type colorManager struct {
 }
 
 type colorMap struct {
-	panel      Panel
+	panel      components.Panel
 	colorIndex uint8
 }
 
@@ -62,7 +63,7 @@ func (c *colorManager) findNextUnassigendColorIndex() uint8 {
 	return 0
 }
 
-func (c *colorManager) Add(panel Panel) uint8 {
+func (c *colorManager) Add(panel components.Panel) uint8 {
 	fail.IfNil(panel, "Add() called with nil panel)")
 
 	unassigned := c.findNextUnassigendColorIndex()
@@ -72,7 +73,7 @@ func (c *colorManager) Add(panel Panel) uint8 {
 	return unassigned
 }
 
-func (c *colorManager) Remove(panel Panel) {
+func (c *colorManager) Remove(panel components.Panel) {
 	for i, cm := range c.colors {
 		if cm.panel == panel {
 			c.colors = append(c.colors[:i], c.colors[i+1:]...)
@@ -82,7 +83,7 @@ func (c *colorManager) Remove(panel Panel) {
 	log.Panicf("Remove() called with panel %v that is not registered", panel)
 }
 
-func (c *colorManager) GetColor(panel Panel) [2]tcell.Color {
+func (c *colorManager) GetColor(panel components.Panel) [2]tcell.Color {
 	for i, cm := range c.colors {
 		if cm.panel == panel {
 			if i < len(FilterColors) {
