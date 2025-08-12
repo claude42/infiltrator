@@ -6,6 +6,7 @@ import (
 
 	// "log"
 
+	"github.com/claude42/infiltrator/components"
 	"github.com/claude42/infiltrator/config"
 	"github.com/claude42/infiltrator/model"
 	"github.com/claude42/infiltrator/model/busy"
@@ -29,7 +30,7 @@ const StatusFollow = StatusDefault
 const StatusPanelOpenText = "[CTRL-S] change mode [CTRL-H] change case sensitive [CTRL-P/O] add remove panel"
 
 type Statusbar struct {
-	ComponentImpl
+	components.ComponentImpl
 	sync.Mutex
 
 	y                      int

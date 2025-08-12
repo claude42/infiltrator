@@ -3,6 +3,7 @@ package ui
 import (
 	"fmt"
 
+	"github.com/claude42/infiltrator/components"
 	"github.com/claude42/infiltrator/model/filter"
 	"github.com/gdamore/tcell/v2"
 	//"github.com/claude42/infiltrator/util"
@@ -10,7 +11,7 @@ import (
 )
 
 type Panel interface {
-	Component
+	components.Component
 
 	Height() int
 	Position() (int, int)
@@ -21,7 +22,7 @@ type Panel interface {
 }
 
 type PanelImpl struct {
-	ComponentImpl
+	components.ComponentImpl
 
 	name       string
 	y          int

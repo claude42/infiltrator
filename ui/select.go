@@ -3,6 +3,7 @@ package ui
 import (
 	"fmt"
 
+	"github.com/claude42/infiltrator/components"
 	"github.com/claude42/infiltrator/util"
 	"github.com/gdamore/tcell/v2"
 )
@@ -13,7 +14,7 @@ type Select struct {
 	selected    int
 	colorIndex  uint8
 
-	ComponentImpl
+	components.ComponentImpl
 }
 
 func NewSelect(options []string) *Select {

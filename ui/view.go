@@ -3,6 +3,7 @@ package ui
 import (
 	"fmt"
 
+	"github.com/claude42/infiltrator/components"
 	"github.com/claude42/infiltrator/config"
 	"github.com/claude42/infiltrator/model"
 	"github.com/claude42/infiltrator/model/reader"
@@ -12,7 +13,7 @@ import (
 )
 
 type View struct {
-	ComponentImpl
+	components.ComponentImpl
 
 	viewWidth, viewHeight int
 	CurrentDisplay        *model.Display

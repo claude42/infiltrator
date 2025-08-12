@@ -5,6 +5,7 @@ import (
 
 	"sync"
 
+	"github.com/claude42/infiltrator/components"
 	"github.com/claude42/infiltrator/fail"
 	"github.com/claude42/infiltrator/util"
 
@@ -20,11 +21,11 @@ type Input interface {
 	Watch(eh tcell.EventHandler)
 	SetColorIndex(colorIndex uint8)
 
-	Component
+	components.Component
 }
 
 type InputImpl struct {
-	ComponentImpl
+	components.ComponentImpl
 	util.ObservableImpl
 	sync.Mutex
 

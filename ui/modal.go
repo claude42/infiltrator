@@ -4,6 +4,7 @@ import (
 	"log"
 	"strings"
 
+	"github.com/claude42/infiltrator/components"
 	"github.com/claude42/infiltrator/model"
 	"github.com/gdamore/tcell/v2"
 )
@@ -17,12 +18,12 @@ const (
 )
 
 type Modal interface {
-	Component
+	components.Component
 	SetTitle(title string)
 }
 
 type ModalImpl struct {
-	ComponentImpl
+	components.ComponentImpl
 
 	x, y, width, height int
 	title               string
@@ -78,7 +79,7 @@ func (m *ModalImpl) Resize(x, y, width, height int) {
 }
 
 func (m *ModalImpl) Render(updateScreen bool) {
-	if !m.active {
+	if !m.IsActive() {
 		return
 	}
 
