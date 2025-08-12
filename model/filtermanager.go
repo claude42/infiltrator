@@ -195,9 +195,9 @@ func (fm *FilterManager) processContentUpdate(newLines []*reader.Line) {
 		// the comment here
 		// fm.refreshDisplay()
 		fm.internalScrollEnd()
-		fm.display.refreshDisplay(nil, nil, fm.currentLine)
+		fm.syncRefreshScreenBuffer()
 	} else if fm.isDisplayAffected() {
-		fm.display.refreshDisplay(nil, nil, fm.currentLine)
+		fm.syncRefreshScreenBuffer()
 	}
 
 	config.GetConfiguration().PostEventFunc(NewEventFileChanged(length, fm.percentage()))
@@ -306,25 +306,25 @@ func (fm *FilterManager) processCommand(command Command) {
 		config.GetConfiguration().PostEventFunc(NewEventDisplay(*fm.display))
 	case CommandHome:
 		fm.internalScrollHome()
-		fm.display.refreshDisplay(nil, nil, fm.currentLine)
+		fm.syncRefreshScreenBuffer()
 	case CommandFindMatch:
 		if refresh, _ := fm.internalFindNextMatch(command.direction); refresh {
-			fm.display.refreshDisplay(nil, nil, fm.currentLine)
+			fm.syncRefreshScreenBuffer()
 		} else {
 			config.GetConfiguration().PostEventFunc(NewEventDisplay(*fm.display))
 		}
 	case CommandAddFilter:
 		fm.internalAddFilter(command.Filter)
-		fm.display.refreshDisplay(nil, nil, fm.currentLine)
+		fm.syncRefreshScreenBuffer()
 	case CommandRemoveFilter:
 		err = fm.internalRemoveFilter(command.Filter)
-		fm.display.refreshDisplay(nil, nil, fm.currentLine)
+		fm.syncRefreshScreenBuffer()
 	case CommandSetDisplayHeight:
 		fm.display.SetHeight(command.Lines)
 		config.GetConfiguration().PostEventFunc(NewEventDisplay(*fm.display))
 	case CommandSetCurrentLine:
 		fm.internalSetCurrentLine(command.Line)
-		fm.display.refreshDisplay(nil, nil, fm.currentLine)
+		fm.syncRefreshScreenBuffer()
 	case CommandFilterColorIndexUpdate:
 		command.Filter.SetColorIndex(command.ColorIndex)
 		fm.invalidateCaches()
@@ -586,6 +586,10 @@ func (fm *FilterManager) internalRemoveFilter(f filter.Filter) error {
 	}
 	log.Panicln("Filter not found in pipeline")
 	return fmt.Errorf("Filter not found in pipeline")
+}
+
+func (fm *FilterManager) syncRefreshScreenBuffer() {
+	fm.display.refreshDisplay(context.Background(), nil, fm.currentLine)
 }
 
 func (fm *FilterManager) asyncRefreshScreenBuffer() {
