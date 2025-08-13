@@ -18,10 +18,6 @@ var ViewCurrentMatchLineNumberStyle = DefStyle.Foreground(tcell.ColorYellow)
 var ViewOverflowStyle = ViewStyle.Reverse(true)
 var DimmedViewOverflowStyle = ViewOverflowStyle.Foreground(tcell.ColorDimGray)
 
-var TextInputStyle = tcell.StyleDefault.Foreground((tcell.ColorDimGray))
-var ActiveTextInputStyle = tcell.StyleDefault
-var CursorTextInputStyle = ActiveTextInputStyle.Reverse(true)
-
 var StatusBarStyle = tcell.StyleDefault.Reverse((true)).Bold((true))
 var StatusBarBusyStyle = StatusBarStyle.Foreground(tcell.ColorRed)
 

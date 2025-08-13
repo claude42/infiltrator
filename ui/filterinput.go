@@ -11,7 +11,7 @@ import (
 )
 
 type FilterInput struct {
-	*InputImpl
+	*ColoredInput
 
 	filter filter.Filter
 	name   string
@@ -25,8 +25,8 @@ func NewFilterInput(name string) *FilterInput {
 	fi := &FilterInput{}
 	fi.name = name
 	fi.currentHistoryIndex = -1
-	fi.InputImpl = NewInputImpl()
-	fi.InputImpl.SetUpdateWatchersFunc(fi.updateWatchers)
+	fi.ColoredInput = NewColoredInput()
+	fi.ColoredInput.SetUpdateWatchersFunc(fi.updateWatchers)
 
 	fi.saveHistoryDelay = util.NewCustomDelay(fi.storeInHistory, 2*time.Second)
 
@@ -35,7 +35,7 @@ func NewFilterInput(name string) *FilterInput {
 
 func (fi *FilterInput) storeInHistory() {
 	// Certainly don't store empty lines in history
-	if string(fi.content) == "" {
+	if fi.ColoredInput.Content() == "" {
 		return
 	}
 
@@ -48,12 +48,12 @@ func (fi *FilterInput) storeInHistory() {
 			// TODO: error handling
 			return
 		}
-		if string(fi.content) == currentHistoryEntry {
+		if fi.ColoredInput.Content() == currentHistoryEntry {
 			return
 		}
 	}
 
-	config.GetConfiguration().AddToHistory(fi.name, string(fi.content))
+	config.GetConfiguration().AddToHistory(fi.name, fi.ColoredInput.Content())
 	fi.currentHistoryIndex = 0
 }
 
@@ -105,10 +105,11 @@ func (fi *FilterInput) SetFilter(filter filter.Filter) {
 	fi.filter = filter
 }
 
+// TODO TODO TODO
 func (fi *FilterInput) updateWatchers() {
-	model.GetFilterManager().UpdateFilterKey(fi.filter, fi.name, string(fi.InputImpl.content))
+	model.GetFilterManager().UpdateFilterKey(fi.filter, fi.name, string(fi.ColoredInput.Content()))
 	fi.saveHistoryDelay.Now()
-	fi.InputImpl.defaultUpdateWatchers()
+	fi.ColoredInput.OldUpdateWatchersFunc()
 }
 
 func (fi *FilterInput) SetName(name string) {

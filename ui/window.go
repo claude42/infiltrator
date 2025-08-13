@@ -28,6 +28,7 @@ type Window struct {
 	statusbar      *Statusbar
 	popup          components.Modal
 	panelSelection *PanelSelection
+	exPanel        *ExPanel
 }
 
 func GetScreen() tcell.Screen {
@@ -58,6 +59,10 @@ func Setup() *Window {
 
 	window.panelSelection = NewPanelSelection()
 
+	window.exPanel = NewExPanel()
+	window.exPanel.SetContent("Hallo")
+	window.exPanel.SetActive(true)
+
 	setupScreen()
 
 	return window
@@ -86,6 +91,10 @@ func (w *Window) Render() {
 	}
 
 	w.statusbar.Render(false)
+
+	if w.exPanel != nil {
+		w.exPanel.Render(false)
+	}
 
 	if w.popup != nil {
 		w.popup.Render(false)
@@ -286,6 +295,8 @@ func (w *Window) resize() {
 		}
 	}
 	w.statusbar.Resize(0, height-1, width, 0) // x and height ignored
+	w.exPanel.Resize(0, 3, width, 0)          // height ignored
+
 	if w.popup != nil {
 		w.popup.Resize(0, 0, 0, 0)
 	}

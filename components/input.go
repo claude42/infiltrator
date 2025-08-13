@@ -1,9 +1,8 @@
-package ui
+package components
 
 import (
 	"sync"
 
-	"github.com/claude42/infiltrator/components"
 	"github.com/claude42/infiltrator/fail"
 	"github.com/claude42/infiltrator/util"
 
@@ -13,15 +12,15 @@ import (
 const inputElementMargin = 3
 
 type Input interface {
+	Component
+
 	SetContent(content string)
 	Watch(eh tcell.EventHandler)
-	SetColorIndex(colorIndex uint8)
-
-	components.Component
+	// SetColorIndex(colorIndex uint8)
 }
 
 type InputImpl struct {
-	components.ComponentImpl
+	ComponentImpl
 	util.ObservableImpl
 	sync.Mutex
 
@@ -30,24 +29,32 @@ type InputImpl struct {
 	start       int
 	content     []rune
 
-	inputCorrect bool
-	colorIndex   uint8
+	InputCorrect bool
 
-	delay              *util.Delay
-	updateWatchersFunc func()
+	delay                 *util.Delay
+	OldUpdateWatchersFunc func()
+	UpdateWatchersFunc    func()
+
+	OldStyler     Styler
+	CurrentStyler Styler
 }
 
 func NewInputImpl() *InputImpl {
 	i := &InputImpl{}
-	i.inputCorrect = true
-	i.delay = util.NewDelay(i.defaultUpdateWatchers)
-	i.updateWatchersFunc = i.defaultUpdateWatchers
+	i.InputCorrect = true
+	i.delay = util.NewDelay(i.DefaultUpdateWatchers)
+	i.UpdateWatchersFunc = i.DefaultUpdateWatchers
+
+	i.StyleUsing(i)
 
 	return i
 }
 
 func (i *InputImpl) SetUpdateWatchersFunc(newFunc func()) {
-	i.updateWatchersFunc = newFunc
+	if i.UpdateWatchersFunc != nil {
+		i.OldUpdateWatchersFunc = i.UpdateWatchersFunc
+	}
+	i.UpdateWatchersFunc = newFunc
 	i.delay.SetInvokeFunc(newFunc)
 }
 
@@ -65,7 +72,11 @@ func (i *InputImpl) SetContent(content string) {
 	i.cursor = len(i.content)
 
 	i.Render(true)
-	i.updateWatchersFunc()
+	i.UpdateWatchersFunc()
+}
+
+func (i *InputImpl) Content() string {
+	return string(i.content)
 }
 
 func (i *InputImpl) SetActive(active bool) {
@@ -75,23 +86,19 @@ func (i *InputImpl) SetActive(active bool) {
 }
 
 func (i *InputImpl) Render(updateScreen bool) {
-	style := i.determineStyle()
+	style := i.CurrentStyler.Style()
 
-	x := components.RenderRunes(i.x, i.y, i.width, i.content[i.start:], style)
+	x := RenderRunes(i.x, i.y, i.width, i.content[i.start:], style)
 
-	components.DrawChars(x, i.y, i.x-x+i.width, '‾', style)
+	DrawChars(x, i.y, i.x-x+i.width, '‾', style)
 
 	if i.IsActive() {
-		components.ChangeStyle(i.x+i.cursor-i.start, i.y, CursorTextInputStyle)
+		ChangeStyle(i.x+i.cursor-i.start, i.y, CursorTextInputStyle)
 	}
 
 	if updateScreen {
-		screen.Show()
+		Screen.Show()
 	}
-}
-
-func (i *InputImpl) SetColorIndex(colorIndex uint8) {
-	i.colorIndex = colorIndex
 }
 
 func (i *InputImpl) HandleEvent(ev tcell.Event) bool {
@@ -147,10 +154,10 @@ func (i *InputImpl) insertRune(r rune) {
 func (i *InputImpl) setCursor(newCursor int) {
 	if newCursor < 0 {
 		i.cursor = 0
-		screen.Beep()
+		Screen.Beep()
 	} else if newCursor > len(i.content) {
 		i.cursor = len(i.content)
-		screen.Beep()
+		Screen.Beep()
 	} else {
 		i.cursor = newCursor
 	}
@@ -160,7 +167,7 @@ func (i *InputImpl) setCursor(newCursor int) {
 
 func (i *InputImpl) backspaceRune() {
 	if i.cursor == 0 {
-		screen.Beep()
+		Screen.Beep()
 		return
 	}
 
@@ -173,7 +180,7 @@ func (i *InputImpl) backspaceRune() {
 
 func (i *InputImpl) deleteRune() {
 	if i.cursor == len(i.content) {
-		screen.Beep()
+		Screen.Beep()
 		return
 	}
 
@@ -216,7 +223,7 @@ func (i *InputImpl) checkBoundaries() {
 
 }
 
-func (i *InputImpl) defaultUpdateWatchers() {
+func (i *InputImpl) DefaultUpdateWatchers() {
 	ev := NewEventText(string(i.content))
 	// consumed := i.PostEvent(ev)
 	i.PostEvent(ev)
@@ -231,18 +238,20 @@ func (i *InputImpl) defaultUpdateWatchers() {
 	// }
 }
 
-func (i *InputImpl) determineStyle() tcell.Style {
+func (i *InputImpl) Style() tcell.Style {
 	var style tcell.Style
 
-	if i.IsActive() {
-		style = tcell.StyleDefault.Foreground((FilterColors[i.colorIndex][0]))
-	} else {
-		style = tcell.StyleDefault.Foreground((FilterColors[i.colorIndex][1]))
-	}
-
-	if !i.inputCorrect {
+	if !i.InputCorrect {
 		style = style.Italic(true)
 	}
 
 	return style
+}
+
+func (i *InputImpl) StyleUsing(styler Styler) {
+	if i.CurrentStyler != nil {
+		i.OldStyler = i.CurrentStyler
+	}
+
+	i.CurrentStyler = styler
 }
