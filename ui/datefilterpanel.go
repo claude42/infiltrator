@@ -36,6 +36,10 @@ func (d *DateFilterPanel) Resize(x, y, width, height int) {
 }
 
 func (d *DateFilterPanel) Render(updateScreen bool) {
+	if !d.IsVisible() {
+		return
+	}
+
 	style := d.ColoredPanel.CurrentStyler.Style()
 
 	header := fmt.Sprintf(" %s", d.Name())

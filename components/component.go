@@ -7,6 +7,8 @@ import (
 type Component interface {
 	SetActive(active bool)
 	IsActive() bool
+	SetVisible(visible bool)
+	IsVisible() bool
 	Resize(x, y, width, height int)
 	Render(updateScreen bool)
 
@@ -16,7 +18,8 @@ type Component interface {
 type ComponentImpl struct {
 	util.EventHandlerPanicImpl
 
-	active bool
+	active  bool
+	visible bool
 }
 
 func (c *ComponentImpl) SetActive(active bool) {
@@ -25,4 +28,12 @@ func (c *ComponentImpl) SetActive(active bool) {
 
 func (c *ComponentImpl) IsActive() bool {
 	return c.active
+}
+
+func (c *ComponentImpl) SetVisible(visible bool) {
+	c.visible = visible
+}
+
+func (c *ComponentImpl) IsVisible() bool {
+	return c.visible
 }

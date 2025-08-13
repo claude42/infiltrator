@@ -54,12 +54,16 @@ func Setup() *Window {
 	fail.Must0(screen.Init())
 
 	window.mainView = NewView()
+	components.Add(window.mainView, 0)
 
 	window.statusbar = NewStatusbar()
+	components.Add(window.statusbar, 0)
 
 	window.panelSelection = NewPanelSelection()
+	components.Add(window.panelSelection, 2)
 
 	window.exPanel = NewExPanel()
+	components.Add(window.exPanel, 1)
 	window.exPanel.SetContent("Hallo")
 	window.exPanel.SetActive(true)
 
@@ -82,23 +86,7 @@ func Cleanup() {
 }
 
 func (w *Window) Render() {
-	w.mainView.Render(nil, false)
-
-	if w.panelsOpen {
-		for _, p := range w.BottomPanels {
-			p.Render(false)
-		}
-	}
-
-	w.statusbar.Render(false)
-
-	if w.exPanel != nil {
-		w.exPanel.Render(false)
-	}
-
-	if w.popup != nil {
-		w.popup.Render(false)
-	}
+	components.RenderAll(false)
 
 	screen.Show()
 }
@@ -250,11 +238,12 @@ func (w *Window) openPanelsOrPanelSelection() {
 		w.SetPanelsOpen(true)
 		return
 	} else {
-		if w.popup != nil {
+		if w.popup != nil { // TODO: weird
 			w.popup.SetActive(false)
 		}
 		w.popup = w.panelSelection
 		w.popup.SetActive(true)
+		w.popup.SetVisible(true)
 	}
 }
 
@@ -284,7 +273,7 @@ func (w *Window) resize() {
 	// TODO: in case the terminal gets to small, the panels will never
 	// open again!
 	if panelsPlusStatusbarHeight >= height {
-		w.panelsOpen = false
+		w.SetPanelsOpen(false)
 		w.mainView.Resize(0, 0, width, height-w.statusbar.Height())
 	} else {
 		w.mainView.Resize(0, 0, width, height-panelsPlusStatusbarHeight)
@@ -319,6 +308,7 @@ func (w *Window) totalPanelHeight() int {
 func (w *Window) AddPanel(newPanel components.Panel) error {
 	// TODO: return error if total height of panels would exceed screen height
 	w.BottomPanels = append(w.BottomPanels, newPanel)
+	components.Add(newPanel, 1)
 	w.SetActivePanel(newPanel)
 
 	// resize() doesn't sound right here but will actually recalculate where
@@ -401,6 +391,9 @@ func (w *Window) switchPanel(offset int) error {
 
 func (w *Window) SetPanelsOpen(panelsOpen bool) {
 	w.panelsOpen = panelsOpen
+	for _, p := range w.BottomPanels {
+		p.SetVisible(panelsOpen)
+	}
 	GetScreen().PostEvent(NewEventPanelStateChanged(panelsOpen))
 	w.resizeAndRedraw()
 }

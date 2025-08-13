@@ -21,6 +21,7 @@ type Select struct {
 
 func NewSelect(options []string) *Select {
 	s := &Select{}
+	s.visible = true
 	s.Options = options
 	s.updateWidth()
 	s.StyleUsing(s)
@@ -71,6 +72,10 @@ func (s *Select) Resize(x, y, width, height int) {
 }
 
 func (s *Select) Render(updateScreen bool) {
+	if !s.visible {
+		return
+	}
+
 	str := fmt.Sprintf("[%-*s]", s.width, s.Options[s.selected])
 	RenderText(s.x, s.y, str, s.CurrentStyler.Style())
 }

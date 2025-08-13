@@ -29,6 +29,10 @@ func (e *ExPanel) Resize(x, y, width, height int) {
 }
 
 func (e *ExPanel) Render(updateScreen bool) {
+	if !e.IsVisible() {
+		return
+	}
+
 	style := e.PanelImpl.CurrentStyler.Style()
 
 	x, y := e.Position()

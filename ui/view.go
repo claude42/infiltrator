@@ -21,11 +21,20 @@ type View struct {
 
 func NewView() *View {
 	v := &View{}
+	v.SetVisible(true)
 
 	return v
 }
 
-func (v *View) Render(display *model.Display, updateScreen bool) {
+func (v *View) Render(updateScreen bool) {
+	v.RenderNewDisplay(nil, updateScreen)
+}
+
+func (v *View) RenderNewDisplay(display *model.Display, updateScreen bool) {
+	if !v.IsVisible() {
+		return
+	}
+
 	// display will be nil if called from Windows.Render(). Only go ahead
 	// if there's already a v.currentDisplay
 	if display == nil && v.CurrentDisplay == nil {
@@ -160,7 +169,7 @@ func (v *View) HandleEvent(ev tcell.Event) bool {
 	switch ev := ev.(type) {
 	case *model.EventDisplay:
 		// log.Printf("DisplayEvent. totalLength: %d, percentage: %d", ev.Display.TotalLength, ev.Display.Percentage)
-		v.Render(&ev.Display, true)
+		v.RenderNewDisplay(&ev.Display, true)
 		return false
 	case *model.EventError:
 		if ev.Beep {
@@ -211,14 +220,14 @@ func (v *View) HandleEvent(ev tcell.Event) bool {
 		case tcell.KeyRight:
 			model.GetFilterManager().ScrollHorizontal(1)
 			v.CurrentDisplay.CurrentCol++
-			v.Render(nil, true)
+			v.RenderNewDisplay(nil, true)
 			return true
 		case tcell.KeyLeft:
 			model.GetFilterManager().ScrollHorizontal(-1)
 			if v.CurrentDisplay.CurrentCol > 0 {
 				v.CurrentDisplay.CurrentCol--
 			}
-			v.Render(nil, true)
+			v.RenderNewDisplay(nil, true)
 			return true
 		case tcell.KeyCtrlF, tcell.KeyPgDn:
 			model.GetFilterManager().PageDown()

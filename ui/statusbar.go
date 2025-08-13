@@ -42,6 +42,7 @@ type Statusbar struct {
 
 func NewStatusbar() *Statusbar {
 	s := &Statusbar{}
+	s.SetVisible(true)
 	s.height = 1
 	model.GetFilterManager().Watch(s)
 
@@ -54,6 +55,10 @@ func (s *Statusbar) Resize(x, y, width, height int) {
 }
 
 func (s *Statusbar) Render(updateScreen bool) {
+	if !s.IsVisible() {
+		return
+	}
+
 	s.Mutex.Lock()
 	components.DrawChars(0, s.y, s.width, ' ', StatusBarStyle)
 

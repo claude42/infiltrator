@@ -19,10 +19,10 @@ type PanelSelection struct {
 }
 
 func NewPanelSelection() *PanelSelection {
-	p := &PanelSelection{}
+	p := &PanelSelection{
+		ModalImpl: *components.NewModalImplWithContent(content, components.OrientationLeft),
+	}
 	p.SetTitle("Choose type of filter")
-	p.SetContent(content, components.OrientationLeft)
-	// p.ModalImpl.Resize(0, 0, 0, 0)
 
 	return p
 }

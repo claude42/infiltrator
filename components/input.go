@@ -41,6 +41,7 @@ type InputImpl struct {
 
 func NewInputImpl() *InputImpl {
 	i := &InputImpl{}
+	i.visible = true
 	i.InputCorrect = true
 	i.delay = util.NewDelay(i.DefaultUpdateWatchers)
 	i.UpdateWatchersFunc = i.DefaultUpdateWatchers
@@ -86,6 +87,10 @@ func (i *InputImpl) SetActive(active bool) {
 }
 
 func (i *InputImpl) Render(updateScreen bool) {
+	if !i.visible {
+		return
+	}
+
 	style := i.CurrentStyler.Style()
 
 	x := RenderRunes(i.x, i.y, i.width, i.content[i.start:], style)

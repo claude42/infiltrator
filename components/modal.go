@@ -33,6 +33,7 @@ type ModalImpl struct {
 
 func NewModalImpl(width, height int) *ModalImpl {
 	m := &ModalImpl{}
+	m.visible = true
 	m.Resize(0, 0, width, height)
 
 	return m
@@ -40,6 +41,7 @@ func NewModalImpl(width, height int) *ModalImpl {
 
 func NewModalImplWithContent(content string, orientation Orientation) *ModalImpl {
 	m := &ModalImpl{}
+	m.visible = true
 	m.SetContent(content, orientation)
 
 	return m
@@ -78,7 +80,7 @@ func (m *ModalImpl) Resize(x, y, width, height int) {
 }
 
 func (m *ModalImpl) Render(updateScreen bool) {
-	if !m.IsActive() {
+	if !m.visible {
 		return
 	}
 

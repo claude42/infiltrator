@@ -53,6 +53,10 @@ func (t *StringFilterPanel) Resize(x, y, width, height int) {
 }
 
 func (t *StringFilterPanel) Render(updateScreen bool) {
+	if !t.IsVisible() {
+		return
+	}
+
 	style := t.ColoredPanel.CurrentStyler.Style()
 
 	header := fmt.Sprintf(" %s", t.Name())
