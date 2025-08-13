@@ -76,6 +76,12 @@ func (e *ExPanel) SetActive(active bool) {
 	e.input.SetActive(active)
 }
 
+func (e *ExPanel) SetVisible(visible bool) {
+	e.PanelImpl.SetVisible(visible)
+
+	e.input.SetVisible(visible)
+}
+
 // func (t *StringFilterPanel) WatchInput(eh tcell.EventHandler) {
 // 	if t.input == nil {
 // 		log.Panicln("StringFilterPanel.WatchInput() called without input field!")

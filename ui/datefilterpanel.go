@@ -124,6 +124,13 @@ func (d *DateFilterPanel) SetActive(active bool) {
 	}
 }
 
+func (d *DateFilterPanel) SetVisible(visible bool) {
+	d.ColoredPanel.SetVisible(visible)
+	d.from.SetVisible(visible)
+	d.to.SetVisible(visible)
+
+}
+
 func (d *DateFilterPanel) SetFilter(filter filter.Filter) {
 	d.ColoredPanel.SetFilter(filter)
 

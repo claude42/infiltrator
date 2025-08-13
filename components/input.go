@@ -41,7 +41,6 @@ type InputImpl struct {
 
 func NewInputImpl() *InputImpl {
 	i := &InputImpl{}
-	i.visible = true
 	i.InputCorrect = true
 	i.delay = util.NewDelay(i.DefaultUpdateWatchers)
 	i.UpdateWatchersFunc = i.DefaultUpdateWatchers

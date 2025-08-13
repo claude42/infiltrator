@@ -38,7 +38,6 @@ func NewPanelImpl(name string) *PanelImpl {
 		name: name,
 	}
 
-	p.visible = true
 	p.StyleUsing(p)
 
 	return p

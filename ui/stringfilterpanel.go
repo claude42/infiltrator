@@ -138,6 +138,14 @@ func (t *StringFilterPanel) SetActive(active bool) {
 	t.caseSensitive.SetActive(active)
 }
 
+func (t *StringFilterPanel) SetVisible(visible bool) {
+	t.ColoredPanel.SetVisible(visible)
+
+	t.input.SetVisible(visible)
+	t.mode.SetVisible(visible)
+	t.caseSensitive.SetVisible(visible)
+}
+
 func (t *StringFilterPanel) SetFilter(filter filter.Filter) {
 	t.ColoredPanel.SetFilter(filter)
 

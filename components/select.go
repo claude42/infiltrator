@@ -21,7 +21,6 @@ type Select struct {
 
 func NewSelect(options []string) *Select {
 	s := &Select{}
-	s.visible = true
 	s.Options = options
 	s.updateWidth()
 	s.StyleUsing(s)

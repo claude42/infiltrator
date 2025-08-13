@@ -21,7 +21,6 @@ type View struct {
 
 func NewView() *View {
 	v := &View{}
-	v.SetVisible(true)
 
 	return v
 }

@@ -42,7 +42,6 @@ type Statusbar struct {
 
 func NewStatusbar() *Statusbar {
 	s := &Statusbar{}
-	s.SetVisible(true)
 	s.height = 1
 	model.GetFilterManager().Watch(s)
 

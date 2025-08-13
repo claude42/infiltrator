@@ -55,9 +55,11 @@ func Setup() *Window {
 
 	window.mainView = NewView()
 	components.Add(window.mainView, 0)
+	window.mainView.SetVisible(true)
 
 	window.statusbar = NewStatusbar()
 	components.Add(window.statusbar, 0)
+	window.statusbar.SetVisible(true)
 
 	window.panelSelection = NewPanelSelection()
 	components.Add(window.panelSelection, 2)
@@ -65,7 +67,7 @@ func Setup() *Window {
 	window.exPanel = NewExPanel()
 	components.Add(window.exPanel, 1)
 	window.exPanel.SetContent("Hallo")
-	window.exPanel.SetActive(true)
+	// window.exPanel.SetActive(true)
 
 	setupScreen()
 
@@ -238,9 +240,9 @@ func (w *Window) openPanelsOrPanelSelection() {
 		w.SetPanelsOpen(true)
 		return
 	} else {
-		if w.popup != nil { // TODO: weird
-			w.popup.SetActive(false)
-		}
+		// if w.popup != nil { // TODO: weird
+		// 	w.popup.SetActive(false)
+		// }
 		w.popup = w.panelSelection
 		w.popup.SetActive(true)
 		w.popup.SetVisible(true)
@@ -391,8 +393,16 @@ func (w *Window) switchPanel(offset int) error {
 
 func (w *Window) SetPanelsOpen(panelsOpen bool) {
 	w.panelsOpen = panelsOpen
-	for _, p := range w.BottomPanels {
-		p.SetVisible(panelsOpen)
+	if panelsOpen {
+		for _, p := range w.BottomPanels {
+			p.SetVisible(true)
+		}
+		w.activePanel.SetActive(true)
+	} else {
+		for _, p := range w.BottomPanels {
+			p.SetVisible(false)
+			p.SetActive(false)
+		}
 	}
 	GetScreen().PostEvent(NewEventPanelStateChanged(panelsOpen))
 	w.resizeAndRedraw()
