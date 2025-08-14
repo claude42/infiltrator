@@ -23,7 +23,8 @@ func NewDateFilterPanel(name string) *DateFilterPanel {
 		from:         NewFilterInput(filter.DateFilterFrom),
 		to:           NewFilterInput(filter.DateFilterTo),
 	}
-
+	d.ColoredPanel.Add(d.from)
+	d.ColoredPanel.Add(d.to)
 	return d
 }
 
@@ -122,13 +123,6 @@ func (d *DateFilterPanel) SetActive(active bool) {
 		d.from.SetActive(false)
 		d.to.SetActive(false)
 	}
-}
-
-func (d *DateFilterPanel) SetVisible(visible bool) {
-	d.ColoredPanel.SetVisible(visible)
-	d.from.SetVisible(visible)
-	d.to.SetVisible(visible)
-
 }
 
 func (d *DateFilterPanel) SetFilter(filter filter.Filter) {

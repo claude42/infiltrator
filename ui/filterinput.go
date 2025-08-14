@@ -107,6 +107,9 @@ func (fi *FilterInput) SetFilter(filter filter.Filter) {
 
 // TODO TODO TODO
 func (fi *FilterInput) updateWatchers() {
+	if fi.filter == nil {
+		return
+	}
 	model.GetFilterManager().UpdateFilterKey(fi.filter, fi.name, string(fi.ColoredInput.Content()))
 	fi.saveHistoryDelay.Now()
 	fi.ColoredInput.OldUpdateWatchersFunc()

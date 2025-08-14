@@ -43,6 +43,8 @@ Threads
 
 
 TODO
+* Removing filters doesn't seem to remove the from the model?!
+
 * Beep
 * Display wrong Regex
 * Error Messages

@@ -13,6 +13,8 @@ Keyboard shortcuts
 
 Available CTRL combination
 
+
+
 * a: Home
 * b: page back
 * c: quit
@@ -33,7 +35,7 @@ Available CTRL combination
 * r:
 * s: toggle filter mode
 * t:
-* u:
+* u: delete to left (in edit mode)
 * v:
 * w:
 * x:

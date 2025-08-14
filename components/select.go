@@ -11,9 +11,8 @@ import (
 type Select struct {
 	ComponentImpl
 
-	x, y, width int
-	Options     []string
-	selected    int
+	Options  []string
+	selected int
 
 	OldStyler     Styler
 	CurrentStyler Styler
@@ -22,7 +21,8 @@ type Select struct {
 func NewSelect(options []string) *Select {
 	s := &Select{}
 	s.Options = options
-	s.updateWidth()
+	// just to set the initial width correctly, mb not even necessary?!
+	s.Resize(0, 0, 0, 0)
 	s.StyleUsing(s)
 
 	return s
@@ -57,17 +57,25 @@ func (s *Select) SelectedOption() string {
 	return s.Options[s.selected]
 }
 
-func (s *Select) updateWidth() {
-	s.width = 0
+func (s *Select) updateWidth() (width int) {
+	width = 0
 	for _, option := range s.Options {
-		s.width = max(len(option), s.width)
+		width = max(len(option), width)
 	}
+	return
 }
 
 func (s *Select) Resize(x, y, width, height int) {
 	// width and height get ignored
-	s.x = x
-	s.y = y
+	s.ComponentImpl.Resize(x, y, s.updateWidth(), 1)
+}
+
+func (s *Select) Height() int {
+	return 1
+}
+
+func (s *Select) Size() (int, int) {
+	return s.width, 1
 }
 
 func (s *Select) Render(updateScreen bool) {

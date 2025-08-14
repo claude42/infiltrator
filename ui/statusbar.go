@@ -8,7 +8,6 @@ import (
 	"github.com/claude42/infiltrator/config"
 	"github.com/claude42/infiltrator/model"
 	"github.com/claude42/infiltrator/model/busy"
-	"github.com/claude42/infiltrator/util"
 
 	"github.com/gdamore/tcell/v2"
 )
@@ -30,9 +29,6 @@ type Statusbar struct {
 	components.ComponentImpl
 	sync.Mutex
 
-	y                      int
-	width                  int
-	height                 int
 	colorIndex             uint8
 	percentage             int
 	panelsOpen             bool
@@ -42,15 +38,21 @@ type Statusbar struct {
 
 func NewStatusbar() *Statusbar {
 	s := &Statusbar{}
-	s.height = 1
 	model.GetFilterManager().Watch(s)
 
 	return s
 }
 
 func (s *Statusbar) Resize(x, y, width, height int) {
-	s.y = y
-	s.width = width
+	s.ComponentImpl.Resize(0, y, width, 1)
+}
+
+func (s *Statusbar) Height() int {
+	return 1
+}
+
+func (s *Statusbar) Size() (int, int) {
+	return s.Width(), 1
 }
 
 func (s *Statusbar) Render(updateScreen bool) {
@@ -58,8 +60,10 @@ func (s *Statusbar) Render(updateScreen bool) {
 		return
 	}
 
+	_, y := s.ComponentImpl.Position()
+
 	s.Mutex.Lock()
-	components.DrawChars(0, s.y, s.width, ' ', StatusBarStyle)
+	components.DrawChars(0, y, s.Width(), ' ', StatusBarStyle)
 
 	if s.panelsOpen {
 		s.renderPanelOpenStatusBar()
@@ -84,7 +88,8 @@ func (s *Statusbar) renderDefaultStatusBar() {
 
 	s.renderFileName()
 
-	components.RenderText(0, s.y, StatusDefaultText, StatusBarStyle)
+	_, y := s.ComponentImpl.Position()
+	components.RenderText(0, y, StatusDefaultText, StatusBarStyle)
 }
 
 func (s *Statusbar) renderFollowStausBar() {
@@ -92,14 +97,16 @@ func (s *Statusbar) renderFollowStausBar() {
 
 	s.renderFileName()
 
-	components.RenderText(0, s.y, StatusDefaultText, StatusBarStyle)
+	_, y := s.ComponentImpl.Position()
+	components.RenderText(0, y, StatusDefaultText, StatusBarStyle)
 }
 func (s *Statusbar) renderPanelOpenStatusBar() {
 	s.renderPercentage()
 
 	s.renderFileName()
 
-	components.RenderText(0, s.y, StatusPanelOpenText, StatusBarStyle)
+	_, y := s.ComponentImpl.Position()
+	components.RenderText(0, y, StatusPanelOpenText, StatusBarStyle)
 }
 
 func (s *Statusbar) renderFileName() {
@@ -107,30 +114,33 @@ func (s *Statusbar) renderFileName() {
 	const percentLength = 9
 	fileNameStr := fmt.Sprintf("\"%s\"", config.GetConfiguration().FileName)
 	length := len(fileNameStr)
-	start := s.width - length - spacer - percentLength
+	start := s.Width() - length - spacer - percentLength
 
-	components.RenderText(start, s.y, fileNameStr, StatusBarStyle)
+	_, y := s.ComponentImpl.Position()
+	components.RenderText(start, y, fileNameStr, StatusBarStyle)
 }
 
 func (s *Statusbar) renderPercentage() {
-	var percentStr string
+	// var percentStr string
 
-	realPercentage, _ := util.InBetween(s.percentage, 0, 100)
-	percentStr = fmt.Sprintf("%3d%%", realPercentage)
+	// realPercentage, _ := util.InBetween(s.percentage, 0, 100)
+	// percentStr = fmt.Sprintf("%3d%%", realPercentage)
 
-	var style tcell.Style
+	// var style tcell.Style
 
-	if s.busyState != busy.Busy {
-		style = StatusBarStyle
-	} else {
-		style = StatusBarBusyStyle
-	}
+	// if s.busyState != busy.Busy {
+	// 	style = StatusBarStyle
+	// } else {
+	// 	style = StatusBarBusyStyle
+	// }
 
-	components.RenderText(s.width-5, s.y, percentStr, style)
+	// _, y := s.ComponentImpl.Position()
+	// components.RenderText(s.Width()-5, y, percentStr, style)
 }
 
 func (s *Statusbar) renderFollow() {
-	components.RenderText(s.width-9, s.y, "[follow]", StatusBarStyle)
+	_, y := s.ComponentImpl.Position()
+	components.RenderText(s.Width()-9, y, "[follow]", StatusBarStyle)
 }
 
 func (s *Statusbar) renderBusyVisualization() {
@@ -144,7 +154,8 @@ func (s *Statusbar) renderBusyVisualization() {
 		style = StatusBarBusyStyle
 	}
 
-	screen.SetContent(s.width-1, s.y, toRender, nil, style)
+	_, y := s.ComponentImpl.Position()
+	screen.SetContent(s.Width()-1, y, toRender, nil, style)
 }
 
 func (s *Statusbar) bumpBusyVisualization() rune {
@@ -160,10 +171,6 @@ func (s *Statusbar) bumpBusyVisualization() rune {
 
 func (s *Statusbar) SetColorIndex(colorIndex uint8) {
 	s.colorIndex = colorIndex
-}
-
-func (s *Statusbar) Height() int {
-	return s.height
 }
 
 func (s *Statusbar) HandleEvent(ev tcell.Event) bool {

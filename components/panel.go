@@ -8,12 +8,9 @@ import (
 )
 
 type Panel interface {
-	Component
+	Container
 	Styler
 
-	Height() int
-	Width() int
-	Position() (int, int)
 	SetFilter(filter filter.Filter)
 	Filter() filter.Filter
 	SetName(name string)
@@ -21,11 +18,9 @@ type Panel interface {
 }
 
 type PanelImpl struct {
-	ComponentImpl
+	ContainerImpl
 
-	name  string
-	y     int
-	width int
+	name string
 
 	filter filter.Filter
 
@@ -43,22 +38,17 @@ func NewPanelImpl(name string) *PanelImpl {
 	return p
 }
 
-func (p *PanelImpl) Position() (int, int) {
-	return 0, p.y
+func (p *PanelImpl) Resize(x, y, width, height int) {
+	// x, height get ignored
+	p.ContainerImpl.Resize(0, y, width, 1)
 }
 
 func (p *PanelImpl) Height() int {
 	return 1
 }
 
-func (p *PanelImpl) Width() int {
-	return p.width
-}
-
-func (p *PanelImpl) Resize(x, y, width, height int) {
-	// x, height get ignored
-	p.y = y
-	p.width = width
+func (p *PanelImpl) Size() (int, int) {
+	return p.width, 1
 }
 
 func (t *PanelImpl) Render(updateScreen bool) {

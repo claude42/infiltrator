@@ -173,6 +173,7 @@ func (w *Window) EventLoop(quit chan<- string) bool {
 			if err != nil {
 				screen.Beep()
 			}
+			components.Remove(toBeDestroyed)
 			DestroyPanel(toBeDestroyed)
 			w.Render()
 			return false

@@ -15,8 +15,8 @@ import (
 type View struct {
 	components.ComponentImpl
 
-	viewWidth, viewHeight int
-	CurrentDisplay        *model.Display
+	// viewWidth, viewHeight int
+	CurrentDisplay *model.Display
 }
 
 func NewView() *View {
@@ -51,13 +51,13 @@ func (v *View) RenderNewDisplay(display *model.Display, updateScreen bool) {
 
 	// skip rendering if display buffer and viewheight differ. Most likely
 	// backend Goroutine needs to catch up
-	if len(v.CurrentDisplay.Buffer) != v.viewHeight {
+	if len(v.CurrentDisplay.Buffer) != v.Height() {
 		return
 	}
 
 	// Guard clause above should catch this, but still: Make sure we don't
 	// render beyond v.viewHeight!
-	for y := 0; y < len(v.CurrentDisplay.Buffer) && y < v.viewHeight; y++ {
+	for y := 0; y < len(v.CurrentDisplay.Buffer) && y < v.Height(); y++ {
 		v.renderLine(v.CurrentDisplay.Buffer[y], y)
 	}
 
@@ -77,7 +77,7 @@ func (v *View) renderLine(line *reader.Line, y int) {
 
 	lineStyle := v.determineStyle(line, matched)
 
-	for x := start; x < v.viewWidth; x++ {
+	for x := start; x < v.Width(); x++ {
 		var r rune = ' '
 		style := lineStyle
 		var lineXPos = v.CurrentDisplay.CurrentCol + x - start
@@ -86,7 +86,7 @@ func (v *View) renderLine(line *reader.Line, y int) {
 			r = rune(str[lineXPos])
 
 			// in case we're on the last screen column, render an inverse '>'
-			if x == v.viewWidth-1 && v.CurrentDisplay.CurrentCol+x+1 < len(str) {
+			if x == v.Width()-1 && v.CurrentDisplay.CurrentCol+x+1 < len(str) {
 				r = '>'
 				style = style.Reverse(true)
 			} else if line.ColorIndex[lineXPos] > 0 {
@@ -131,7 +131,7 @@ func (v *View) renderLineNumber(line *reader.Line, y int, matched bool) int {
 
 	var x int
 	style := v.determineLineNumberStyle(line, matched)
-	for x = 0; x < v.viewWidth && x < len(str); x++ {
+	for x = 0; x < v.Width() && x < len(str); x++ {
 		screen.SetContent(x, y, rune(str[x]), nil, style)
 	}
 
@@ -158,9 +158,8 @@ func (v *View) determineLineNumberStyle(line *reader.Line, matched bool) tcell.S
 
 func (v *View) Resize(x, y, width, height int) {
 	// x, y ignored for now
-	v.viewWidth = width
-	v.viewHeight = height
-	model.GetFilterManager().SetDisplayHeight(v.viewHeight)
+	v.ComponentImpl.Resize(0, 0, width, height)
+	model.GetFilterManager().SetDisplayHeight(v.Height())
 	//model.GetFilterManager().RefreshScreenBuffer(v.curY, v.viewHeight)
 }
 

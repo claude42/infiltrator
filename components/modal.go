@@ -17,18 +17,17 @@ const (
 )
 
 type Modal interface {
-	Component
+	Container
 	SetTitle(title string)
 }
 
 type ModalImpl struct {
-	ComponentImpl
+	ContainerImpl
 
-	x, y, width, height int
-	title               string
-	orientation         Orientation
-	lines               []string
-	contentWidth        int
+	title        string
+	orientation  Orientation
+	lines        []string
+	contentWidth int
 }
 
 func NewModalImpl(width, height int) *ModalImpl {
@@ -66,15 +65,8 @@ func (m *ModalImpl) Resize(x, y, width, height int) {
 	// TODO: change Resize() interface so it can return an error
 	screenWidth, screenHeight := Screen.Size()
 
-	if width != 0 {
-		m.width = width
-	}
-	if height != 0 {
-		m.height = height
-	}
-
-	m.x = max((screenWidth-m.width)/2, 0)
-	m.y = max((screenHeight-m.height)/2, 0)
+	m.ContainerImpl.Resize(max((screenWidth-width)/2, 0),
+		max((screenHeight-height)/2, 0), width, height)
 }
 
 func (m *ModalImpl) Render(updateScreen bool) {

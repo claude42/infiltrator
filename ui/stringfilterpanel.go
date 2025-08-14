@@ -40,6 +40,9 @@ func NewStringFilterPanel(name string) *StringFilterPanel {
 		mode:          NewColoredSelect(filterModes),
 		caseSensitive: NewColoredSelect(caseSensitive),
 	}
+	s.ColoredPanel.Add(s.input)
+	s.ColoredPanel.Add(s.mode)
+	s.ColoredPanel.Add(s.caseSensitive)
 
 	return s
 }
@@ -128,22 +131,6 @@ func (t *StringFilterPanel) HandleEvent(ev tcell.Event) bool {
 	}
 
 	return false
-}
-
-func (t *StringFilterPanel) SetActive(active bool) {
-	t.ColoredPanel.SetActive(active)
-
-	t.input.SetActive(active)
-	t.mode.SetActive(active)
-	t.caseSensitive.SetActive(active)
-}
-
-func (t *StringFilterPanel) SetVisible(visible bool) {
-	t.ColoredPanel.SetVisible(visible)
-
-	t.input.SetVisible(visible)
-	t.mode.SetVisible(visible)
-	t.caseSensitive.SetVisible(visible)
 }
 
 func (t *StringFilterPanel) SetFilter(filter filter.Filter) {

@@ -19,6 +19,7 @@ func NewExPanel() *ExPanel {
 		PanelImpl: components.NewPanelImpl("none"),
 		input:     components.NewInputImpl(),
 	}
+	e.PanelImpl.Add(e.input)
 	return e
 }
 
@@ -68,18 +69,6 @@ func (e *ExPanel) HandleEvent(ev tcell.Event) bool {
 	}
 
 	return false
-}
-
-func (e *ExPanel) SetActive(active bool) {
-	e.PanelImpl.SetActive(active)
-
-	e.input.SetActive(active)
-}
-
-func (e *ExPanel) SetVisible(visible bool) {
-	e.PanelImpl.SetVisible(visible)
-
-	e.input.SetVisible(visible)
 }
 
 // func (t *StringFilterPanel) WatchInput(eh tcell.EventHandler) {

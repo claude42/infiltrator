@@ -24,10 +24,9 @@ type InputImpl struct {
 	util.ObservableImpl
 	sync.Mutex
 
-	x, y, width int
-	cursor      int
-	start       int
-	content     []rune
+	cursor  int
+	start   int
+	content []rune
 
 	InputCorrect bool
 
@@ -60,11 +59,16 @@ func (i *InputImpl) SetUpdateWatchersFunc(newFunc func()) {
 
 func (i *InputImpl) Resize(x, y, width, height int) {
 	// height gets ignored
-	i.x = x
-	i.y = y
-	i.width = width
+	i.ComponentImpl.Resize(x, y, width, 1)
 	i.checkBoundaries()
+}
 
+func (i *InputImpl) Height() int {
+	return 1
+}
+
+func (i *InputImpl) Size() (int, int) {
+	return i.width, 1
 }
 
 func (i *InputImpl) SetContent(content string) {
@@ -82,7 +86,7 @@ func (i *InputImpl) Content() string {
 func (i *InputImpl) SetActive(active bool) {
 	i.ComponentImpl.SetActive(active)
 
-	i.Render(true)
+	i.Render(true) // really needed?
 }
 
 func (i *InputImpl) Render(updateScreen bool) {

@@ -11,12 +11,17 @@ type Component interface {
 	IsVisible() bool
 	Resize(x, y, width, height int)
 	Render(updateScreen bool)
+	Position() (int, int)
+	Size() (int, int)
+	Width() int
+	Height() int
 
 	util.EventHandler
 }
 
 type ComponentImpl struct {
 	util.EventHandlerPanicImpl
+	x, y, width, height int
 
 	active  bool
 	visible bool
@@ -36,4 +41,36 @@ func (c *ComponentImpl) SetVisible(visible bool) {
 
 func (c *ComponentImpl) IsVisible() bool {
 	return c.visible
+}
+
+func (c *ComponentImpl) Resize(x, y, width, height int) {
+	if x != 0 {
+		c.x = x
+	}
+	if y != 0 {
+		c.y = y
+	}
+	if width != 0 {
+		c.width = width
+	}
+
+	if height != 0 {
+		c.height = height
+	}
+}
+
+func (c *ComponentImpl) Position() (int, int) {
+	return c.x, c.y
+}
+
+func (c *ComponentImpl) Size() (int, int) {
+	return c.width, c.height
+}
+
+func (c *ComponentImpl) Width() int {
+	return c.width
+}
+
+func (c *ComponentImpl) Height() int {
+	return c.height
 }
