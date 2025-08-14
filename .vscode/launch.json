@@ -13,7 +13,8 @@
             "program": "${workspaceFolder}",
             "args": ["-d",
                     "-l",
-                    "../realjournal"],
+                    "-f",
+                    "testerli"],
             "console": "integratedTerminal"
         }
     ]

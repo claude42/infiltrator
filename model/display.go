@@ -34,6 +34,14 @@ type Display struct {
 	CurrentMatch int
 }
 
+// Initializes a 25 line display. Height likely will get overwritten
+// immediately but in this way, inital calls refreshDisplay() will not fail.
+func NewDisplay() *Display {
+	return &Display{
+		Buffer: make([]*reader.Line, 25, 25),
+	}
+}
+
 // does not lock!!!
 func (d *Display) Height() int {
 	return len(d.Buffer)

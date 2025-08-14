@@ -49,13 +49,12 @@ func (r *Reader) ReadFromFile(ctx context.Context, wg *sync.WaitGroup,
 		return
 	}
 
-	if !follow {
+	if !config.GetConfiguration().FollowFile {
 		return
 	}
 
-	if config.GetConfiguration().FollowFile {
-		r.startWatching(ctx, filePath, file, ch, lineNo)
-	}
+	r.startWatching(ctx, filePath, file, ch, lineNo)
+
 }
 
 func (r *Reader) ReopenForWatching(ctx context.Context, wg *sync.WaitGroup,
@@ -146,7 +145,7 @@ func (r *Reader) keepWatching(ctx context.Context, watcher *fsnotify.Watcher,
 		select {
 		case event, ok := <-watcher.Events:
 			if !ok {
-				log.Println("Watcher errors channel closed.")
+				log.Println("Watcher events channel closed.")
 				return nil
 			}
 

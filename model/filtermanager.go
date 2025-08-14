@@ -49,19 +49,16 @@ func GetFilterManager() *FilterManager {
 }
 
 func NewFilterManager(ctx context.Context, wg *sync.WaitGroup, quit chan<- string) *FilterManager {
-	fm := &FilterManager{}
-	fm.ctx = ctx
-	fm.wg = wg
-	fm.quit = quit
-
-	fm.display = &Display{}
-	fm.display.UnsetCurrentMatch()
-
-	fm.contentUpdate = make(chan []*reader.Line, 10)
-	fm.commandChannel = make(chan Command, 10)
+	fm := &FilterManager{
+		ctx:            ctx,
+		wg:             wg,
+		quit:           quit,
+		display:        NewDisplay(),
+		contentUpdate:  make(chan []*reader.Line, 10),
+		commandChannel: make(chan Command, 10),
+	}
 
 	fm.internalAddFilter(filter.NewSource())
-	fm.internalAddFilter(filter.NewDateFilter())
 	fm.internalAddFilter(filter.NewCache())
 
 	filterManagerInstance = fm
@@ -163,7 +160,7 @@ func (fm *FilterManager) EventLoop() {
 	for {
 		select {
 		case newLines := <-fm.contentUpdate:
-			// log.Printf("Received contentupdate")
+			log.Printf("Received contentupdate, lines %d-%d", newLines[0].No, newLines[len(newLines)-1].No)
 			fm.processContentUpdate(newLines)
 		case command := <-fm.commandChannel:
 			log.Printf("Received Command: %T", command)
@@ -194,8 +191,8 @@ func (fm *FilterManager) processContentUpdate(newLines []*reader.Line) {
 		// UPD: I think this should not be necessary anymore, let's still keep
 		// the comment here
 		// fm.refreshDisplay()
-		fm.internalScrollEnd()
-		fm.syncRefreshScreenBuffer()
+		// fm.internalScrollEnd()
+		fm.internalTail()
 	} else if fm.isDisplayAffected() {
 		fm.syncRefreshScreenBuffer()
 	}
@@ -498,6 +495,30 @@ func (fm *FilterManager) internalPageUpLineBuffer() error {
 		}
 	}
 	return nil
+}
+
+func (fm *FilterManager) internalTail() {
+	log.Printf("internalTail()")
+	fm.syncRefreshScreenBuffer()
+	for {
+		err := fm.internalScrollDownLineBuffer()
+		if err != nil {
+			break
+		}
+	}
+
+	fm.display.Percentage = GetFilterManager().percentage()
+
+	var from, to int
+	if len(fm.display.Buffer) > 0 {
+		from = fm.display.Buffer[0].No
+		to = fm.display.Buffer[len(fm.display.Buffer)-1].No
+	} else {
+		from = -1
+		to = -1
+	}
+	log.Printf("internalTail: NewDisplayEvent, lines %d - %d", from, to)
+	config.GetConfiguration().PostEventFunc(NewEventDisplay(*fm.display))
 }
 
 func (fm *FilterManager) internalScrollEnd() {
