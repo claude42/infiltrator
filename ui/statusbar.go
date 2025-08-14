@@ -8,6 +8,7 @@ import (
 	"github.com/claude42/infiltrator/config"
 	"github.com/claude42/infiltrator/model"
 	"github.com/claude42/infiltrator/model/busy"
+	"github.com/claude42/infiltrator/util"
 
 	"github.com/gdamore/tcell/v2"
 )
@@ -121,21 +122,21 @@ func (s *Statusbar) renderFileName() {
 }
 
 func (s *Statusbar) renderPercentage() {
-	// var percentStr string
+	var percentStr string
 
-	// realPercentage, _ := util.InBetween(s.percentage, 0, 100)
-	// percentStr = fmt.Sprintf("%3d%%", realPercentage)
+	realPercentage, _ := util.InBetween(s.percentage, 0, 100)
+	percentStr = fmt.Sprintf("%3d%%", realPercentage)
 
-	// var style tcell.Style
+	var style tcell.Style
 
-	// if s.busyState != busy.Busy {
-	// 	style = StatusBarStyle
-	// } else {
-	// 	style = StatusBarBusyStyle
-	// }
+	if s.busyState != busy.Busy {
+		style = StatusBarStyle
+	} else {
+		style = StatusBarBusyStyle
+	}
 
-	// _, y := s.ComponentImpl.Position()
-	// components.RenderText(s.Width()-5, y, percentStr, style)
+	_, y := s.ComponentImpl.Position()
+	components.RenderText(s.Width()-5, y, percentStr, style)
 }
 
 func (s *Statusbar) renderFollow() {
