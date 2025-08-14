@@ -38,7 +38,8 @@ type Display struct {
 // immediately but in this way, inital calls refreshDisplay() will not fail.
 func NewDisplay() *Display {
 	return &Display{
-		Buffer: make([]*reader.Line, 25, 25),
+		Buffer:       make([]*reader.Line, 25),
+		CurrentMatch: -1,
 	}
 }
 

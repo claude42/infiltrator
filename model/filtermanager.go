@@ -203,7 +203,7 @@ func (fm *FilterManager) processContentUpdate(newLines []*reader.Line) {
 func (fm *FilterManager) isDisplayAffected() bool {
 	// only if display is currently at the end and not all lines of the
 	// display are filled, then new lines in the file will affect the display.
-	if len(fm.display.Buffer) == 0 {
+	if len(fm.display.Buffer) == 0 || fm.display.Buffer[len(fm.display.Buffer)-1] == nil {
 		return true
 	}
 	return fm.display.Buffer[len(fm.display.Buffer)-1].No == -1
