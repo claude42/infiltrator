@@ -66,7 +66,7 @@ func (d *Display) SetHeight(height int) {
 	d.Buffer = append(d.Buffer, make([]*reader.Line, height-currentHeight)...)
 
 	var lineNo int
-	if currentHeight > 0 {
+	if currentHeight > 0 && d.Buffer[currentHeight-1] != nil {
 		lineNo = d.Buffer[currentHeight-1].No + 1
 		if lineNo == 0 {
 			d.fillRestOfBufferWithNonExistingLines(currentHeight - 1)
