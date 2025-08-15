@@ -56,7 +56,7 @@ func (d CommandHome) commandString() string {
 }
 
 type CommandFindMatch struct {
-	direction int
+	direction scrollDirection
 }
 
 func (d CommandFindMatch) commandString() string {

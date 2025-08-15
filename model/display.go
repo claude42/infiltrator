@@ -79,7 +79,7 @@ func (d *Display) SetHeight(height int) {
 	y := currentHeight
 	for y < height {
 		// log.Printf("doing line=%d", y)
-		line, err := GetFilterManager().GetLine(lineNo)
+		line, err := GetFilterManager().getLine(lineNo)
 		lineNo++
 		if errors.Is(err, util.ErrOutOfBounds) {
 			break
@@ -145,7 +145,7 @@ func (d *Display) refreshDisplay(ctx context.Context, wg *sync.WaitGroup,
 	y := 0
 	for y < displayHeight {
 		// log.Printf("doing line=%d", y)
-		line, err := GetFilterManager().GetLine(lineNo)
+		line, err := GetFilterManager().getLine(lineNo)
 		lineNo++
 		if errors.Is(err, util.ErrOutOfBounds) {
 			break
@@ -172,4 +172,50 @@ func (d *Display) refreshDisplay(ctx context.Context, wg *sync.WaitGroup,
 	d.Percentage = GetFilterManager().percentage()
 
 	config.GetConfiguration().PostEventFunc(NewEventDisplay(*d))
+}
+
+func (d *Display) firstLine() *reader.Line {
+	return d.Buffer[0]
+}
+
+func (d *Display) lastLine() *reader.Line {
+	return d.Buffer[len(d.Buffer)-1]
+}
+
+func (d *Display) searchOnScreen(startOnScreen int, direction scrollDirection) (*reader.Line, error) {
+	height := len(d.Buffer)
+
+	for i := startOnScreen; i >= 0 && i < height; i = i + int(direction) {
+		if d.Buffer[i].Matched {
+			return d.Buffer[i], nil
+		}
+	}
+
+	return nil, util.ErrNotFound
+}
+
+func (d *Display) isAffectedByNewContend() bool {
+	// only if display is currently at the end and not all lines of the
+	// display are filled, then new lines in the file will affect the display.
+	if len(d.Buffer) == 0 || d.lastLine() == nil {
+		return true
+	}
+	return d.lastLine().No == -1
+}
+
+func (d *Display) addLineAtBottomRemoveLineAtTop(line *reader.Line) {
+	if d.Height() > 0 {
+		d.Buffer = append(d.Buffer[1:], line)
+	} else {
+		d.Buffer = []*reader.Line{line}
+	}
+}
+
+func (d *Display) addLineAtTopRemoveLineAtBottom(line *reader.Line) {
+	if d.Height() > 0 {
+		d.Buffer = append([]*reader.Line{line},
+			d.Buffer[:d.Height()-1]...)
+	} else {
+		d.Buffer = []*reader.Line{line}
+	}
 }
