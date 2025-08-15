@@ -3,11 +3,11 @@ package filter
 import (
 	"log"
 
-	"github.com/claude42/infiltrator/model/reader"
+	"github.com/claude42/infiltrator/model/lines"
 )
 
 type Filter interface {
-	GetLine(line int) (*reader.Line, error)
+	GetLine(line int) (*lines.Line, error)
 	SetSource(source Filter)
 	Size() (int, int)
 	Length() int
@@ -22,7 +22,7 @@ type FilterImpl struct {
 	source Filter
 }
 
-func (f *FilterImpl) GetLine(lineNo int) (*reader.Line, error) {
+func (f *FilterImpl) GetLine(lineNo int) (*lines.Line, error) {
 	sourceLine, err := f.source.GetLine(lineNo)
 	if err != nil {
 		return sourceLine, err

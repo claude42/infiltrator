@@ -6,7 +6,7 @@ import (
 	"github.com/claude42/infiltrator/components"
 	"github.com/claude42/infiltrator/config"
 	"github.com/claude42/infiltrator/model"
-	"github.com/claude42/infiltrator/model/reader"
+	"github.com/claude42/infiltrator/model/lines"
 	"github.com/claude42/infiltrator/util"
 
 	"github.com/gdamore/tcell/v2"
@@ -66,7 +66,7 @@ func (v *View) RenderNewDisplay(display *model.Display, updateScreen bool) {
 	}
 }
 
-func (v *View) renderLine(line *reader.Line, y int) {
+func (v *View) renderLine(line *lines.Line, y int) {
 	str := line.Str
 	var start = 0
 	matched := line.No == v.CurrentDisplay.CurrentMatch
@@ -98,9 +98,9 @@ func (v *View) renderLine(line *reader.Line, y int) {
 			} else if line.ColorIndex[lineXPos] > 0 {
 				// if something matched render the character in the color of the corresponding filter
 				switch line.Status {
-				case reader.LineWithoutStatus, reader.LineMatched:
+				case lines.LineWithoutStatus, lines.LineMatched:
 					style = style.Foreground(FilterColors[line.ColorIndex[lineXPos]][0])
-				case reader.LineDimmed:
+				case lines.LineDimmed:
 					style = style.Foreground(FilterColors[line.ColorIndex[lineXPos]][1])
 				}
 				style = style.Reverse(true)
@@ -126,14 +126,14 @@ func (v *View) colorAccordingToFileFormat(lineXPos int, matches []int,
 	return baseStyle
 }
 
-func (v *View) determineStyle(line *reader.Line, matched bool) tcell.Style {
+func (v *View) determineStyle(line *lines.Line, matched bool) tcell.Style {
 	if matched {
 		return CurrentMatchStyle
 	} else {
 		switch line.Status {
-		case reader.LineWithoutStatus, reader.LineMatched:
+		case lines.LineWithoutStatus, lines.LineMatched:
 			return ViewStyle
-		case reader.LineDimmed:
+		case lines.LineDimmed:
 			return ViewDimmedStyle
 		default:
 			// should only occur for hidden lines and therefore not matter
@@ -144,7 +144,7 @@ func (v *View) determineStyle(line *reader.Line, matched bool) tcell.Style {
 	}
 }
 
-func (v *View) renderLineNumber(line *reader.Line, y int, matched bool) int {
+func (v *View) renderLineNumber(line *lines.Line, y int, matched bool) int {
 	if line.No < 0 {
 		return 0 // TODO: 0 ok?
 	}
@@ -160,14 +160,14 @@ func (v *View) renderLineNumber(line *reader.Line, y int, matched bool) int {
 	return x
 }
 
-func (v *View) determineLineNumberStyle(line *reader.Line, matched bool) tcell.Style {
+func (v *View) determineLineNumberStyle(line *lines.Line, matched bool) tcell.Style {
 	if matched {
 		return ViewCurrentMatchLineNumberStyle
 	} else {
 		switch line.Status {
-		case reader.LineWithoutStatus, reader.LineMatched:
+		case lines.LineWithoutStatus, lines.LineMatched:
 			return ViewLineNumberStyle
-		case reader.LineDimmed:
+		case lines.LineDimmed:
 			return ViewDimmedLineNumberStyle
 		default:
 			// should only occur for hidden lines and therefore not matter

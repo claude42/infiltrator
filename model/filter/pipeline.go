@@ -8,7 +8,7 @@ import (
 
 	"github.com/claude42/infiltrator/fail"
 	"github.com/claude42/infiltrator/model/busy"
-	"github.com/claude42/infiltrator/model/reader"
+	"github.com/claude42/infiltrator/model/lines"
 	"github.com/claude42/infiltrator/util"
 )
 
@@ -82,10 +82,10 @@ func (pp *Pipeline) Remove(f Filter) error {
 	return fmt.Errorf("Filter not found in pipeline")
 }
 
-func (pp *Pipeline) GetLine(line int) (*reader.Line, error) {
+func (pp *Pipeline) GetLine(line int) (*lines.Line, error) {
 	filter, err := pp.OutputFilter()
 	if err != nil {
-		return reader.NonExistingLine, err
+		return lines.NonExistingLine, err
 	}
 
 	busy.SpinWithFraction(line, pp.SourceLength())
@@ -94,7 +94,7 @@ func (pp *Pipeline) GetLine(line int) (*reader.Line, error) {
 }
 
 func (pp *Pipeline) Search(start int,
-	direction ScrollDirection) (*reader.Line, error) {
+	direction ScrollDirection) (*lines.Line, error) {
 
 	length := pp.SourceLength()
 
@@ -110,7 +110,7 @@ func (pp *Pipeline) Search(start int,
 }
 
 func (pp *Pipeline) FindNonHiddenLine(lineNo int,
-	direction ScrollDirection) (*reader.Line, error) {
+	direction ScrollDirection) (*lines.Line, error) {
 
 	fail.If(direction != -1 && direction != 1, "Unknown directionn %d", direction)
 
@@ -122,9 +122,9 @@ func (pp *Pipeline) FindNonHiddenLine(lineNo int,
 		if err != nil {
 			return nil, err
 		}
-		if prevLine.Status == reader.LineWithoutStatus ||
-			prevLine.Status == reader.LineMatched ||
-			prevLine.Status == reader.LineDimmed {
+		if prevLine.Status == lines.LineWithoutStatus ||
+			prevLine.Status == lines.LineMatched ||
+			prevLine.Status == lines.LineDimmed {
 			return prevLine, nil
 		}
 	}

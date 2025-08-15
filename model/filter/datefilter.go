@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/claude42/infiltrator/fail"
-	"github.com/claude42/infiltrator/model/reader"
+	"github.com/claude42/infiltrator/model/lines"
 
 	dateparser "github.com/markusmobius/go-dateparser"
 )
@@ -54,13 +54,13 @@ func (d *DateFilter) SetKey(name string, key string) error {
 	return nil
 }
 
-func (d *DateFilter) GetLine(lineNo int) (*reader.Line, error) {
+func (d *DateFilter) GetLine(lineNo int) (*lines.Line, error) {
 	sourceLine, err := d.source.GetLine(lineNo)
 	if err != nil {
 		return sourceLine, err
 	}
 
-	if sourceLine.Status == reader.LineHidden {
+	if sourceLine.Status == lines.LineHidden {
 		return sourceLine, nil
 	}
 
@@ -69,7 +69,7 @@ func (d *DateFilter) GetLine(lineNo int) (*reader.Line, error) {
 	}
 
 	if sourceLine.No < d.fromLineNo || sourceLine.No > d.toLineNo {
-		sourceLine.Status = reader.LineHidden
+		sourceLine.Status = lines.LineHidden
 	}
 
 	return sourceLine, nil
@@ -96,7 +96,7 @@ func (d *DateFilter) findLastBefore(toTime time.Time) int {
 	return lineNo - 1
 }
 
-func (d *DateFilter) calculateLineDate(line *reader.Line) (time.Time, error) {
+func (d *DateFilter) calculateLineDate(line *lines.Line) (time.Time, error) {
 	if !line.When.IsZero() {
 		return line.When, nil
 	}

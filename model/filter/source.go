@@ -3,13 +3,13 @@ package filter
 import (
 	"log"
 
-	"github.com/claude42/infiltrator/model/reader"
+	"github.com/claude42/infiltrator/model/lines"
 	"github.com/claude42/infiltrator/util"
 )
 
 type Source struct {
 	FilterImpl
-	lines []*reader.Line
+	lines []*lines.Line
 	width int
 }
 
@@ -25,7 +25,7 @@ func (s *Source) calculateNewWidthFrom(start int) {
 	}
 }
 
-func (s *Source) StoreNewLines(newLines []*reader.Line) int {
+func (s *Source) StoreNewLines(newLines []*lines.Line) int {
 	start := len(s.lines)
 	s.lines = append(s.lines, newLines...)
 	s.calculateNewWidthFrom(start)
@@ -40,11 +40,11 @@ func (s *Source) Length() int {
 	return len(s.lines)
 }
 
-func (s *Source) GetLine(line int) (*reader.Line, error) {
+func (s *Source) GetLine(line int) (*lines.Line, error) {
 	length := len(s.lines)
 
 	if line < 0 || line >= length {
-		return reader.NonExistingLine, util.ErrOutOfBounds
+		return lines.NonExistingLine, util.ErrOutOfBounds
 	}
 
 	s.lines[line].CleanUp()
@@ -64,6 +64,6 @@ func (s *Source) IsEmpty() bool {
 	return len(s.lines) == 0
 }
 
-func (s *Source) LastLine() *reader.Line {
+func (s *Source) LastLine() *lines.Line {
 	return s.lines[len(s.lines)-1]
 }

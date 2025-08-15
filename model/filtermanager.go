@@ -11,6 +11,7 @@ import (
 	"github.com/claude42/infiltrator/model/busy"
 	"github.com/claude42/infiltrator/model/filter"
 	"github.com/claude42/infiltrator/model/formats"
+	"github.com/claude42/infiltrator/model/lines"
 	"github.com/claude42/infiltrator/model/reader"
 	"github.com/claude42/infiltrator/util"
 )
@@ -32,7 +33,7 @@ type FilterManager struct {
 	refresherCancelFunc context.CancelFunc
 	refresherWg         sync.WaitGroup
 
-	contentUpdate  chan []*reader.Line
+	contentUpdate  chan []*lines.Line
 	commandChannel chan Command
 
 	filters     filter.Pipeline
@@ -53,7 +54,7 @@ func NewFilterManager(ctx context.Context, wg *sync.WaitGroup, quit chan<- strin
 		wg:             wg,
 		quit:           quit,
 		display:        NewDisplay(),
-		contentUpdate:  make(chan []*reader.Line, 10),
+		contentUpdate:  make(chan []*lines.Line, 10),
 		commandChannel: make(chan Command, 10),
 	}
 
@@ -120,7 +121,7 @@ func (fm *FilterManager) EventLoop() {
 	}
 }
 
-func (fm *FilterManager) processContentUpdate(newLines []*reader.Line) {
+func (fm *FilterManager) processContentUpdate(newLines []*lines.Line) {
 	identifyFileTypeOnce.Do(func() {
 		go formats.Identify(newLines)
 	})
@@ -310,14 +311,14 @@ func (fm *FilterManager) internalScrollVertical(
 		return util.ErrOutOfBounds
 	}
 
-	var startLine *reader.Line
+	var startLine *lines.Line
 	if direction == filter.DirectionDown {
 		startLine = fm.display.lastLine()
 	} else {
 		startLine = fm.display.firstLine()
 	}
 
-	if startLine.Status == reader.LineDoesNotExist {
+	if startLine.Status == lines.LineDoesNotExist {
 		return util.ErrOutOfBounds
 	}
 
@@ -356,7 +357,7 @@ func (fm *FilterManager) alreadyAtTheEnd() bool {
 
 	lastLineOnScreen := fm.display.lastLine()
 
-	if lastLineOnScreen.Status == reader.LineDoesNotExist {
+	if lastLineOnScreen.Status == lines.LineDoesNotExist {
 		return true
 	}
 
@@ -393,8 +394,8 @@ func (fm *FilterManager) internalScrollEnd() {
 	lineNo := fm.filters.SourceLength() - 1
 	for ; y >= 0 && lineNo >= 0; lineNo-- {
 		line, _ := fm.filters.GetLine(lineNo)
-		if line.Status != reader.LineHidden &&
-			line.Status != reader.LineDoesNotExist {
+		if line.Status != lines.LineHidden &&
+			line.Status != lines.LineDoesNotExist {
 
 			fm.display.Buffer[y] = line
 			y--
@@ -443,7 +444,7 @@ func (fm *FilterManager) internalFindNextMatch(direction filter.ScrollDirection)
 	fail.If(direction != 1 && direction != -1, "Unknown direction %d", direction)
 
 	startSearchWith := 0
-	var found *reader.Line
+	var found *lines.Line
 
 	// first see if the current match is on screen if yes, try if we can find
 	// the next match on screen already (much faster)
@@ -544,7 +545,7 @@ func (fm *FilterManager) arrangeLine(lineNo int, percentage int) (int, error) {
 
 	linesAbove := percentage*len(fm.display.Buffer)/100 - 1
 
-	var line *reader.Line
+	var line *lines.Line
 	var err error
 	for i := 1; i <= linesAbove; i++ {
 		busy.SpinWithFraction(lineNo, fm.filters.SourceLength())

@@ -2,6 +2,7 @@ package reader
 
 import (
 	"bufio"
+	"compress/gzip"
 	"context"
 	"fmt"
 	"io"
@@ -10,7 +11,10 @@ import (
 	"sync"
 
 	"github.com/claude42/infiltrator/config"
+	"github.com/claude42/infiltrator/fail"
 	"github.com/claude42/infiltrator/model/busy"
+	"github.com/claude42/infiltrator/model/formats"
+	"github.com/claude42/infiltrator/model/lines"
 	"github.com/fsnotify/fsnotify"
 )
 
@@ -30,7 +34,7 @@ func GetReader() *Reader {
 }
 
 func (r *Reader) ReadFromFile(ctx context.Context, wg *sync.WaitGroup,
-	quit chan<- string, filePath string, ch chan<- []*Line, follow bool) {
+	quit chan<- string, filePath string, ch chan<- []*lines.Line, follow bool) {
 
 	defer wg.Done()
 
@@ -42,7 +46,19 @@ func (r *Reader) ReadFromFile(ctx context.Context, wg *sync.WaitGroup,
 	}
 	defer file.Close()
 
-	lineNo, err := r.readNewLines(file, ch, 0)
+	isGzip, _ := formats.IsGzip(file)
+
+	var ioReader io.Reader
+	if isGzip {
+		gzReader, err := gzip.NewReader(file)
+		fail.OnError(err, "Failed to create gzip reader")
+		defer gzReader.Close()
+		ioReader = gzReader
+	} else {
+		ioReader = file
+	}
+
+	lineNo, err := r.readNewLines(ioReader, ch, 0)
 	if err != nil {
 		quit <- err.Error()
 		close(quit)
@@ -58,7 +74,7 @@ func (r *Reader) ReadFromFile(ctx context.Context, wg *sync.WaitGroup,
 }
 
 func (r *Reader) ReopenForWatching(ctx context.Context, wg *sync.WaitGroup,
-	filePath string, ch chan<- []*Line, lineNo int) {
+	filePath string, ch chan<- []*lines.Line, lineNo int) {
 
 	log.Println("ReopenForWatching")
 
@@ -82,7 +98,7 @@ func (r *Reader) ReopenForWatching(ctx context.Context, wg *sync.WaitGroup,
 }
 
 func (r *Reader) startWatching(ctx context.Context, filePath string,
-	file *os.File, ch chan<- []*Line, lineNo int) {
+	file *os.File, ch chan<- []*lines.Line, lineNo int) {
 
 	log.Println("Start watching")
 	watcher, err := r.initWatcher(filePath)
@@ -99,7 +115,7 @@ func (r *Reader) startWatching(ctx context.Context, filePath string,
 	}
 }
 
-func (r *Reader) ReadFromStdin(ch chan<- []*Line, quit chan<- string) {
+func (r *Reader) ReadFromStdin(ch chan<- []*lines.Line, quit chan<- string) {
 
 	yes, err := r.canUseStdin()
 	if err != nil {
@@ -117,7 +133,7 @@ func (r *Reader) ReadFromStdin(ch chan<- []*Line, quit chan<- string) {
 	for scanner.Scan() {
 		text := scanner.Text()
 		busy.Spin()
-		ch <- []*Line{NewLine(lineNo, text)}
+		ch <- []*lines.Line{lines.NewLine(lineNo, text)}
 		lineNo++
 	}
 	if err := scanner.Err(); err != nil {
@@ -139,7 +155,7 @@ func (r *Reader) canUseStdin() (bool, error) {
 }
 
 func (r *Reader) keepWatching(ctx context.Context, watcher *fsnotify.Watcher,
-	file *os.File, ch chan<- []*Line, lineNo int) error {
+	file *os.File, ch chan<- []*lines.Line, lineNo int) error {
 	var err error
 	for {
 		select {
@@ -184,14 +200,14 @@ func (r *Reader) initWatcher(filePath string) (*fsnotify.Watcher, error) {
 	return watcher, nil
 }
 
-func (r *Reader) readNewLines(file *os.File, ch chan<- []*Line, lineNo int) (int, error) {
-	var newLines []*Line
+func (r *Reader) readNewLines(file io.Reader, ch chan<- []*lines.Line, lineNo int) (int, error) {
+	var newLines []*lines.Line
 
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
 		text := scanner.Text()
 		busy.Spin()
-		newLines = append(newLines, NewLine(lineNo, text))
+		newLines = append(newLines, lines.NewLine(lineNo, text))
 		lineNo++
 	}
 

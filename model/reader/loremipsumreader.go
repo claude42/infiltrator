@@ -6,6 +6,8 @@ import (
 	"log"
 	"strings"
 	"sync"
+
+	"github.com/claude42/infiltrator/model/lines"
 )
 
 var (
@@ -16,9 +18,9 @@ var (
 type LoremIpsumReader struct {
 	sync.Mutex
 
-	newLines      []Line
+	newLines      []lines.Line
 	lineNo        int
-	contentUpdate chan<- []Line
+	contentUpdate chan<- []lines.Line
 }
 
 func GetLoremIpsumReader() *LoremIpsumReader {
@@ -28,7 +30,7 @@ func GetLoremIpsumReader() *LoremIpsumReader {
 	return loremIpsumInstance
 }
 
-func (c *LoremIpsumReader) Read(ch chan<- []Line) {
+func (c *LoremIpsumReader) Read(ch chan<- []lines.Line) {
 	text := `Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed sed facilisis
 ligula, non finibus erat. Sed viverra leo elit, quis posuere magna sagittis
 id. Morbi eget dolor sem. Nulla consequat dignissim velit vitae
@@ -88,7 +90,7 @@ func (c *LoremIpsumReader) readNewLines(rd *strings.Reader) error {
 	scanner := bufio.NewScanner(rd)
 	for scanner.Scan() {
 		text := scanner.Text()
-		c.newLines = append(c.newLines, *NewLine(c.lineNo, text))
+		c.newLines = append(c.newLines, *lines.NewLine(c.lineNo, text))
 		c.lineNo++
 	}
 

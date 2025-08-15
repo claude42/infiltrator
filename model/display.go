@@ -8,7 +8,7 @@ import (
 
 	"github.com/claude42/infiltrator/config"
 	"github.com/claude42/infiltrator/model/filter"
-	"github.com/claude42/infiltrator/model/reader"
+	"github.com/claude42/infiltrator/model/lines"
 	"github.com/claude42/infiltrator/util"
 )
 
@@ -19,7 +19,7 @@ type Display struct {
 	// happen that its size is out of sync with the actual screen size then
 	// its data should be ignored until there's an updated version with the
 	// correct dimensions
-	Buffer []*reader.Line
+	Buffer []*lines.Line
 
 	// at what percentage of the whole buffer are we currently
 	// TODO: decide: display percentag in relation to whole file or to the
@@ -44,10 +44,10 @@ func NewDisplay() *Display {
 	}
 }
 
-func newEmptyBuffer(height int) (buffer []*reader.Line) {
-	buffer = make([]*reader.Line, height)
+func newEmptyBuffer(height int) (buffer []*lines.Line) {
+	buffer = make([]*lines.Line, height)
 	for i := range height {
-		buffer[i] = reader.NonExistingLine
+		buffer[i] = lines.NonExistingLine
 	}
 
 	return buffer
@@ -73,7 +73,7 @@ func (d *Display) SetHeight(height int) {
 	}
 
 	// so height > currentHeight
-	d.Buffer = append(d.Buffer, make([]*reader.Line, height-currentHeight)...)
+	d.Buffer = append(d.Buffer, make([]*lines.Line, height-currentHeight)...)
 
 	var lineNo int
 	if currentHeight > 0 && d.Buffer[currentHeight-1] != nil {
@@ -97,14 +97,14 @@ func (d *Display) SetHeight(height int) {
 			log.Panicf("fuck me: %v", err)
 		}
 
-		if line.Status != reader.LineHidden {
+		if line.Status != lines.LineHidden {
 			d.Buffer[y] = line
 			y++
 		}
 	}
 
 	for ; y < height; y++ {
-		d.Buffer[y] = reader.NonExistingLine
+		d.Buffer[y] = lines.NonExistingLine
 	}
 
 	d.Percentage = GetFilterManager().percentage()
@@ -112,7 +112,7 @@ func (d *Display) SetHeight(height int) {
 
 func (d *Display) fillRestOfBufferWithNonExistingLines(y int) {
 	for ; y < len(d.Buffer); y++ {
-		d.Buffer[y] = reader.NonExistingLine
+		d.Buffer[y] = lines.NonExistingLine
 	}
 }
 
@@ -162,7 +162,7 @@ func (d *Display) refreshDisplay(ctx context.Context, wg *sync.WaitGroup,
 			log.Panicf("fuck me: %v", err)
 		}
 
-		if line.Status != reader.LineHidden {
+		if line.Status != lines.LineHidden {
 			d.Buffer[y] = line
 			y++
 		}
@@ -183,15 +183,15 @@ func (d *Display) refreshDisplay(ctx context.Context, wg *sync.WaitGroup,
 	config.GetConfiguration().PostEventFunc(NewEventDisplay(*d))
 }
 
-func (d *Display) firstLine() *reader.Line {
+func (d *Display) firstLine() *lines.Line {
 	return d.Buffer[0]
 }
 
-func (d *Display) lastLine() *reader.Line {
+func (d *Display) lastLine() *lines.Line {
 	return d.Buffer[len(d.Buffer)-1]
 }
 
-func (d *Display) searchOnScreen(startOnScreen int, direction filter.ScrollDirection) (*reader.Line, error) {
+func (d *Display) searchOnScreen(startOnScreen int, direction filter.ScrollDirection) (*lines.Line, error) {
 	height := len(d.Buffer)
 
 	for i := startOnScreen; i >= 0 && i < height; i = i + int(direction) {
@@ -212,20 +212,20 @@ func (d *Display) isAffectedByNewContend() bool {
 	return d.lastLine().No == -1
 }
 
-func (d *Display) addLineAtBottomRemoveLineAtTop(line *reader.Line) {
+func (d *Display) addLineAtBottomRemoveLineAtTop(line *lines.Line) {
 	if d.Height() > 0 {
 		d.Buffer = append(d.Buffer[1:], line)
 	} else {
-		d.Buffer = []*reader.Line{line}
+		d.Buffer = []*lines.Line{line}
 	}
 }
 
-func (d *Display) addLineAtTopRemoveLineAtBottom(line *reader.Line) {
+func (d *Display) addLineAtTopRemoveLineAtBottom(line *lines.Line) {
 	if d.Height() > 0 {
-		d.Buffer = append([]*reader.Line{line},
+		d.Buffer = append([]*lines.Line{line},
 			d.Buffer[:d.Height()-1]...)
 	} else {
-		d.Buffer = []*reader.Line{line}
+		d.Buffer = []*lines.Line{line}
 	}
 }
 
