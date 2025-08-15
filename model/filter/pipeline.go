@@ -17,8 +17,6 @@ var ErrNotEnoughPanels = errors.New("at least one buffer and one filter required
 
 type Pipeline []Filter
 
-// TODO: copy/paste from filtermanager.go
-// can't import model, must find other solution
 type ScrollDirection int
 
 const (
@@ -157,6 +155,19 @@ func (pp *Pipeline) OutputFilter() (Filter, error) {
 	return p[len((*pp))-1], nil
 }
 
+func (pp *Pipeline) DateFilter() (*DateFilter, error) {
+	pipelineMutex.Lock()
+	defer pipelineMutex.Unlock()
+	for _, f := range *pp {
+		dateFilter, ok := f.(*DateFilter)
+		if ok {
+			return dateFilter, nil
+		}
+	}
+
+	return nil, util.ErrNotFound
+}
+
 func (pp *Pipeline) Size() (int, int) {
 	filter, err := pp.OutputFilter()
 	if err != nil {
@@ -182,15 +193,4 @@ func (pp *Pipeline) InvalidateCaches() {
 			cache.Invalidate()
 		}
 	}
-}
-
-func (pp *Pipeline) GetDateFilter() (*DateFilter, error) {
-	for _, f := range *pp {
-		dateFilter, ok := f.(*DateFilter)
-		if ok {
-			return dateFilter, nil
-		}
-	}
-
-	return nil, util.ErrNotFound
 }
