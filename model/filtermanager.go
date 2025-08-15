@@ -497,22 +497,26 @@ func (fm *FilterManager) internalSetCurrentLine(newCurrentLine int) {
 //     --> bring display to the end and start following
 func (fm *FilterManager) internalToggleFollowMode() {
 	cfg := config.GetConfiguration()
-	// TODO: handle stdin case
+
 	if cfg.FollowFile {
 		if fm.alreadyAtTheEnd() {
-			fm.readerCancelFunc()
+			if !cfg.Stdin {
+				fm.readerCancelFunc()
+			}
 			cfg.FollowFile = false
 		} else {
 			fm.internalScrollEnd()
 		}
 	} else {
 		cfg.FollowFile = true
-		fm.wg.Add(1)
-		fm.internalScrollEnd()
-		var ctx context.Context
-		ctx, fm.readerCancelFunc = context.WithCancel(fm.ctx)
-		go reader.GetReader().ReopenForWatching(ctx, fm.wg, cfg.FilePath,
-			fm.contentUpdate, fm.filters.Source().LastLine().No+1)
+		fm.internalTail()
+		if !cfg.Stdin {
+			fm.wg.Add(1)
+			var ctx context.Context
+			ctx, fm.readerCancelFunc = context.WithCancel(fm.ctx)
+			go reader.GetReader().ReopenForWatching(ctx, fm.wg, cfg.FilePath,
+				fm.contentUpdate, fm.filters.Source().LastLine().No+1)
+		}
 	}
 }
 
