@@ -25,6 +25,15 @@ func (c *ColoredPanel) SetColorIndex(colorIndex uint8) {
 	c.colorIndex = colorIndex
 }
 
+func (c *ColoredPanel) Render(updateScreen bool) {
+	style := c.CurrentStyler.Style()
+	x, y := c.Position()
+	for i := range c.Height() {
+		components.DrawChars(x, y+i, c.Width(), ' ', style.Reverse(true))
+	}
+	// c.PanelImpl.Render(updateScreen)
+}
+
 func (c *ColoredPanel) Style() tcell.Style {
 	var style tcell.Style
 	if c.PanelImpl.OldStyler != nil {

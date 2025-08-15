@@ -31,7 +31,7 @@ func main() {
 
 func run() error {
 	cm := config.GetConfiguration()
-	cm.ReadStateFile()
+	cm.Load()
 	defer cm.WriteStateFile()
 
 	// Parse command line

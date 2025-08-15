@@ -68,33 +68,37 @@ func (fi *FilterInput) HandleEvent(ev tcell.Event) bool {
 			model.GetFilterManager().FindMatch(1)
 			return true
 		case tcell.KeyUp:
-			content, err := config.GetConfiguration().FromHistory(fi.name,
-				fi.currentHistoryIndex+1)
-			if err != nil {
-				// TODO error handling / beep
-				return true
-			}
-			fi.currentHistoryIndex++
-			fi.SetContent(content)
-			return true
-		case tcell.KeyDown:
-			if fi.currentHistoryIndex <= -1 {
-				// TODO error handling / beep
-				return true
-			}
-			fi.currentHistoryIndex--
-			if fi.currentHistoryIndex == -1 {
-				fi.SetContent("")
-			} else {
+			if ev.Modifiers() == 0 {
 				content, err := config.GetConfiguration().FromHistory(fi.name,
-					fi.currentHistoryIndex)
+					fi.currentHistoryIndex+1)
 				if err != nil {
 					// TODO error handling / beep
 					return true
 				}
+				fi.currentHistoryIndex++
 				fi.SetContent(content)
+				return true
 			}
-			return true
+		case tcell.KeyDown:
+			if ev.Modifiers() == 0 {
+				if fi.currentHistoryIndex <= -1 {
+					// TODO error handling / beep
+					return true
+				}
+				fi.currentHistoryIndex--
+				if fi.currentHistoryIndex == -1 {
+					fi.SetContent("")
+				} else {
+					content, err := config.GetConfiguration().FromHistory(fi.name,
+						fi.currentHistoryIndex)
+					if err != nil {
+						// TODO error handling / beep
+						return true
+					}
+					fi.SetContent(content)
+				}
+				return true
+			}
 		}
 	}
 

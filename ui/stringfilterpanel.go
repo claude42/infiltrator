@@ -66,7 +66,7 @@ func (t *StringFilterPanel) Render(updateScreen bool) {
 	_, y := t.Position()
 	x := components.RenderText(0, y, header, style.Reverse(true))
 	components.DrawChars(x, y, headerWidth-x, ' ', style.Reverse((true)))
-	components.RenderText(headerWidth, y, "► ", style)
+	components.RenderText(headerWidth, y, "▶ ", style)
 
 	if t.input != nil {
 		t.input.Render(updateScreen)

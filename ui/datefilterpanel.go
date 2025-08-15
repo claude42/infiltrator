@@ -25,6 +25,7 @@ func NewDateFilterPanel(name string) *DateFilterPanel {
 	}
 	d.ColoredPanel.Add(d.from)
 	d.ColoredPanel.Add(d.to)
+	d.to.SetActive(false)
 	return d
 }
 
@@ -41,12 +42,17 @@ func (d *DateFilterPanel) Render(updateScreen bool) {
 		return
 	}
 
+	d.ColoredPanel.Render(false)
+
 	style := d.ColoredPanel.CurrentStyler.Style()
 
 	header := fmt.Sprintf(" %s", d.Name())
 	_, y := d.Position()
-	x := components.RenderText(0, y, header, style.Reverse(true))
-	components.DrawChars(x, y, d.Width()-(len(d.Name())+1), ' ', style.Reverse(true))
+	components.RenderText(0, y, header, style.Reverse(true))
+	x := components.RenderText(19, y, "From ", style.Reverse(true))
+	components.RenderText(x, y, "▶ ", style)
+	x = components.RenderText(55, y, "To ", style.Reverse(true))
+	components.RenderText(x, y, "▶ ", style)
 
 	if d.from != nil {
 		d.from.Render(updateScreen)

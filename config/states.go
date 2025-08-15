@@ -11,6 +11,8 @@ import (
 	"github.com/knadh/koanf/providers/file"
 )
 
+const historyFileName = "/history.toml"
+
 func (cm *ConfigManager) AddToHistory(filter string, value string) {
 	filterHistory := cm.histories[filter]
 	util.Remove(filterHistory, value)
@@ -35,7 +37,7 @@ func (cm *ConfigManager) FromHistory(filter string, index int) (string, error) {
 }
 
 func (cm *ConfigManager) ReadStateFile() {
-	stateFile, err := xdg.StateFile(appName + "/history.toml")
+	stateFile, err := xdg.StateFile(appName + historyFileName)
 	fail.OnError(err, "Can't determine State File")
 
 	err = cm.kState.Load(file.Provider(stateFile), toml.Parser())

@@ -39,9 +39,18 @@ type Display struct {
 // immediately but in this way, inital calls refreshDisplay() will not fail.
 func NewDisplay() *Display {
 	return &Display{
-		Buffer:       make([]*reader.Line, 25),
+		Buffer:       newEmptyBuffer(25),
 		CurrentMatch: -1,
 	}
+}
+
+func newEmptyBuffer(height int) (buffer []*reader.Line) {
+	buffer = make([]*reader.Line, height)
+	for i := range height {
+		buffer[i] = reader.NonExistingLine
+	}
+
+	return buffer
 }
 
 // does not lock!!!

@@ -22,6 +22,8 @@ type PanelImpl struct {
 
 	name string
 
+	minHeight int
+
 	filter filter.Filter
 
 	OldStyler     Styler
@@ -30,7 +32,8 @@ type PanelImpl struct {
 
 func NewPanelImpl(name string) *PanelImpl {
 	p := &PanelImpl{
-		name: name,
+		name:      name,
+		minHeight: 1,
 	}
 
 	p.StyleUsing(p)
@@ -38,17 +41,21 @@ func NewPanelImpl(name string) *PanelImpl {
 	return p
 }
 
+func (p *PanelImpl) SetMinHeight(minHeight int) {
+	p.minHeight = minHeight
+}
+
 func (p *PanelImpl) Resize(x, y, width, height int) {
 	// x, height get ignored
-	p.ContainerImpl.Resize(0, y, width, 1)
+	p.ContainerImpl.Resize(0, y, width, max(p.minHeight, height))
 }
 
 func (p *PanelImpl) Height() int {
-	return 1
+	return max(p.minHeight, p.height)
 }
 
 func (p *PanelImpl) Size() (int, int) {
-	return p.width, 1
+	return p.width, p.Height()
 }
 
 func (t *PanelImpl) Render(updateScreen bool) {

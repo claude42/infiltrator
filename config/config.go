@@ -1,6 +1,7 @@
 package config
 
 import (
+	"regexp"
 	"sync"
 
 	"github.com/claude42/infiltrator/util"
@@ -21,6 +22,8 @@ type ConfigManager struct {
 	kState          *koanf.Koanf
 	FileName        string
 	FilePath        string
+	FileFormat      string
+	FileFormatRegex *regexp.Regexp
 	Stdin           bool
 	ShowLineNumbers bool
 	FollowFile      bool
@@ -29,6 +32,9 @@ type ConfigManager struct {
 	PostEventFunc func(ev util.Event) error
 
 	histories map[string][]string
+
+	kFormats *koanf.Koanf
+	Formats  map[string]string
 }
 
 func GetConfiguration() *ConfigManager {
@@ -36,6 +42,12 @@ func GetConfiguration() *ConfigManager {
 		instance = &ConfigManager{}
 		instance.histories = make(map[string][]string)
 		instance.kState = koanf.New(".")
+		instance.kFormats = koanf.New(".")
 	})
 	return instance
+}
+
+func (cm *ConfigManager) Load() {
+	cm.ReadStateFile()
+	cm.ReadFormatsFile()
 }

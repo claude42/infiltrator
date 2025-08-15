@@ -77,6 +77,12 @@ func (v *View) renderLine(line *reader.Line, y int) {
 
 	lineStyle := v.determineStyle(line, matched)
 
+	fileFormatRegex := config.GetConfiguration().FileFormatRegex
+	var matches []int
+	if fileFormatRegex != nil {
+		matches = fileFormatRegex.FindStringSubmatchIndex(line.Str)
+	}
+
 	for x := start; x < v.Width(); x++ {
 		var r rune = ' '
 		style := lineStyle
@@ -85,11 +91,12 @@ func (v *View) renderLine(line *reader.Line, y int) {
 		if v.CurrentDisplay.CurrentCol+x < len(str)+start {
 			r = rune(str[lineXPos])
 
-			// in case we're on the last screen column, render an inverse '>'
 			if x == v.Width()-1 && v.CurrentDisplay.CurrentCol+x+1 < len(str) {
+				// in case we're on the last screen column, render an inverse '>'
 				r = '>'
 				style = style.Reverse(true)
 			} else if line.ColorIndex[lineXPos] > 0 {
+				// if something matched render the character in the color of the corresponding filter
 				switch line.Status {
 				case reader.LineWithoutStatus, reader.LineMatched:
 					style = style.Foreground(FilterColors[line.ColorIndex[lineXPos]][0])
@@ -97,11 +104,26 @@ func (v *View) renderLine(line *reader.Line, y int) {
 					style = style.Foreground(FilterColors[line.ColorIndex[lineXPos]][1])
 				}
 				style = style.Reverse(true)
+			} else if matches != nil {
+				// lastly check if we can color the character according to the files format
+				style = v.colorAccordingToFileFormat(lineXPos, matches, style)
 			}
 		}
 
 		screen.SetContent(x, y, r, nil, style)
 	}
+}
+
+func (v *View) colorAccordingToFileFormat(lineXPos int, matches []int,
+	baseStyle tcell.Style) tcell.Style {
+
+	for i := 2; i < len(matches); i += 2 {
+		if lineXPos >= matches[i] && lineXPos < matches[i+1] {
+			return baseStyle.Foreground(FilterColors[i/2][1]) // use the dimmed color
+		}
+	}
+
+	return baseStyle
 }
 
 func (v *View) determineStyle(line *reader.Line, matched bool) tcell.Style {

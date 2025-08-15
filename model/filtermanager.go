@@ -10,12 +10,14 @@ import (
 	"github.com/claude42/infiltrator/fail"
 	"github.com/claude42/infiltrator/model/busy"
 	"github.com/claude42/infiltrator/model/filter"
+	"github.com/claude42/infiltrator/model/formats"
 	"github.com/claude42/infiltrator/model/reader"
 	"github.com/claude42/infiltrator/util"
 )
 
 var (
 	filterManagerInstance *FilterManager
+	identifyFileTypeOnce  sync.Once
 )
 
 type FilterManager struct {
@@ -119,6 +121,9 @@ func (fm *FilterManager) EventLoop() {
 }
 
 func (fm *FilterManager) processContentUpdate(newLines []*reader.Line) {
+	identifyFileTypeOnce.Do(func() {
+		go formats.Identify(newLines)
+	})
 
 	// If we're in Follow mode we'll automatically jump to the new end of the
 	// file - but only in case we're already at the end
