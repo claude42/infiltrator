@@ -7,6 +7,7 @@ import (
 	"sync"
 
 	"github.com/claude42/infiltrator/config"
+	"github.com/claude42/infiltrator/model/filter"
 	"github.com/claude42/infiltrator/model/reader"
 	"github.com/claude42/infiltrator/util"
 )
@@ -79,7 +80,7 @@ func (d *Display) SetHeight(height int) {
 	y := currentHeight
 	for y < height {
 		// log.Printf("doing line=%d", y)
-		line, err := GetFilterManager().getLine(lineNo)
+		line, err := GetFilterManager().filters.GetLine(lineNo)
 		lineNo++
 		if errors.Is(err, util.ErrOutOfBounds) {
 			break
@@ -144,8 +145,7 @@ func (d *Display) refreshDisplay(ctx context.Context, wg *sync.WaitGroup,
 
 	y := 0
 	for y < displayHeight {
-		// log.Printf("doing line=%d", y)
-		line, err := GetFilterManager().getLine(lineNo)
+		line, err := GetFilterManager().filters.GetLine(lineNo)
 		lineNo++
 		if errors.Is(err, util.ErrOutOfBounds) {
 			break
@@ -182,7 +182,7 @@ func (d *Display) lastLine() *reader.Line {
 	return d.Buffer[len(d.Buffer)-1]
 }
 
-func (d *Display) searchOnScreen(startOnScreen int, direction scrollDirection) (*reader.Line, error) {
+func (d *Display) searchOnScreen(startOnScreen int, direction filter.ScrollDirection) (*reader.Line, error) {
 	height := len(d.Buffer)
 
 	for i := startOnScreen; i >= 0 && i < height; i = i + int(direction) {
@@ -218,4 +218,17 @@ func (d *Display) addLineAtTopRemoveLineAtBottom(line *reader.Line) {
 	} else {
 		d.Buffer = []*reader.Line{line}
 	}
+}
+
+func (d *Display) getLineOnScreen(lineNo int) (int, error) {
+	if lineNo < 0 {
+		return -1, util.ErrOutOfBounds
+	}
+
+	for screenLine, line := range d.Buffer {
+		if lineNo == line.No {
+			return screenLine, nil
+		}
+	}
+	return -1, util.ErrOutOfBounds
 }

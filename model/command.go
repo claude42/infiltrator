@@ -56,7 +56,7 @@ func (d CommandHome) commandString() string {
 }
 
 type CommandFindMatch struct {
-	direction scrollDirection
+	direction filter.ScrollDirection
 }
 
 func (d CommandFindMatch) commandString() string {
