@@ -32,7 +32,7 @@ type ModalImpl struct {
 
 func NewModalImpl(width, height int) *ModalImpl {
 	m := &ModalImpl{}
-	m.Resize(0, 0, width, height)
+	m.Resize(-1, -1, width, height)
 
 	return m
 }
@@ -58,8 +58,6 @@ func (m *ModalImpl) HandleEvent(ev tcell.Event) bool {
 	return false
 }
 
-// special case: Resize(0, 0, 0, 0): don't resize, just adjust to screen if
-// necessary
 func (m *ModalImpl) Resize(x, y, width, height int) {
 	// x and y are ignore - modal will always be centered
 	// TODO: change Resize() interface so it can return an error
@@ -130,5 +128,5 @@ func (m *ModalImpl) Fit() {
 		return
 	}
 
-	m.Resize(0, 0, m.contentWidth+4, len(m.lines)+3)
+	m.Resize(-1, -1, m.contentWidth+4, len(m.lines)+3)
 }

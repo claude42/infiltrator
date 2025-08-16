@@ -294,7 +294,7 @@ func (w *Window) resize() {
 	w.exPanel.Resize(0, height-1, width, 0)   // height ignored
 
 	if w.popup != nil {
-		w.popup.Resize(0, 0, 0, 0)
+		w.popup.Resize(-1, -1, -1, -1)
 	}
 }
 

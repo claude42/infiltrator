@@ -22,7 +22,7 @@ func NewSelect(options []string) *Select {
 	s := &Select{}
 	s.Options = options
 	// just to set the initial width correctly, mb not even necessary?!
-	s.Resize(0, 0, 0, 0)
+	s.Resize(-1, -1, -1, -1)
 	s.StyleUsing(s)
 
 	return s

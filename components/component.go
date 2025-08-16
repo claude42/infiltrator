@@ -44,17 +44,18 @@ func (c *ComponentImpl) IsVisible() bool {
 }
 
 func (c *ComponentImpl) Resize(x, y, width, height int) {
-	if x != 0 {
+	// TODO: x != 0 is just wrong
+	if x != -1 {
 		c.x = x
 	}
-	if y != 0 {
+	if y != -1 {
 		c.y = y
 	}
-	if width != 0 {
+	if width != -1 {
 		c.width = width
 	}
 
-	if height != 0 {
+	if height != -1 {
 		c.height = height
 	}
 }

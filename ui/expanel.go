@@ -1,6 +1,8 @@
 package ui
 
 import (
+	"fmt"
+
 	"github.com/claude42/infiltrator/components"
 
 	"github.com/gdamore/tcell/v2"
@@ -8,6 +10,8 @@ import (
 
 type ExPanel struct {
 	*components.PanelImpl
+
+	prompt string
 
 	input *components.InputImpl
 	// mode          *ColoredSelect
@@ -24,9 +28,12 @@ func NewExPanel() *ExPanel {
 }
 
 func (e *ExPanel) Resize(x, y, width, height int) {
-	e.PanelImpl.Resize(x, y, width, height)
+	e.PanelImpl.Resize(x, y, width, 1)
 
-	e.input.Resize(x+2, y, width-2, 1)
+	// reload in case Resize() was called with zero values
+	x, y = e.PanelImpl.Position()
+
+	e.input.Resize(x+len(e.prompt)+2, y, e.PanelImpl.Width()-len(e.prompt)-2, 1)
 }
 
 func (e *ExPanel) Render(updateScreen bool) {
@@ -38,7 +45,9 @@ func (e *ExPanel) Render(updateScreen bool) {
 
 	x, y := e.Position()
 
-	components.RenderText(x, y, ":", style)
+	fullPrompt := fmt.Sprint(e.prompt + ": ")
+
+	components.RenderText(x, y, fullPrompt, style)
 
 	if e.input != nil {
 		e.input.Render((updateScreen))
@@ -55,12 +64,19 @@ func (e *ExPanel) SetContent(content string) {
 	e.input.SetContent(content)
 }
 
+func (e *ExPanel) SetPrompt(prompt string) {
+	e.prompt = prompt
+	e.Resize(-1, -1, -1, -1)
+	e.Render(true)
+}
+
 func (e *ExPanel) HandleEvent(ev tcell.Event) bool {
 	switch ev := ev.(type) {
 	case *tcell.EventKey:
 		switch ev.Key() {
 		case tcell.KeyEscape:
 			e.SetActive(false)
+			return true
 		}
 	}
 
