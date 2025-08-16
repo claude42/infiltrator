@@ -68,7 +68,7 @@ func (s *Statusbar) Render(updateScreen bool) {
 
 	if s.panelsOpen {
 		s.renderPanelOpenStatusBar()
-	} else if config.GetConfiguration().FollowFile {
+	} else if config.GetConfiguration().UserConfig.Main.Follow {
 		s.renderFollowStausBar()
 	} else {
 		s.renderDefaultStatusBar()
@@ -89,8 +89,7 @@ func (s *Statusbar) renderDefaultStatusBar() {
 
 	s.renderFileName()
 
-	_, y := s.ComponentImpl.Position()
-	components.RenderText(0, y, StatusDefaultText, StatusBarStyle)
+	s.renderStatusDefaultText()
 }
 
 func (s *Statusbar) renderFollowStausBar() {
@@ -98,9 +97,14 @@ func (s *Statusbar) renderFollowStausBar() {
 
 	s.renderFileName()
 
+	s.renderStatusDefaultText()
+}
+
+func (s *Statusbar) renderStatusDefaultText() {
 	_, y := s.ComponentImpl.Position()
 	components.RenderText(0, y, StatusDefaultText, StatusBarStyle)
 }
+
 func (s *Statusbar) renderPanelOpenStatusBar() {
 	s.renderPercentage()
 

@@ -13,8 +13,9 @@
             "program": "${workspaceFolder}",
             "args": ["-d",
                     "-l",
-                    "-f",
-                    "testerli"],
+                    "--colorize",
+                    "--preset=examplepreset",
+                    "../realjournal"],
             "console": "integratedTerminal"
         }
     ]

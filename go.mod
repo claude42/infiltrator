@@ -8,16 +8,18 @@ require (
 	github.com/adrg/xdg v0.5.3
 	github.com/gdamore/tcell/v2 v2.8.1
 	github.com/knadh/koanf v1.5.0
+	github.com/knadh/koanf/v2 v2.2.2
 	github.com/markusmobius/go-dateparser v1.2.4
 )
 
 require (
+	github.com/fatih/structs v1.1.0 // indirect
+	github.com/go-viper/mapstructure/v2 v2.3.0 // indirect
 	github.com/hablullah/go-hijri v1.0.2 // indirect
 	github.com/hablullah/go-juliandays v1.0.0 // indirect
 	github.com/jalaali/go-jalaali v0.0.0-20210801064154-80525e88d958 // indirect
 	github.com/magefile/mage v1.14.0 // indirect
 	github.com/mitchellh/copystructure v1.2.0 // indirect
-	github.com/mitchellh/mapstructure v1.5.0 // indirect
 	github.com/mitchellh/reflectwalk v1.0.2 // indirect
 	github.com/pelletier/go-toml v1.7.0 // indirect
 	github.com/tetratelabs/wazero v1.2.1 // indirect

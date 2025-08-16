@@ -6,7 +6,6 @@ import (
 	"io"
 	"log"
 	"os"
-	"path/filepath"
 	"sync"
 
 	"github.com/claude42/infiltrator/config"
@@ -14,10 +13,7 @@ import (
 	"github.com/claude42/infiltrator/model"
 	"github.com/claude42/infiltrator/model/busy"
 	"github.com/claude42/infiltrator/ui"
-
 	// dateparser "github.com/markusmobius/go-dateparser"
-
-	flag "github.com/spf13/pflag"
 )
 
 func main() {
@@ -30,20 +26,16 @@ func main() {
 }
 
 func run() error {
-	cm := config.GetConfiguration()
-	cm.Load()
-	defer cm.WriteStateFile()
-
-	// Parse command line
-	flag.BoolVarP(&cm.ShowLineNumbers, "lines", "l", false, "Show line numbers")
-	flag.BoolVarP(&cm.FollowFile, "follow", "f", false, "Follow changes to file")
-	flag.BoolVarP(&cm.Debug, "debug", "d", false, "Log debugging information to ./debug.log")
-
-	flag.Parse()
+	cfg := config.GetConfiguration()
+	err := cfg.Load()
+	if err != nil {
+		return err
+	}
+	defer cfg.WriteStateFile()
 
 	// debug log
 
-	if !config.GetConfiguration().Debug {
+	if !cfg.UserConfig.Main.Debug {
 		log.SetOutput(io.Discard)
 	} else {
 		debug, err := os.OpenFile("debug.log", os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
@@ -53,7 +45,6 @@ func run() error {
 		log.SetFlags(log.LstdFlags | log.Lshortfile)
 	}
 
-	cfg := config.GetConfiguration()
 	cfg.PostEventFunc = ui.InfiltPostEvent
 
 	ctx, cancelFunc := context.WithCancel((context.Background()))
@@ -72,27 +63,18 @@ func run() error {
 	wg.Add(1)
 	go window.MetaEventLoop(ctx, &wg, quit)
 
-	switch len(flag.Args()) {
-	case 0:
-		cm.FileName = "[stdin]"
-		cm.FilePath = ""
-		cm.Stdin = true
+	if cfg.Stdin {
 		fm.ReadFromStdin()
-	case 1:
-		cm.FilePath = flag.Args()[0]
-		cm.FileName = filepath.Base(cm.FilePath)
-		cm.Stdin = false
-
-		fm.ReadFromFile(cm.FilePath)
-	default:
-		flag.Usage()
-		cancelFunc()
-		wg.Wait()
-		return fmt.Errorf("try again")
+	} else {
+		fm.ReadFromFile(cfg.FilePath)
 	}
 
 	wg.Add(1)
 	go fm.EventLoop()
+
+	if len(cfg.UserConfig.Panels) > 0 {
+		window.CreatePresetPanels()
+	}
 
 	// wait for UI thread to finish
 

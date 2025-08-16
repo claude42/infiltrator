@@ -1,0 +1,22 @@
+[main]
+name = "Meine Abfrage"
+filename = "/var/log/syslog"
+follow = false
+colorize = true
+
+[[panel]]
+type = "regex"
+key = '\d'
+mode = "match"
+casesensitive = false
+
+[[panel]]
+type = "regex"
+key = "abcd"
+mode = "focus"
+casesensitive = false
+
+[[panel]]
+type = "date"
+from = "-1d"
+to = "-1h"

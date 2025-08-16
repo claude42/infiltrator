@@ -3,6 +3,12 @@ package config
 type FilterType int
 
 const (
+	appName            = "infiltrator"
+	mainConfigFileName = "/config.toml"
+	presetDir          = "/presets/"
+)
+
+const (
 	FilterTypeKeyword FilterType = iota
 	FilterTypeRegex
 	PanelTypeGlob
@@ -20,6 +26,7 @@ const (
 	FilterStringTo   = "To"
 )
 
+// TODO: some stuff is here, some in stringfiltermodes.go
 var Filters map[FilterType]string = map[FilterType]string{
 	FilterTypeKeyword: FilterStringKeyword,
 	FilterTypeRegex:   FilterStringRegex,

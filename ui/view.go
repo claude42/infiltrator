@@ -68,19 +68,22 @@ func (v *View) RenderNewDisplay(display *model.Display, updateScreen bool) {
 
 func (v *View) renderLine(line *lines.Line, y int) {
 	str := line.Str
-	var start = 0
+	start := 0
 	matched := line.No == v.CurrentDisplay.CurrentMatch
+	cfg := config.GetConfiguration()
 
-	if config.GetConfiguration().ShowLineNumbers {
+	if cfg.UserConfig.Main.Lines {
 		start = v.renderLineNumber(line, y, matched)
 	}
 
 	lineStyle := v.determineStyle(line, matched)
 
-	fileFormatRegex := config.GetConfiguration().FileFormatRegex
-	var matches []int
-	if fileFormatRegex != nil {
-		matches = fileFormatRegex.FindStringSubmatchIndex(line.Str)
+	var detectedTokens []int
+	if cfg.UserConfig.Main.Colorize {
+		fileFormatRegex := cfg.FileFormatRegex
+		if fileFormatRegex != nil {
+			detectedTokens = fileFormatRegex.FindStringSubmatchIndex(line.Str)
+		}
 	}
 
 	for x := start; x < v.Width(); x++ {
@@ -104,9 +107,9 @@ func (v *View) renderLine(line *lines.Line, y int) {
 					style = style.Foreground(FilterColors[line.ColorIndex[lineXPos]][1])
 				}
 				style = style.Reverse(true)
-			} else if matches != nil {
+			} else if detectedTokens != nil {
 				// lastly check if we can color the character according to the files format
-				style = v.colorAccordingToFileFormat(lineXPos, matches, style)
+				style = v.colorAccordingToFileFormat(lineXPos, detectedTokens, style)
 			}
 		}
 

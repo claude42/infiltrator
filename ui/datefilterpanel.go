@@ -137,3 +137,12 @@ func (d *DateFilterPanel) SetFilter(filter filter.Filter) {
 	d.from.SetFilter(filter)
 	d.to.SetFilter(filter)
 }
+
+// TODO: test if these really work
+func (d *DateFilterPanel) SetFrom(from string) {
+	d.from.SetContent(from)
+}
+
+func (d *DateFilterPanel) SetTo(to string) {
+	d.to.SetContent(to)
+}

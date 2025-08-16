@@ -14,17 +14,6 @@ import (
 const nameWidth = 9
 const headerWidth = 24
 
-var filterModes = []string{
-	"focus",
-	"match",
-	"hide",
-}
-
-var caseSensitive = []string{
-	"case",
-	"CaSe",
-}
-
 type StringFilterPanel struct {
 	*ColoredPanel
 
@@ -37,8 +26,8 @@ func NewStringFilterPanel(name string) *StringFilterPanel {
 	s := &StringFilterPanel{
 		ColoredPanel:  NewColoredPanel(name),
 		input:         NewFilterInput(name),
-		mode:          NewColoredSelect(filterModes),
-		caseSensitive: NewColoredSelect(caseSensitive),
+		mode:          NewColoredSelect(filter.FilterModeStrings),
+		caseSensitive: NewColoredSelect(filter.CaseSensitiveStrings),
 	}
 	s.ColoredPanel.Add(s.input)
 	s.ColoredPanel.Add(s.mode)
@@ -188,8 +177,21 @@ func (t *StringFilterPanel) Mode() filter.FilterMode {
 	return filter.FilterMode(t.mode.SelectedIndex())
 }
 
-func (t *StringFilterPanel) SetMode(mode int) {
-	t.mode.SetSelectedIndex(mode)
+func (t *StringFilterPanel) SetMode(mode filter.FilterMode) {
+	t.mode.SetSelectedIndex(int(mode))
+	model.GetFilterManager().UpdateFilterMode(t.Filter(), mode)
+}
+
+func (t *StringFilterPanel) SetCaseSensitive(caseSensitive bool) {
+
+	if caseSensitive {
+		t.caseSensitive.SetSelectedIndex(1)
+	} else {
+		t.caseSensitive.SetSelectedIndex(0)
+	}
+
+	model.GetFilterManager().UpdateFilterCaseSensitiveUpdate(t.Filter(), caseSensitive)
+
 }
 
 func (t *StringFilterPanel) SetName(name string) {

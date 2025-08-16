@@ -10,14 +10,6 @@ import (
 	"github.com/claude42/infiltrator/model/lines"
 )
 
-type FilterMode int
-
-const (
-	FilterFocus FilterMode = iota
-	FilterMatch
-	FilterHide
-)
-
 type StringFilter struct {
 	FilterImpl
 	sync.Mutex

@@ -5,11 +5,13 @@ import (
 	"fmt"
 	"log"
 	"runtime/debug"
+	"slices"
 	"sync"
 
 	"github.com/claude42/infiltrator/components"
 	"github.com/claude42/infiltrator/config"
 	"github.com/claude42/infiltrator/fail"
+	"github.com/claude42/infiltrator/model/filter"
 	"github.com/claude42/infiltrator/util"
 	"github.com/gdamore/tcell/v2"
 )
@@ -67,6 +69,8 @@ func Setup() *Window {
 	window.exPanel = NewExPanel()
 	components.Add(window.exPanel, 1)
 	window.exPanel.SetContent("Hallo")
+	window.exPanel.SetPrompt("Testerli")
+	// window.exPanel.SetVisible(true)
 	// window.exPanel.SetActive(true)
 
 	setupScreen()
@@ -287,7 +291,7 @@ func (w *Window) resize() {
 		}
 	}
 	w.statusbar.Resize(0, height-1, width, 0) // x and height ignored
-	w.exPanel.Resize(0, 3, width, 0)          // height ignored
+	w.exPanel.Resize(0, height-1, width, 0)   // height ignored
 
 	if w.popup != nil {
 		w.popup.Resize(0, 0, 0, 0)
@@ -411,4 +415,51 @@ func (w *Window) SetPanelsOpen(panelsOpen bool) {
 
 func (w *Window) PanelsOopen() bool {
 	return w.panelsOpen
+}
+
+func (w *Window) CreatePresetPanels() {
+	cfg := config.GetConfiguration()
+	for _, panelConfig := range cfg.UserConfig.Panels {
+		switch panelConfig.Type {
+		case "regex":
+			w.createRegexPanel(panelConfig)
+		case "keyword":
+			w.createKeywordPanel(panelConfig)
+		case "date":
+			w.createDatePanel(panelConfig)
+		}
+	}
+	w.resizeAndRedraw()
+}
+
+func (w *Window) createRegexPanel(panelConfig config.PanelTable) {
+	newPanel, ok := NewPanel(config.FilterTypeRegex).(*StringFilterPanel)
+	if !ok {
+		return
+	}
+	newPanel.SetContent(panelConfig.Key)
+	newPanel.SetMode(filter.FilterMode(slices.Index(filter.FilterModeStrings, panelConfig.Mode)))
+	newPanel.SetCaseSensitive(panelConfig.CaseSensitive)
+	w.AddPanel(newPanel)
+}
+
+func (w *Window) createKeywordPanel(panelConfig config.PanelTable) {
+	newPanel, ok := NewPanel(config.FilterTypeKeyword).(*StringFilterPanel)
+	if !ok {
+		return
+	}
+	newPanel.SetContent(panelConfig.Key)
+	newPanel.SetMode(filter.FilterMode(slices.Index(filter.FilterModeStrings, panelConfig.Mode)))
+	newPanel.SetCaseSensitive(panelConfig.CaseSensitive)
+	w.AddPanel(newPanel)
+}
+
+func (w *Window) createDatePanel(panelConfig config.PanelTable) {
+	newPanel, ok := NewPanel(config.FilterTypeDate).(*DateFilterPanel)
+	if !ok {
+		return
+	}
+	newPanel.SetTo(panelConfig.To)
+	newPanel.SetFrom(panelConfig.From)
+	w.AddPanel(newPanel)
 }
