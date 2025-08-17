@@ -57,7 +57,7 @@ func Setup() *Window {
 
 	window.mainView = NewView()
 	components.Add(window.mainView, 0)
-	window.mainView.SetVisible(true)
+	window.mainView.Show()
 
 	window.statusbar = NewStatusbar()
 	components.Add(window.statusbar, 0)
@@ -130,6 +130,10 @@ func (w *Window) EventLoop(quit chan<- string) bool {
 	ev := screen.PollEvent()
 	// log.Printf("Event: %T, %+v", ev, ev)
 	log.Printf("Main Loop: %T", ev)
+
+	if _, ok := ev.(*tcell.EventKey); ok {
+		log.Println()
+	}
 
 	if components.HandleEventAll(ev) {
 		return false
