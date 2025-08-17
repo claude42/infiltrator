@@ -82,7 +82,7 @@ func (cm *ConfigManager) Load() error {
 	cm.ReadDefaults(cm.kConfig)
 
 	err := cm.ReadConfigFile(cm.kConfig, mainConfigFileName)
-	if err != nil {
+	if err != nil && !errors.Is(err, os.ErrNotExist) {
 		return err
 	}
 
