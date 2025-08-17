@@ -106,7 +106,7 @@ func (fi *FilterInput) HandleEvent(ev tcell.Event) bool {
 		}
 	}
 
-	return fi.InputImpl.HandleEvent(ev)
+	return fi.ColoredInput.HandleEvent(ev)
 }
 
 func (fi *FilterInput) SetFilter(filter filter.Filter) {
