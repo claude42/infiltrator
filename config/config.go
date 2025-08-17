@@ -183,29 +183,33 @@ func (cm *ConfigManager) ReadCommandLine(k *koanf.Koanf) error {
 	return nil
 }
 
-// func (cm *ConfigManager) ConfigBool(path string) bool {
-// 	return cm.kConfig.Bool(path)
-// }
+// Untested as of now
+func (cm *ConfigManager) WritePreset(k *koanf.Koanf, lastPathPart string) error {
+	var presetK = koanf.New(".")
 
-// func (cm *ConfigManager) ConfigString(path string) string {
-// 	return cm.kConfig.String(path)
-// }
+	err := k.Cut("panel").Merge(presetK)
+	fail.OnError(err, "Error creating preset")
 
-// func (cm *ConfigManager) WritePreset(presetName string) error {
-// 	presetFile, err := xdg.ConfigFile(appName + presetDir + presetName +
-// 		".toml")
-// 	fail.OnError(err, "Can't determine preset filename")
+	err = presetK.Set("main.filename", k.Bool("main.filename"))
+	fail.OnError(err, "Error creating preset")
 
-// 	// TODO: ask before overwriting
+	err = presetK.Set("main.follow", k.Bool("main.follow"))
+	fail.OnError(err, "Error creating preset")
 
-// 	err = cm.kPreset.Set("", cm.Preset)
-// 	fail.OnError(err, "Error storing preset")
+	err = presetK.Set("main.lines", k.Bool("main.lines"))
+	fail.OnError(err, "Error creating preset")
 
-// 	marshalledBytes, err := cm.kPreset.Marshal(toml.Parser())
-// 	fail.OnError(err, "Error marshalling data")
+	err = presetK.Set("main.colorize", k.Bool("main.colorize"))
+	fail.OnError(err, "Error creating preset")
 
-// 	err = os.WriteFile(presetFile, marshalledBytes, 0644)
-// 	// TODO: handle error differently?
+	marshalledBytes, err := presetK.Marshal(toml.Parser())
+	fail.OnError(err, "Error creating preset")
 
-// 	return err
-// }
+	var path string
+	path, err = xdg.ConfigFile(appName + lastPathPart)
+	fail.OnError(err, "Can't determine preset filename")
+
+	err = os.WriteFile(path, marshalledBytes, 0644)
+
+	return err
+}
