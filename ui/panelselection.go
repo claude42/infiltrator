@@ -1,8 +1,6 @@
 package ui
 
 import (
-	"log"
-
 	"github.com/claude42/infiltrator/components"
 	"github.com/claude42/infiltrator/config"
 
@@ -28,7 +26,10 @@ func NewPanelSelection() *PanelSelection {
 }
 
 func (p *PanelSelection) HandleEvent(ev tcell.Event) bool {
-	log.Println("dochdrin")
+	if !p.IsActive() {
+		return false
+	}
+
 	switch ev := ev.(type) {
 	case *tcell.EventKey:
 		switch ev.Key() {
@@ -37,29 +38,27 @@ func (p *PanelSelection) HandleEvent(ev tcell.Event) bool {
 			case 'r':
 				window.CreateAndAddPanel(config.FilterTypeRegex)
 				window.SetPanelsOpen(true)
-				p.SetActive(false)
-				p.SetVisible(false)
+				p.Hide()
+				return true
 			case 'k':
 				window.CreateAndAddPanel(config.FilterTypeKeyword)
 				window.SetPanelsOpen(true)
-				p.SetActive(false)
-				p.SetVisible(false)
+				p.Hide()
+				return true
 			case 'd':
 				window.CreateAndAddPanel(config.FilterTypeDate)
 				window.SetPanelsOpen(true)
-				p.SetActive(false)
-				p.SetVisible(false)
+				p.Hide()
+				return true
 			}
 			return true
 		case tcell.KeyEscape:
-			p.SetActive(false)
-			p.SetVisible(false)
+			p.Hide()
 			return true
 		case tcell.KeyEnter:
 			window.CreateAndAddPanel(config.FilterTypeRegex)
 			window.SetPanelsOpen(true)
-			p.SetActive(false)
-			p.SetVisible(false)
+			p.Hide()
 			return true
 		}
 	}

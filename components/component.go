@@ -9,6 +9,8 @@ type Component interface {
 	IsActive() bool
 	SetVisible(visible bool)
 	IsVisible() bool
+	Show()
+	Hide()
 	Resize(x, y, width, height int)
 	Render(updateScreen bool)
 	Position() (int, int)
@@ -43,8 +45,17 @@ func (c *ComponentImpl) IsVisible() bool {
 	return c.visible
 }
 
+func (c *ComponentImpl) Show() {
+	c.active = true
+	c.visible = true
+}
+
+func (c *ComponentImpl) Hide() {
+	c.active = false
+	c.visible = false
+}
+
 func (c *ComponentImpl) Resize(x, y, width, height int) {
-	// TODO: x != 0 is just wrong
 	if x != -1 {
 		c.x = x
 	}

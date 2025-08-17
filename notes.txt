@@ -43,14 +43,12 @@ Threads
 
 
 TODO
-* Removing filters doesn't seem to remove the from the model?!
 
 * Beep
 * Display wrong Regex
 * Error Messages
 
 
-* ScrollDownBuffer() / ScrollUpBuffer() less weird, more consistent
 * Quit with error message if problems reading file
 * Go to end does not update Status bar
 Filter mode "ignore/off"
@@ -159,4 +157,183 @@ func main() {
 	} else {
 		fmt.Println("The line is not a valid syslog message.")
 	}
+}
+
+
+Structure:
+* Name / stdin
+* File
+* Follow
+* filters
+  * key
+  * type
+  * mode
+  * case-sensitive
+
+  or
+  * from
+  * to
+
+
+  package main
+
+import (
+    "fmt"
+    "log"
+    "strings"
+
+    "github.com/knadh/koanf/parsers/toml"
+    "github.com/knadh/koanf/v2"
+)
+
+// TopLevelConfig mirrors the [Toplevelsomething] table.
+type TopLevelConfig struct {
+    Name       string `koanf:"name"`
+    Filename   string `koanf:"filename"`
+    Follow     bool   `koanf:"follow"`
+    Linenumber bool   `koanf:"linenumber"`
+}
+
+// RegexConfig mirrors one instance of the [[regex]] table array.
+type RegexConfig struct {
+    Key           string `koanf:"key"`
+    Mode          string `koanf:"mode"`
+    CaseSensitive bool   `koanf:"casesensitive"`
+}
+
+// FullConfig is the top-level struct that contains everything.
+type FullConfig struct {
+    TopLevel TopLevelConfig `koanf:"Toplevelsomething"`
+    Regexes  []RegexConfig  `koanf:"regex"`
+    Keywords []RegexConfig  `koanf:"keyword"` // Assuming the same structure.
+    Dates    []struct {
+        From string `koanf:"from"`
+        To   string `koanf:"to"`
+    } `koanf:"date"`
+}
+
+// Your TOML file content for the example.
+const tomlContent = `
+[Toplevelsomething]
+name = "Meine Abfrage"
+filename = "logfile.txt"
+follow = false
+linenumber = true
+
+[[regex]]
+key = "abcd"
+mode = "match"
+casesensitive = false
+
+[[keyword]]
+key = "abcd"
+mode = "match"
+casesensitive = false
+
+[[date]]
+from = "-1d"
+to = "-1h"
+`
+
+func main() {
+    var k = koanf.New(".")
+    parser := toml.Parser()
+    var config FullConfig
+
+    // Load the TOML content from the string.
+    if err := k.Load(strings.NewReader(tomlContent), parser); err != nil {
+        log.Fatalf("Error loading config: %v", err)
+    }
+
+    // Unmarshal the entire configuration into our struct.
+    if err := k.Unmarshal("", &config); err != nil {
+        log.Fatalf("Error unmarshalling config: %v", err)
+    }
+
+    // Now, you can process the slices with a for...range loop.
+    fmt.Printf("Top-level config name: %s\n", config.TopLevel.Name)
+    fmt.Println("--------------------")
+    
+    fmt.Println("Processing Regexes:")
+    for _, r := range config.Regexes {
+        fmt.Printf("  Key: %s, Mode: %s\n", r.Key, r.Mode)
+        // ... call a function for regex ...
+    }
+    
+    fmt.Println("--------------------")
+
+    fmt.Println("Processing Keywords:")
+    for _, kw := range config.Keywords {
+        fmt.Printf("  Key: %s, Mode: %s\n", kw.Key, kw.Mode)
+        // ... call a function for keywords ...
+    }
+}
+
+
+
+package main
+
+import (
+	"fmt"
+	"log"
+	"os"
+
+	"github.com/knadh/koanf/parsers/toml"
+	"github.com/knadh/koanf/v2"
+)
+
+// FullConfig is the top-level struct that contains all our config.
+type FullConfig struct {
+	TopLevel struct {
+		Name string `koanf:"name"`
+		Filename string `koanf:"filename"`
+		Follow bool `koanf:"follow"`
+	} `koanf:"Toplevelsomething"`
+	Regexes  []struct {
+		Key string `koanf:"key"`
+	} `koanf:"regex"`
+	Keywords []struct {
+		Key string `koanf:"key"`
+	} `koanf:"keyword"`
+}
+
+func main() {
+	// Step 1: Create and populate the Go struct.
+	config := FullConfig{
+		TopLevel: struct {
+			Name string `koanf:"name"`
+			Filename string `koanf:"filename"`
+			Follow bool `koanf:"follow"`
+		}{
+			Name: "Updated Query",
+			Filename: "new_log.txt",
+			Follow: true,
+		},
+		Regexes: []struct { Key string `koanf:"key"` }{
+			{Key: "^Jun"},
+			{Key: "error"},
+		},
+	}
+
+	var k = koanf.New(".")
+
+	// Step 2: Set the entire struct onto the koanf instance.
+	// This is the reverse of Unmarshal.
+	if err := k.Set("", config); err != nil {
+		log.Fatalf("Error setting config: %v", err)
+	}
+
+	// Step 3: Marshal the data back into TOML format.
+	marshalledBytes, err := k.Marshal(toml.Parser())
+	if err != nil {
+		log.Fatalf("Error marshalling to TOML: %v", err)
+	}
+
+	// Step 4: Write the byte slice to a file.
+	err = os.WriteFile("output.toml", marshalledBytes, 0644)
+	if err != nil {
+		log.Fatalf("Error writing file: %v", err)
+	}
+
+	fmt.Println("Configuration successfully written to output.toml")
 }

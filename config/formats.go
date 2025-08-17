@@ -12,6 +12,7 @@ import (
 
 const formatsFileName = "/formats.toml"
 
+// TODO error handling
 func (cm *ConfigManager) ReadFormatsFile() {
 	formatsFile, err := xdg.ConfigFile(appName + formatsFileName)
 	fail.OnError(err, "Can't determine formats File")

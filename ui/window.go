@@ -75,6 +75,12 @@ func Setup() *Window {
 
 	setupScreen()
 
+	// ShowYesNoBar("todalo", "Hell (yes/no)?", func(name string) {
+	// 	log.Printf("You did it %s", name)
+	// }, func(name string) {
+	// 	log.Printf("Maybe next time %s", name)
+	// })
+
 	return window
 }
 
@@ -125,13 +131,7 @@ func (w *Window) EventLoop(quit chan<- string) bool {
 	// log.Printf("Event: %T, %+v", ev, ev)
 	log.Printf("Main Loop: %T", ev)
 
-	if w.popup != nil && w.popup.IsActive() && w.popup.HandleEvent(ev) {
-		return false
-	}
-
-	if w.panelsOpen && w.activePanel != nil &&
-		w.activePanel.HandleEvent(ev) {
-
+	if components.HandleEventAll(ev) {
 		return false
 	}
 
@@ -226,14 +226,6 @@ func (w *Window) EventLoop(quit chan<- string) bool {
 		// log.Printf("Event: %T, %+v", ev, ev)
 	}
 
-	if w.mainView.HandleEvent(ev) {
-		return false
-	}
-
-	if w.statusbar.HandleEvent(ev) {
-		return false
-	}
-
 	return false
 }
 
@@ -241,7 +233,7 @@ func (w *Window) openPanelsOrPanelSelection() {
 	// if panels are currently closed but at least one panel exists
 	// already, then just open the existing panels, don't open
 	// panel selection
-	if w.activePanel != nil && !w.statusbar.panelsOpen {
+	if w.activePanel != nil && !w.panelsOpen {
 		w.SetPanelsOpen(true)
 		return
 	} else {
@@ -249,8 +241,7 @@ func (w *Window) openPanelsOrPanelSelection() {
 		// 	w.popup.SetActive(false)
 		// }
 		w.popup = w.panelSelection
-		w.popup.SetActive(true)
-		w.popup.SetVisible(true)
+		w.popup.Show()
 	}
 }
 
@@ -405,8 +396,7 @@ func (w *Window) SetPanelsOpen(panelsOpen bool) {
 		w.activePanel.SetActive(true)
 	} else {
 		for _, p := range w.BottomPanels {
-			p.SetVisible(false)
-			p.SetActive(false)
+			p.Hide()
 		}
 	}
 	GetScreen().PostEvent(NewEventPanelStateChanged(panelsOpen))

@@ -198,6 +198,13 @@ func (v *View) HandleEvent(ev tcell.Event) bool {
 			screen.Beep()
 			return true
 		}
+	}
+
+	if !v.IsActive() {
+		return false
+	}
+
+	switch ev := ev.(type) {
 	case *tcell.EventKey:
 		switch ev.Key() {
 		case tcell.KeyRune:

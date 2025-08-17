@@ -13,8 +13,6 @@
             "program": "${workspaceFolder}",
             "args": ["-d",
                     "-l",
-                    "--colorize",
-                    "--preset=examplepreset",
                     "../realjournal"],
             "console": "integratedTerminal"
         }

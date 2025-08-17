@@ -80,6 +80,10 @@ func (d *DateFilterPanel) SetColorIndex(colorIndex uint8) {
 }
 
 func (d *DateFilterPanel) HandleEvent(ev tcell.Event) bool {
+	if !d.IsActive() {
+		return false
+	}
+
 	switch ev := ev.(type) {
 	case *tcell.EventKey:
 		switch ev.Key() {

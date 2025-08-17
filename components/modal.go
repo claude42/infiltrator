@@ -49,6 +49,10 @@ func (m *ModalImpl) SetTitle(title string) {
 }
 
 func (m *ModalImpl) HandleEvent(ev tcell.Event) bool {
+	// if !m.active {
+	// 	return false
+	// }
+
 	switch ev.(type) {
 	case *model.EventDisplay:
 		m.Render(true)
@@ -62,6 +66,14 @@ func (m *ModalImpl) Resize(x, y, width, height int) {
 	// x and y are ignore - modal will always be centered
 	// TODO: change Resize() interface so it can return an error
 	screenWidth, screenHeight := Screen.Size()
+
+	if width == -1 {
+		width = m.width
+	}
+
+	if height == -1 {
+		height = m.height
+	}
 
 	m.ContainerImpl.Resize(max((screenWidth-width)/2, 0),
 		max((screenHeight-height)/2, 0), width, height)

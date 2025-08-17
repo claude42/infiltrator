@@ -58,6 +58,10 @@ func (fi *FilterInput) storeInHistory() {
 }
 
 func (fi *FilterInput) HandleEvent(ev tcell.Event) bool {
+	if !fi.IsActive() {
+		return false
+	}
+
 	switch ev := ev.(type) {
 	case *tcell.EventKey:
 		switch ev.Key() {

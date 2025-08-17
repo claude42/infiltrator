@@ -110,6 +110,10 @@ func (i *InputImpl) Render(updateScreen bool) {
 }
 
 func (i *InputImpl) HandleEvent(ev tcell.Event) bool {
+	if !i.active {
+		return false
+	}
+
 	switch ev := ev.(type) {
 	case *tcell.EventKey:
 		switch ev.Key() {

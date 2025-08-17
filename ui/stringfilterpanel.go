@@ -2,6 +2,7 @@ package ui
 
 import (
 	"fmt"
+	"log"
 
 	"github.com/claude42/infiltrator/components"
 	"github.com/claude42/infiltrator/fail"
@@ -92,6 +93,14 @@ func (t *StringFilterPanel) SetContent(content string) {
 }
 
 func (t *StringFilterPanel) HandleEvent(ev tcell.Event) bool {
+	if !t.IsActive() {
+		return false
+	}
+	huch, ok := ev.(*tcell.EventKey)
+	if ok {
+		log.Printf("StringFilterPanel handling %+v", huch)
+	}
+
 	switch ev := ev.(type) {
 	case *tcell.EventKey:
 		switch ev.Key() {

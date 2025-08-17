@@ -179,6 +179,10 @@ func (s *Statusbar) SetColorIndex(colorIndex uint8) {
 }
 
 func (s *Statusbar) HandleEvent(ev tcell.Event) bool {
+	// if !s.IsActive() {
+	// 	return false
+	// }
+
 	switch ev := ev.(type) {
 	case *busy.EventBusySpinnerUpdate:
 		s.busyState = ev.BusyState
