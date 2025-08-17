@@ -25,18 +25,17 @@ const (
 )
 
 func (pp *Pipeline) Add(f Filter) {
-	p := *pp
 	pipelineMutex.Lock()
 	defer pipelineMutex.Unlock()
 
-	if len(p) == 0 {
-		*pp = append(*pp, f) // use pointer to silence static analyzer
+	if len(*pp) == 0 {
+		*pp = append(*pp, f)
 		return
 	}
 
 	var pos int
-	for pos = len(p) - 1; pos > 0; pos-- {
-		existingFilter := p[pos]
+	for pos = len(*pp) - 1; pos > 0; pos-- {
+		existingFilter := (*pp)[pos]
 		if _, ok := existingFilter.(*Cache); ok {
 			continue
 		} else if _, ok := existingFilter.(*Source); ok {
@@ -49,31 +48,29 @@ func (pp *Pipeline) Add(f Filter) {
 	// if the whole for loop went through then pos should be 0 now. So new
 	// filter will be added add pos 1, right after the source.
 
-	f.SetSource(p[pos])
-	if pos < len(p)-1 {
-		p[pos+1].SetSource(f)
-		f.SetSource(p[pos])
+	f.SetSource((*pp)[pos])
+	if pos < len(*pp)-1 {
+		(*pp)[pos+1].SetSource(f)
 		// insert right after fm.filters[pos]
-		p = append(p[:pos+2], p[pos+1:]...)
-		p[pos+1] = f
+		*pp = append((*pp)[:pos+2], (*pp)[pos+1:]...)
+		(*pp)[pos+1] = f
 	} else {
-		*pp = append(*pp, f) // use pointer to silence static analyzer
+		*pp = append(*pp, f)
 	}
 }
 
 func (pp *Pipeline) Remove(f Filter) error {
-	p := *pp
 	pipelineMutex.Lock()
 	defer pipelineMutex.Unlock()
-	if len(p) <= 2 {
+	if len(*pp) <= 2 {
 		return ErrNotEnoughPanels
 	}
-	for i, filter := range p {
+	for i, filter := range *pp {
 		if filter == f {
 			fail.If(i == 0, "Cannot remove source from pipeline")
-			p = append(p[:i], p[i+1:]...)
-			if i < len(p) {
-				p[i].SetSource(p[i-1])
+			*pp = append((*pp)[:i], (*pp)[i+1:]...)
+			if i < len(*pp) {
+				(*pp)[i].SetSource((*pp)[i-1])
 			}
 			return nil
 		}
@@ -133,10 +130,9 @@ func (pp *Pipeline) FindNonHiddenLine(lineNo int,
 }
 
 func (pp *Pipeline) Source() *Source {
-	p := *pp
 	pipelineMutex.Lock()
-	fail.If(len(p) < 1, "No source in filter stack!")
-	firstFilter := p[0]
+	fail.If(len(*pp) < 1, "No source in filter stack!")
+	firstFilter := (*pp)[0]
 	pipelineMutex.Unlock()
 
 	source, ok := firstFilter.(*Source)
@@ -145,14 +141,13 @@ func (pp *Pipeline) Source() *Source {
 }
 
 func (pp *Pipeline) OutputFilter() (Filter, error) {
-	p := *pp
 	pipelineMutex.Lock()
 	defer pipelineMutex.Unlock()
-	if len(p) == 0 {
+	if len(*pp) == 0 {
 		return nil, fmt.Errorf("pipeline empty")
 	}
 
-	return p[len((*pp))-1], nil
+	return (*pp)[len((*pp))-1], nil
 }
 
 func (pp *Pipeline) DateFilter() (*DateFilter, error) {
