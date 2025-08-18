@@ -21,10 +21,6 @@ func NewColoredSelect(options []string) *ColoredSelect {
 	return s
 }
 
-func (s *ColoredSelect) SetOptions(options []string) {
-	s.Select.Options = options
-}
-
 func (s *ColoredSelect) SetColorIndex(colorIndex uint8) {
 	s.colorIndex = colorIndex
 }
