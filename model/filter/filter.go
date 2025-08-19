@@ -14,12 +14,11 @@ type Filter interface {
 
 	SetKey(name string, key string) error
 	SetColorIndex(colorIndex uint8)
-	SetMode(mode FilterMode)
-	SetCaseSensitive(on bool) error
 }
 
 type FilterImpl struct {
-	source Filter
+	source     Filter
+	colorIndex uint8
 }
 
 func (f *FilterImpl) GetLine(lineNo int) (*lines.Line, error) {
@@ -43,20 +42,11 @@ func (f *FilterImpl) Length() int {
 	return f.source.Length()
 }
 
+func (f *FilterImpl) SetColorIndex(colorIndex uint8) {
+	f.colorIndex = colorIndex
+}
+
 func (f *FilterImpl) SetKey(name string, key string) error {
 	log.Panicln("SetKey() not implemented!")
 	return nil
-}
-
-func (f *FilterImpl) SetMode(mode FilterMode) {
-	log.Panicln("SetMode() not implemented!")
-}
-
-func (f *FilterImpl) SetCaseSensitive(caseSensitive bool) error {
-	log.Panicln("SetCaseSensitive() not implemented!")
-	return nil
-}
-
-func (f *FilterImpl) SetColorIndex(colorIndex uint8) {
-	log.Panicln("setColorIndex() not implemented!")
 }

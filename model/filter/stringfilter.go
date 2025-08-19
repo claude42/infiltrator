@@ -15,7 +15,6 @@ type StringFilter struct {
 	sync.Mutex
 	filterFunc        func(input string) (string, [][]int, bool)
 	filterFuncFactory StringFilterFuncFactory
-	colorIndex        uint8
 	mode              FilterMode
 	key               string
 	caseSensitive     bool
@@ -213,8 +212,4 @@ func (s *StringFilter) colorizeLine(line *lines.Line, indeces [][]int) {
 			line.ColorIndex[i] = s.colorIndex
 		}
 	}
-}
-
-func (s *StringFilter) SetColorIndex(colorIndex uint8) {
-	s.colorIndex = colorIndex
 }

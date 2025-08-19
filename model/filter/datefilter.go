@@ -122,7 +122,3 @@ func (d *DateFilter) getDateForLineNo(lineNo int) (time.Time, error) {
 
 	return d.calculateLineDate(line)
 }
-
-func (s *DateFilter) SetColorIndex(colorIndex uint8) {
-	// don't care, filter won't highlight anything
-}

@@ -271,12 +271,14 @@ func (fm *FilterManager) processCommand(command Command) {
 		fm.display.UnsetCurrentMatch()
 		fm.asyncRefreshScreenBuffer()
 	case CommandFilterModeUpdate:
-		command.Filter.SetMode(command.Mode)
+		stringFilter := command.Filter.(*filter.StringFilter)
+		stringFilter.SetMode(command.Mode)
 		fm.filters.InvalidateCaches()
 		fm.display.UnsetCurrentMatch()
 		fm.asyncRefreshScreenBuffer()
 	case CommandFilterCaseSensitiveUpdate:
-		err = command.Filter.SetCaseSensitive(command.CaseSensitive)
+		stringFilter := command.Filter.(*filter.StringFilter)
+		err = stringFilter.SetCaseSensitive(command.CaseSensitive)
 		fm.filters.InvalidateCaches()
 		fm.display.UnsetCurrentMatch()
 		fm.asyncRefreshScreenBuffer()
