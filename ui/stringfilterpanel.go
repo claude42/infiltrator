@@ -24,11 +24,11 @@ type StringFilterPanel struct {
 
 func NewStringFilterPanel(name string) *StringFilterPanel {
 	s := &StringFilterPanel{
-		ColoredPanel:  NewColoredPanel(name),
-		input:         NewFilterInput(name),
-		mode:          NewColoredSelect(filter.FilterModeStrings),
-		caseSensitive: NewColoredSelect(filter.CaseSensitiveStrings),
+		ColoredPanel: NewColoredPanel(name),
+		input:        NewFilterInput(name),
 	}
+	s.mode = NewColoredSelect(filter.FilterModeStrings, tcell.KeyCtrlS, s.toggleMode)
+	s.caseSensitive = NewColoredSelect(filter.CaseSensitiveStrings, tcell.KeyCtrlH, s.toggleCaseSensitive)
 	s.ColoredPanel.Add(s.input)
 	s.ColoredPanel.Add(s.mode)
 	s.ColoredPanel.Add(s.caseSensitive)
@@ -84,76 +84,22 @@ func (t *StringFilterPanel) Content() string {
 	return t.input.Content()
 }
 
-func (t *StringFilterPanel) HandleEvent(ev tcell.Event) bool {
-	if t.IsActive() {
-		switch ev := ev.(type) {
-		case *tcell.EventKey:
-			switch ev.Key() {
-			case tcell.KeyCtrlS:
-				t.toggleMode()
-				return true
-			case tcell.KeyCtrlH:
-				t.toggleCaseSensitive()
-				return true
-			}
-		case *tcell.EventMouse:
-			buttons := ev.Buttons()
-			if buttons&tcell.ButtonPrimary != 0 {
-				if t.mouseToggleMode(ev) {
-					return true
-				}
-				if t.mouseToggleCaseSensitive(ev) {
-					return true
-				}
-
-			}
-		}
-	}
-
-	return t.ColoredPanel.HandleEvent(ev)
-}
-
 func (t *StringFilterPanel) SetFilter(filter filter.Filter) {
 	t.ColoredPanel.SetFilter(filter)
 
 	t.input.SetFilter(filter)
 }
 
-func (t *StringFilterPanel) toggleMode() {
-	model.GetFilterManager().UpdateFilterMode(t.Filter(), filter.FilterMode(t.mode.NextOption()))
+func (t *StringFilterPanel) toggleMode(i int) {
+	model.GetFilterManager().UpdateFilterMode(t.Filter(), filter.FilterMode(i))
 
 	t.Render(true)
 }
 
-func (t *StringFilterPanel) mouseToggleMode(ev *tcell.EventMouse) bool {
-	mouseX, mouseY := ev.Position()
-	modeX, modeY := t.mode.Position()
-	if mouseX >= modeX && mouseX <= modeX+t.mode.Width() &&
-		mouseY == modeY {
-		t.toggleMode()
-		return true
-	} else {
-		return false
-	}
-}
-
-func (t *StringFilterPanel) toggleCaseSensitive() {
-	model.GetFilterManager().UpdateFilterCaseSensitiveUpdate(t.Filter(), t.caseSensitive.NextOption() != 0)
+func (t *StringFilterPanel) toggleCaseSensitive(i int) {
+	model.GetFilterManager().UpdateFilterCaseSensitiveUpdate(t.Filter(), i != 0)
 
 	t.Render(true)
-}
-
-func (t *StringFilterPanel) mouseToggleCaseSensitive(ev *tcell.EventMouse) bool {
-	mouseX, mouseY := ev.Position()
-	caseSensitiveX, caseSensitiveY := t.caseSensitive.Position()
-	if mouseX >= caseSensitiveX &&
-		mouseX <= caseSensitiveX+t.caseSensitive.Width() &&
-		mouseY == caseSensitiveY {
-		t.toggleCaseSensitive()
-		return true
-	} else {
-		return false
-	}
 }
 
 func (t *StringFilterPanel) Mode() filter.FilterMode {

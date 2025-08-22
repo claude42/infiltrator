@@ -11,9 +11,9 @@ type ColoredSelect struct {
 	colorIndex uint8
 }
 
-func NewColoredSelect(options []string) *ColoredSelect {
+func NewColoredSelect(options []string, key tcell.Key, do func(int)) *ColoredSelect {
 	s := &ColoredSelect{
-		Select: *components.NewSelect(options),
+		Select: *components.NewSelect(options, key, do),
 	}
 
 	s.StyleUsing(s)

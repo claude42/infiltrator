@@ -14,13 +14,15 @@ type Select struct {
 	Options  []string
 	selected int
 
+	key tcell.Key
+	do  func(int)
+
 	OldStyler     Styler
 	CurrentStyler Styler
 }
 
-func NewSelect(options []string) *Select {
-	s := &Select{}
-	s.Options = options
+func NewSelect(options []string, key tcell.Key, do func(int)) *Select {
+	s := &Select{Options: options, key: key, do: do}
 	// just to set the initial width correctly, mb not even necessary?!
 	s.Resize(-1, -1, -1, -1)
 	s.StyleUsing(s)
@@ -109,4 +111,28 @@ func (s *Select) StyleUsing(styler Styler) {
 		s.OldStyler = s.CurrentStyler
 	}
 	s.CurrentStyler = styler
+}
+
+func (s *Select) HandleEvent(ev tcell.Event) bool {
+	if !s.IsActive() {
+		return false
+	}
+	switch ev := ev.(type) {
+	case *tcell.EventKey:
+		if ev.Key() == s.key {
+			s.do(s.NextOption())
+			return true
+		}
+	case *tcell.EventMouse:
+		buttons := ev.Buttons()
+		if buttons&tcell.ButtonPrimary != 0 {
+			mouseX, mouseY := ev.Position()
+			if mouseX >= s.x && mouseX <= s.x+s.width &&
+				mouseY == s.y {
+				s.do(s.NextOption())
+				return true
+			}
+		}
+	}
+	return false
 }
