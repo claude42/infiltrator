@@ -2,7 +2,6 @@ package components
 
 import (
 	"fmt"
-	"log"
 
 	"github.com/claude42/infiltrator/util"
 	"github.com/gdamore/tcell/v2"
@@ -37,7 +36,6 @@ func (s *Select) Width() int {
 }
 
 func (s *Select) SetOptions(options []string) {
-	log.Printf("SetOptions(%+v)", options)
 	s.Options = options
 }
 
