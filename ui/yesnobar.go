@@ -4,13 +4,11 @@ import (
 	"log"
 
 	"github.com/claude42/infiltrator/components"
-	"github.com/claude42/infiltrator/util"
 	"github.com/gdamore/tcell/v2"
 )
 
 type YesNoBar struct {
 	components.ComponentImpl
-	util.Observable
 
 	prompt  string
 	yesFunc func()

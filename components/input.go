@@ -236,7 +236,7 @@ func (i *InputImpl) checkBoundaries() {
 }
 
 func (i *InputImpl) DefaultUpdateWatchers() {
-	ev := NewEventText(string(i.content))
+	ev := NewEventText(string(i.content), i)
 	// consumed := i.PostEvent(ev)
 	i.PostEvent(ev)
 

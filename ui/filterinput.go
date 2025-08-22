@@ -68,7 +68,7 @@ func (fi *FilterInput) HandleEvent(ev tcell.Event) bool {
 		case tcell.KeyEnter:
 			// posting this globally makes things easier but not sure if it's
 			// the right thing to do
-			screen.PostEvent(NewEventPressedEnterInInputField())
+			screen.PostEvent(NewEventPressedEnterInInputField(fi))
 			model.GetFilterManager().FindMatch(1)
 			return true
 		case tcell.KeyUp:

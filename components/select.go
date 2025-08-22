@@ -9,6 +9,7 @@ import (
 
 type Select struct {
 	ComponentImpl
+	util.ObservableImpl
 
 	Options  []string
 	selected int

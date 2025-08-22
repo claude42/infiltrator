@@ -11,6 +11,14 @@ type Observable interface {
 	Unwatch(eh tcell.EventHandler)
 }
 
+type ObservableIgnore struct{}
+
+func (o *ObservableIgnore) Watch(eh tcell.EventHandler) {}
+
+func (o *ObservableIgnore) Unwatch(eh tcell.EventHandler) {}
+
+func (o *ObservableIgnore) PostEvent(ev tcell.Event) bool { return false }
+
 type ObservableImpl struct {
 	sync.Mutex
 	watchers map[tcell.EventHandler]struct{}

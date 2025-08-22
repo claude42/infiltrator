@@ -81,6 +81,6 @@ type EventBusySpinnerUpdate struct {
 
 func NewEventBusySpinnerUpdate(busyState State, percentage int) *EventBusySpinnerUpdate {
 	ev := &EventBusySpinnerUpdate{BusyState: busyState, BusyPercentage: percentage}
-	ev.EventImpl.SetWhen()
+	ev.EventImpl.SetEventNow()
 	return ev
 }

@@ -12,7 +12,7 @@ type EventDisplay struct {
 
 func NewEventDisplay(display Display) *EventDisplay {
 	ev := &EventDisplay{Display: display}
-	ev.EventImpl.SetWhen()
+	ev.EventImpl.SetEventNow()
 	return ev
 }
 
@@ -25,7 +25,7 @@ type EventError struct {
 
 func NewEventError(beep bool, errorMessage string) *EventError {
 	ev := &EventError{Beep: beep, ErrorMessage: errorMessage}
-	ev.EventImpl.SetWhen()
+	ev.EventImpl.SetEventNow()
 	return ev
 }
 
@@ -38,7 +38,7 @@ type EventFileChanged struct {
 
 func NewEventFileChanged(length int, percentage int) *EventFileChanged {
 	ev := &EventFileChanged{length: length, percentage: percentage}
-	ev.EventImpl.SetWhen()
+	ev.EventImpl.SetEventNow()
 	return ev
 }
 

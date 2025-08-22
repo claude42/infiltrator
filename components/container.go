@@ -3,6 +3,7 @@ package components
 import (
 	"sync"
 
+	"github.com/claude42/infiltrator/fail"
 	"github.com/gdamore/tcell/v2"
 )
 
@@ -25,10 +26,13 @@ func (c *ContainerImpl) Add(component Component) {
 		c.contained = make(map[Component]struct{})
 	})
 	c.contained[component] = struct{}{}
+	component.Watch(c)
 }
 
 func (c *ContainerImpl) Remove(component Component) {
+	fail.IfNil(c.contained, "ContainerImpl: Remove called on uninitialized container")
 	delete(c.contained, component)
+	component.Unwatch(c)
 }
 
 func (c *ContainerImpl) Contained() map[Component]struct{} {

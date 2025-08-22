@@ -19,10 +19,12 @@ type Component interface {
 	Height() int
 
 	util.EventHandler
+	util.Observable
 }
 
 type ComponentImpl struct {
 	util.EventHandlerIgnoreImpl
+	util.ObservableIgnore
 	x, y, width, height int
 
 	active  bool

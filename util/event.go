@@ -8,14 +8,13 @@ import (
 
 type Event interface {
 	tcell.Event
-	When() time.Time
 }
 
 type EventImpl struct {
 	t time.Time
 }
 
-func (ev *EventImpl) SetWhen() {
+func (ev *EventImpl) SetEventNow() {
 	ev.t = time.Now()
 }
 

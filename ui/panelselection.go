@@ -74,5 +74,5 @@ func (p *PanelSelection) SetActive(active bool) {
 		popupState = PopupNone
 	}
 
-	GetScreen().PostEvent(NewEventPopupStateChanged(popupState))
+	GetScreen().PostEvent(NewEventPopupStateChanged(popupState, p))
 }

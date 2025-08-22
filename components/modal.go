@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/claude42/infiltrator/model"
+	"github.com/claude42/infiltrator/util"
 	"github.com/gdamore/tcell/v2"
 )
 
@@ -23,6 +24,7 @@ type Modal interface {
 
 type ModalImpl struct {
 	ContainerImpl
+	util.ObservableImpl
 
 	title        string
 	orientation  Orientation
