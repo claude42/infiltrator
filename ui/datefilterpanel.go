@@ -76,33 +76,27 @@ func (d *DateFilterPanel) HandleEvent(ev tcell.Event) bool {
 		return false
 	}
 
-	switch ev := ev.(type) {
-	case *tcell.EventKey:
-		switch ev.Key() {
-		case tcell.KeyTab:
-			if d.from.IsActive() {
-				d.from.SetActive(false)
-				d.to.SetActive(true)
-				return true
-			}
-		case tcell.KeyBacktab:
-			if d.to.IsActive() {
-				d.from.SetActive(true)
-				d.to.SetActive(false)
-				return true
+	if d.IsActive() {
+		switch ev := ev.(type) {
+		case *tcell.EventKey:
+			switch ev.Key() {
+			case tcell.KeyTab:
+				if d.from.IsActive() {
+					d.from.SetActive(false)
+					d.to.SetActive(true)
+					return true
+				}
+			case tcell.KeyBacktab:
+				if d.to.IsActive() {
+					d.from.SetActive(true)
+					d.to.SetActive(false)
+					return true
+				}
 			}
 		}
 	}
 
-	if d.from.IsActive() && d.from.HandleEvent(ev) {
-		return true
-	}
-
-	if d.to.IsActive() && d.to.HandleEvent(ev) {
-		return true
-	}
-
-	return false
+	return d.ColoredPanel.HandleEvent(ev)
 }
 
 func (d *DateFilterPanel) SetActive(active bool) {

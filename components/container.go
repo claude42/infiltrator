@@ -2,6 +2,8 @@ package components
 
 import (
 	"sync"
+
+	"github.com/gdamore/tcell/v2"
 )
 
 type Container interface {
@@ -27,6 +29,10 @@ func (c *ContainerImpl) Add(component Component) {
 
 func (c *ContainerImpl) Remove(component Component) {
 	delete(c.contained, component)
+}
+
+func (c *ContainerImpl) Contained() map[Component]struct{} {
+	return c.contained
 }
 
 func (c *ContainerImpl) SetActive(active bool) {
@@ -61,4 +67,18 @@ func (c *ContainerImpl) Render(updateScreen bool) {
 	if updateScreen {
 		Screen.Show()
 	}
+}
+
+func (c *ContainerImpl) HandleEvent(ev tcell.Event) bool {
+	if !c.IsActive() {
+		return false
+	}
+
+	for i := range c.contained {
+		if i.HandleEvent(ev) {
+			return true
+		}
+	}
+
+	return false
 }

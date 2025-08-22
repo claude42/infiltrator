@@ -26,40 +26,38 @@ func NewPanelSelection() *PanelSelection {
 }
 
 func (p *PanelSelection) HandleEvent(ev tcell.Event) bool {
-	if !p.IsActive() {
-		return false
-	}
-
-	switch ev := ev.(type) {
-	case *tcell.EventKey:
-		switch ev.Key() {
-		case tcell.KeyRune:
-			switch ev.Rune() {
-			case 'r':
+	if p.IsActive() {
+		switch ev := ev.(type) {
+		case *tcell.EventKey:
+			switch ev.Key() {
+			case tcell.KeyRune:
+				switch ev.Rune() {
+				case 'r':
+					window.CreateAndAddPanel(config.FilterTypeRegex)
+					window.SetPanelsOpen(true)
+					p.Hide()
+					return true
+				case 'k':
+					window.CreateAndAddPanel(config.FilterTypeKeyword)
+					window.SetPanelsOpen(true)
+					p.Hide()
+					return true
+				case 'd':
+					window.CreateAndAddPanel(config.FilterTypeDate)
+					window.SetPanelsOpen(true)
+					p.Hide()
+					return true
+				}
+				return true
+			case tcell.KeyEscape:
+				p.Hide()
+				return true
+			case tcell.KeyEnter:
 				window.CreateAndAddPanel(config.FilterTypeRegex)
 				window.SetPanelsOpen(true)
 				p.Hide()
 				return true
-			case 'k':
-				window.CreateAndAddPanel(config.FilterTypeKeyword)
-				window.SetPanelsOpen(true)
-				p.Hide()
-				return true
-			case 'd':
-				window.CreateAndAddPanel(config.FilterTypeDate)
-				window.SetPanelsOpen(true)
-				p.Hide()
-				return true
 			}
-			return true
-		case tcell.KeyEscape:
-			p.Hide()
-			return true
-		case tcell.KeyEnter:
-			window.CreateAndAddPanel(config.FilterTypeRegex)
-			window.SetPanelsOpen(true)
-			p.Hide()
-			return true
 		}
 	}
 

@@ -49,17 +49,13 @@ func (m *ModalImpl) SetTitle(title string) {
 }
 
 func (m *ModalImpl) HandleEvent(ev tcell.Event) bool {
-	// if !m.active {
-	// 	return false
-	// }
-
 	switch ev.(type) {
 	case *model.EventDisplay:
 		m.Render(true)
 		return false
 	}
 
-	return false
+	return m.ContainerImpl.HandleEvent(ev)
 }
 
 func (m *ModalImpl) Resize(x, y, width, height int) {

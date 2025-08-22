@@ -2,7 +2,6 @@ package ui
 
 import (
 	"fmt"
-	"log"
 
 	"github.com/claude42/infiltrator/components"
 	"github.com/claude42/infiltrator/fail"
@@ -86,42 +85,32 @@ func (t *StringFilterPanel) Content() string {
 }
 
 func (t *StringFilterPanel) HandleEvent(ev tcell.Event) bool {
-	if !t.IsActive() {
-		return false
-	}
-	huch, ok := ev.(*tcell.EventKey)
-	if ok {
-		log.Printf("StringFilterPanel handling %+v", huch)
-	}
-
-	switch ev := ev.(type) {
-	case *tcell.EventKey:
-		switch ev.Key() {
-		case tcell.KeyCtrlS:
-			t.toggleMode()
-			return true
-		case tcell.KeyCtrlH:
-			t.toggleCaseSensitive()
-			return true
-		}
-	case *tcell.EventMouse:
-		buttons := ev.Buttons()
-		if buttons&tcell.ButtonPrimary != 0 {
-			if t.mouseToggleMode(ev) {
+	if t.IsActive() {
+		switch ev := ev.(type) {
+		case *tcell.EventKey:
+			switch ev.Key() {
+			case tcell.KeyCtrlS:
+				t.toggleMode()
+				return true
+			case tcell.KeyCtrlH:
+				t.toggleCaseSensitive()
 				return true
 			}
-			if t.mouseToggleCaseSensitive(ev) {
-				return true
-			}
+		case *tcell.EventMouse:
+			buttons := ev.Buttons()
+			if buttons&tcell.ButtonPrimary != 0 {
+				if t.mouseToggleMode(ev) {
+					return true
+				}
+				if t.mouseToggleCaseSensitive(ev) {
+					return true
+				}
 
+			}
 		}
 	}
 
-	if t.input != nil && t.input.HandleEvent(ev) {
-		return true
-	}
-
-	return false
+	return t.ColoredPanel.HandleEvent(ev)
 }
 
 func (t *StringFilterPanel) SetFilter(filter filter.Filter) {
@@ -129,14 +118,6 @@ func (t *StringFilterPanel) SetFilter(filter filter.Filter) {
 
 	t.input.SetFilter(filter)
 }
-
-// func (t *StringFilterPanel) WatchInput(eh tcell.EventHandler) {
-// 	if t.input == nil {
-// 		log.Panicln("StringFilterPanel.WatchInput() called without input field!")
-// 		return
-// 	}
-// 	t.input.Watch(eh)
-// }
 
 func (t *StringFilterPanel) toggleMode() {
 	model.GetFilterManager().UpdateFilterMode(t.Filter(), filter.FilterMode(t.mode.NextOption()))

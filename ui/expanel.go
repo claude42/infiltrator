@@ -69,24 +69,18 @@ func (e *ExPanel) SetPrompt(prompt string) {
 }
 
 func (e *ExPanel) HandleEvent(ev tcell.Event) bool {
-	if !e.IsActive() {
-		return false
-	}
-
-	switch ev := ev.(type) {
-	case *tcell.EventKey:
-		switch ev.Key() {
-		case tcell.KeyEscape:
-			e.SetActive(false)
-			return true
+	if e.IsActive() {
+		switch ev := ev.(type) {
+		case *tcell.EventKey:
+			switch ev.Key() {
+			case tcell.KeyEscape:
+				e.SetActive(false)
+				return true
+			}
 		}
 	}
 
-	if e.input != nil && e.input.HandleEvent(ev) {
-		return true
-	}
-
-	return false
+	return e.PanelImpl.HandleEvent(ev)
 }
 
 // func (t *StringFilterPanel) WatchInput(eh tcell.EventHandler) {

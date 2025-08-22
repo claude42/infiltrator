@@ -64,11 +64,6 @@ func (p *PanelImpl) Style() tcell.Style {
 	}
 }
 
-// ignore all events
-func (p *PanelImpl) HandleEvent(ev tcell.Event) bool {
-	return false
-}
-
 func (p *PanelImpl) SetFilter(filter filter.Filter) {
 	p.filter = filter
 }

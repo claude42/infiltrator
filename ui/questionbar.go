@@ -64,26 +64,21 @@ func (q *QuestionBar) Render(updateScreen bool) {
 }
 
 func (q *QuestionBar) HandleEvent(ev tcell.Event) bool {
-	if !q.IsActive() {
-		return false
-	}
-
-	switch ev := ev.(type) {
-	case *tcell.EventKey:
-		switch ev.Key() {
-		case tcell.KeyEscape:
-			q.closeBar()
-			return true
-		case tcell.KeyEnter:
-			q.closeBar()
-			q.enterFunc(q.input.Content())
+	if q.IsActive() {
+		switch ev := ev.(type) {
+		case *tcell.EventKey:
+			switch ev.Key() {
+			case tcell.KeyEscape:
+				q.closeBar()
+				return true
+			case tcell.KeyEnter:
+				q.closeBar()
+				q.enterFunc(q.input.Content())
+			}
 		}
 	}
 
-	if q.input != nil && q.input.HandleEvent(ev) {
-		return true
-	}
-	return false
+	return q.PanelImpl.HandleEvent(ev)
 }
 
 func (q *QuestionBar) closeBar() {

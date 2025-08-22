@@ -41,5 +41,5 @@ type EventHandlerPanicImpl struct {
 }
 
 func (eh *EventHandlerPanicImpl) HandleEvent(tcell.Event) bool {
-	panic("HandlEvent() implementation missing!")
+	panic("HandleEvent() implementation missing!")
 }

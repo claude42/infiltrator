@@ -22,7 +22,7 @@ type Component interface {
 }
 
 type ComponentImpl struct {
-	util.EventHandlerPanicImpl
+	util.EventHandlerIgnoreImpl
 	x, y, width, height int
 
 	active  bool
