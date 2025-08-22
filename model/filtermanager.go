@@ -78,7 +78,7 @@ func (fm *FilterManager) ReadFromFile(filePath string) {
 	readCtx, fm.readerCancelFunc = context.WithCancel(fm.ctx)
 	fm.wg.Add(1)
 	go reader.GetReader().ReadFromFile(readCtx, fm.wg, fm.quit, filePath,
-		fm.contentUpdate, config.UserCfg().Follow)
+		fm.contentUpdate, config.User().Follow)
 	// GetLoremIpsumReader().Read(fm.contentUpdate)
 }
 
@@ -129,7 +129,7 @@ func (fm *FilterManager) processContentUpdate(newLines []*lines.Line) {
 	// If we're in Follow mode we'll automatically jump to the new end of the
 	// file - but only in case we're already at the end
 	goToEnd := false
-	if config.UserCfg().Follow && fm.alreadyAtTheEnd() {
+	if config.User().Follow && fm.alreadyAtTheEnd() {
 		goToEnd = true
 	}
 
@@ -504,7 +504,7 @@ func (fm *FilterManager) internalSetCurrentLine(newCurrentLine int) {
 //   - if currently not following
 //     --> bring display to the end and start following
 func (fm *FilterManager) internalToggleFollowMode() {
-	cfg := config.UserCfg()
+	cfg := config.User()
 
 	if cfg.Follow {
 		if fm.alreadyAtTheEnd() {

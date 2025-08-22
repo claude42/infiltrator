@@ -17,12 +17,12 @@ func readFormatsFile() {
 	formatsFile, err := xdg.ConfigFile(appName + formatsFileName)
 	fail.OnError(err, "Can't determine formats File")
 
-	err = instance.kFormats.Load(file.Provider(formatsFile), toml.Parser())
+	err = cm.kFormats.Load(file.Provider(formatsFile), toml.Parser())
 	if err != nil && errors.Is(err, os.ErrNotExist) {
 		return
 	}
 	fail.OnError(err, "Loading formats file failed")
 
-	err = instance.kFormats.Unmarshal("", &instance.formats)
+	err = cm.kFormats.Unmarshal("", &cm.formats)
 	fail.OnError(err, "Error unmarshalling formats file")
 }

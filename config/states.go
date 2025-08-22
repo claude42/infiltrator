@@ -11,20 +11,18 @@ import (
 	"github.com/knadh/koanf/providers/file"
 )
 
-const historyFileName = "/history.toml"
-
 func AddToHistory(filter string, value string) {
-	filterHistory := instance.histories[filter]
+	filterHistory := cm.histories[filter]
 	util.Remove(filterHistory, value)
 	filterHistory = append([]string{value}, filterHistory[:min(len(filterHistory), 99)]...)
-	instance.histories[filter] = filterHistory
+	cm.histories[filter] = filterHistory
 }
 
 func FromHistory(filter string, index int) (string, error) {
-	fail.If(instance == nil, "No config manager?!")
-	fail.If(instance.histories == nil, "No histories?!")
+	fail.If(cm == nil, "No config manager?!")
+	fail.If(cm.histories == nil, "No histories?!")
 
-	history, ok := instance.histories[filter]
+	history, ok := cm.histories[filter]
 	if !ok {
 		return "", util.ErrNotFound
 	}
@@ -40,14 +38,14 @@ func readStateFile() {
 	stateFile, err := xdg.StateFile(appName + historyFileName)
 	fail.OnError(err, "Can't determine State File")
 
-	err = instance.kState.Load(file.Provider(stateFile), toml.Parser())
+	err = cm.kState.Load(file.Provider(stateFile), toml.Parser())
 	if err != nil && errors.Is(err, os.ErrNotExist) {
 		return
 	}
 	fail.OnError(err, "Loading state file failed")
 
 	for _, historyName := range Histories {
-		instance.histories[historyName] = instance.kState.Strings((historyName + ".history"))
+		cm.histories[historyName] = cm.kState.Strings((historyName + ".history"))
 	}
 
 	// cm.keywordHistory = append(cm.keywordHistory, "hurahagl")
@@ -59,11 +57,11 @@ func WriteStateFile() error {
 	fail.OnError(err, "Can't determine State File")
 
 	for _, historyName := range Histories {
-		err = instance.kState.Set(historyName+".history", instance.histories[historyName])
+		err = cm.kState.Set(historyName+".history", cm.histories[historyName])
 		fail.OnError(err, "Error storing new history lines")
 	}
 
-	marshalledBytes, err := instance.kState.Marshal(toml.Parser())
+	marshalledBytes, err := cm.kState.Marshal(toml.Parser())
 	fail.OnError(err, "Error marshalling data")
 
 	err = os.MkdirAll(xdg.StateHome+"/"+appName, 0755)

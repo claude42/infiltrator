@@ -7,6 +7,7 @@ type FilterType int
 const (
 	appName            = "infiltrator"
 	mainConfigFileName = "/config.toml"
+	historyFileName    = "/history.toml"
 	presetDir          = "/presets/"
 )
 

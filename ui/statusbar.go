@@ -68,7 +68,7 @@ func (s *Statusbar) Render(updateScreen bool) {
 
 	if s.panelsOpen {
 		s.renderPanelOpenStatusBar()
-	} else if config.UserCfg().Follow {
+	} else if config.User().Follow {
 		s.renderFollowStausBar()
 	} else {
 		s.renderDefaultStatusBar()
@@ -117,7 +117,7 @@ func (s *Statusbar) renderPanelOpenStatusBar() {
 func (s *Statusbar) renderFileName() {
 	const spacer = 4
 	const percentLength = 9
-	fileNameStr := fmt.Sprintf("\"%s\"", config.UserCfg().FileName)
+	fileNameStr := fmt.Sprintf("\"%s\"", config.User().FileName)
 	length := len(fileNameStr)
 	start := s.Width() - length - spacer - percentLength
 

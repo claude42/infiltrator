@@ -70,7 +70,7 @@ func (v *View) renderLine(line *lines.Line, y int) {
 	str := line.Str
 	start := 0
 	matched := line.No == v.CurrentDisplay.CurrentMatch
-	cfg := config.UserCfg()
+	cfg := config.User()
 
 	if cfg.Lines {
 		start = v.renderLineNumber(line, y, matched)

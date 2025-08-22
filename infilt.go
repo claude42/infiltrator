@@ -26,7 +26,7 @@ func main() {
 }
 
 func run() error {
-	cfg := config.UserCfg()
+	cfg := config.User()
 	err := config.Load()
 	if err != nil {
 		return err

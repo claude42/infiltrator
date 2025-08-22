@@ -65,7 +65,7 @@ func (r *Reader) ReadFromFile(ctx context.Context, wg *sync.WaitGroup,
 		return
 	}
 
-	if !config.UserCfg().Follow {
+	if !config.User().Follow {
 		return
 	}
 

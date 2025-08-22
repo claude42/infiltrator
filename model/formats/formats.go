@@ -49,8 +49,8 @@ nextLine:
 	}
 
 	if float64(maxResult)/float64(n) > 0.9 {
-		config.UserCfg().FileFormat = fileFormat
-		config.UserCfg().FileFormatRegex = regexs[fileFormat]
+		config.User().FileFormat = fileFormat
+		config.User().FileFormatRegex = regexs[fileFormat]
 	}
 }
 

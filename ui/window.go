@@ -430,7 +430,7 @@ func (w *Window) CreatePresetPanels() {
 }
 
 func (w *Window) savePreset() {
-	ShowQuestionBar("Preset name: ", config.UserCfg().Preset, func(presetName string) {
+	ShowQuestionBar("Preset name: ", config.User().Preset, func(presetName string) {
 		presetFileName := config.BuildFullPresetPath(presetName)
 
 		_, err := os.Stat(presetFileName)
