@@ -44,7 +44,11 @@ func Remove(component Component) {
 
 func RenderAll(updateScreen bool) {
 	for _, c := range stackedComponents {
-		c.component.Render(updateScreen)
+		c.component.Render(false)
+	}
+
+	if updateScreen {
+		Screen.Show()
 	}
 }
 

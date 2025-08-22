@@ -23,7 +23,7 @@ Available CTRL combination
 * f: page down
 * g:
 * h: change case sensitivity
-* i:
+* i: TAB
 * j:
 * k:
 * l: redraw

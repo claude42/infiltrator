@@ -13,16 +13,16 @@ import (
 const formatsFileName = "/formats.toml"
 
 // TODO error handling
-func (cm *ConfigManager) ReadFormatsFile() {
+func readFormatsFile() {
 	formatsFile, err := xdg.ConfigFile(appName + formatsFileName)
 	fail.OnError(err, "Can't determine formats File")
 
-	err = cm.kFormats.Load(file.Provider(formatsFile), toml.Parser())
+	err = instance.kFormats.Load(file.Provider(formatsFile), toml.Parser())
 	if err != nil && errors.Is(err, os.ErrNotExist) {
 		return
 	}
 	fail.OnError(err, "Loading formats file failed")
 
-	err = cm.kFormats.Unmarshal("", &cm.Formats)
+	err = instance.kFormats.Unmarshal("", &instance.formats)
 	fail.OnError(err, "Error unmarshalling formats file")
 }

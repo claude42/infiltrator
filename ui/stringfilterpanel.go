@@ -50,25 +50,14 @@ func (t *StringFilterPanel) Render(updateScreen bool) {
 		return
 	}
 
+	t.ColoredPanel.Render(false)
+
 	style := t.ColoredPanel.CurrentStyler.Style()
 
 	header := fmt.Sprintf(" %s", t.Name())
 	_, y := t.Position()
-	x := components.RenderText(0, y, header, style.Reverse(true))
-	components.DrawChars(x, y, headerWidth-x, ' ', style.Reverse((true)))
+	_ = components.RenderText(0, y, header, style.Reverse(true))
 	components.RenderText(headerWidth, y, "▶ ", style)
-
-	if t.input != nil {
-		t.input.Render(updateScreen)
-	}
-
-	if t.mode != nil {
-		t.mode.Render(updateScreen)
-	}
-
-	if t.caseSensitive != nil {
-		t.caseSensitive.Render(updateScreen)
-	}
 
 	if updateScreen {
 		screen.Show()
@@ -90,6 +79,10 @@ func (t *StringFilterPanel) SetContent(content string) {
 	fail.IfNil(t.input, "StringFilterPanel.SetContent() called without input field!")
 
 	t.input.SetContent(content)
+}
+
+func (t *StringFilterPanel) Content() string {
+	return t.input.Content()
 }
 
 func (t *StringFilterPanel) HandleEvent(ev tcell.Event) bool {
@@ -189,6 +182,10 @@ func (t *StringFilterPanel) Mode() filter.FilterMode {
 func (t *StringFilterPanel) SetMode(mode filter.FilterMode) {
 	t.mode.SetSelectedIndex(int(mode))
 	model.GetFilterManager().UpdateFilterMode(t.Filter(), mode)
+}
+
+func (t *StringFilterPanel) CaseSensitive() bool {
+	return t.caseSensitive.SelectedIndex() == 1
 }
 
 func (t *StringFilterPanel) SetCaseSensitive(caseSensitive bool) {

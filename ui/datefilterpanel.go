@@ -54,14 +54,6 @@ func (d *DateFilterPanel) Render(updateScreen bool) {
 	x = components.RenderText(55, y, "To ", style.Reverse(true))
 	components.RenderText(x, y, "▶ ", style)
 
-	if d.from != nil {
-		d.from.Render(updateScreen)
-	}
-
-	if d.to != nil {
-		d.to.Render(updateScreen)
-	}
-
 	if updateScreen {
 		screen.Show()
 	}
@@ -147,6 +139,14 @@ func (d *DateFilterPanel) SetFrom(from string) {
 	d.from.SetContent(from)
 }
 
+func (d *DateFilterPanel) From() string {
+	return d.from.Content()
+}
+
 func (d *DateFilterPanel) SetTo(to string) {
 	d.to.SetContent(to)
+}
+
+func (d *DateFilterPanel) To() string {
+	return d.to.Content()
 }

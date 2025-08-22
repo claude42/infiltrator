@@ -31,7 +31,11 @@ func (c *ColoredPanel) Render(updateScreen bool) {
 	for i := range c.Height() {
 		components.DrawChars(x, y+i, c.Width(), ' ', style.Reverse(true))
 	}
-	// c.PanelImpl.Render(updateScreen)
+	c.PanelImpl.Render(false)
+
+	if updateScreen {
+		components.Screen.Show()
+	}
 }
 
 func (c *ColoredPanel) Style() tcell.Style {

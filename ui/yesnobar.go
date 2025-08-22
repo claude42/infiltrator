@@ -4,23 +4,22 @@ import (
 	"log"
 
 	"github.com/claude42/infiltrator/components"
+	"github.com/claude42/infiltrator/util"
 	"github.com/gdamore/tcell/v2"
 )
 
 type YesNoBar struct {
 	components.ComponentImpl
+	util.Observable
 
-	name    string
 	prompt  string
-	yesFunc func(name string)
-	noFunc  func(name string)
+	yesFunc func()
+	noFunc  func()
 }
 
-func ShowYesNoBar(name string, prompt string,
-	yesFunc func(name string), noFunc func(name string)) {
+func ShowYesNoBar(prompt string, yesFunc func(), noFunc func()) {
 
 	yn := &YesNoBar{
-		name:    name,
 		prompt:  prompt,
 		yesFunc: yesFunc,
 		noFunc:  noFunc,
@@ -72,28 +71,28 @@ func (yn *YesNoBar) HandleEvent(ev tcell.Event) bool {
 			switch ev.Rune() {
 			case 'y':
 				log.Println("Answered y")
-				yn.triggerClose(yn.yesFunc)
+				yn.closeBar(yn.yesFunc)
 				return true
 			case 'n':
-				yn.triggerClose(yn.noFunc)
+				yn.closeBar(yn.noFunc)
 				return true
 			}
 		case tcell.KeyEnter:
-			yn.triggerClose(yn.yesFunc)
+			yn.closeBar(yn.yesFunc)
 			return true
 		case tcell.KeyEscape:
-			yn.triggerClose(yn.noFunc)
+			yn.closeBar(yn.noFunc)
 			return true
 		}
 	}
 	return false
 }
 
-func (yn *YesNoBar) triggerClose(f func(name string)) {
+func (yn *YesNoBar) closeBar(f func()) {
 	yn.Hide()
 	components.Remove(yn)
 	if f != nil {
-		f(yn.name)
+		f()
 	}
 	window.Render()
 }

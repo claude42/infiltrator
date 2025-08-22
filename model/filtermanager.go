@@ -78,7 +78,7 @@ func (fm *FilterManager) ReadFromFile(filePath string) {
 	readCtx, fm.readerCancelFunc = context.WithCancel(fm.ctx)
 	fm.wg.Add(1)
 	go reader.GetReader().ReadFromFile(readCtx, fm.wg, fm.quit, filePath,
-		fm.contentUpdate, config.GetConfiguration().UserConfig.Main.Follow)
+		fm.contentUpdate, config.UserCfg().Follow)
 	// GetLoremIpsumReader().Read(fm.contentUpdate)
 }
 
@@ -129,7 +129,7 @@ func (fm *FilterManager) processContentUpdate(newLines []*lines.Line) {
 	// If we're in Follow mode we'll automatically jump to the new end of the
 	// file - but only in case we're already at the end
 	goToEnd := false
-	if config.GetConfiguration().UserConfig.Main.Follow && fm.alreadyAtTheEnd() {
+	if config.UserCfg().Follow && fm.alreadyAtTheEnd() {
 		goToEnd = true
 	}
 
@@ -149,7 +149,7 @@ func (fm *FilterManager) processContentUpdate(newLines []*lines.Line) {
 		fm.syncRefreshScreenBuffer()
 	}
 
-	config.GetConfiguration().PostEventFunc(NewEventFileChanged(length, fm.percentage()))
+	config.PostEventFunc(NewEventFileChanged(length, fm.percentage()))
 }
 
 func (fm *FilterManager) ScrollDown() {
@@ -229,21 +229,21 @@ func (fm *FilterManager) processCommand(command Command) {
 	switch command := command.(type) {
 	case CommandDown:
 		err = fm.internalScrollVertical(filter.DirectionDown)
-		config.GetConfiguration().PostEventFunc(NewEventDisplay(*fm.display))
+		config.PostEventFunc(NewEventDisplay(*fm.display))
 	case CommandUp:
 		err = fm.internalScrollVertical(filter.DirectionUp)
-		config.GetConfiguration().PostEventFunc(NewEventDisplay(*fm.display))
+		config.PostEventFunc(NewEventDisplay(*fm.display))
 	case CommandScrollHorizontal:
 		err = fm.internalScrollHorizontal(command.offset)
 	case CommandPgDown:
 		err = fm.internalScrollPage(filter.DirectionDown)
-		config.GetConfiguration().PostEventFunc(NewEventDisplay(*fm.display))
+		config.PostEventFunc(NewEventDisplay(*fm.display))
 	case CommandPgUp:
 		err = fm.internalScrollPage(filter.DirectionUp)
-		config.GetConfiguration().PostEventFunc(NewEventDisplay(*fm.display))
+		config.PostEventFunc(NewEventDisplay(*fm.display))
 	case CommandEnd:
 		fm.internalScrollEnd()
-		config.GetConfiguration().PostEventFunc(NewEventDisplay(*fm.display))
+		config.PostEventFunc(NewEventDisplay(*fm.display))
 	case CommandHome:
 		fm.internalScrollHome()
 		fm.syncRefreshScreenBuffer()
@@ -251,7 +251,7 @@ func (fm *FilterManager) processCommand(command Command) {
 		if refresh, _ := fm.internalFindNextMatch(command.direction); refresh {
 			fm.syncRefreshScreenBuffer()
 		} else {
-			config.GetConfiguration().PostEventFunc(NewEventDisplay(*fm.display))
+			config.PostEventFunc(NewEventDisplay(*fm.display))
 		}
 	case CommandAddFilter:
 		fm.filters.Add(command.Filter)
@@ -261,7 +261,7 @@ func (fm *FilterManager) processCommand(command Command) {
 		fm.syncRefreshScreenBuffer()
 	case CommandSetDisplayHeight:
 		fm.display.SetHeight(command.Lines)
-		config.GetConfiguration().PostEventFunc(NewEventDisplay(*fm.display))
+		config.PostEventFunc(NewEventDisplay(*fm.display))
 	case CommandSetCurrentLine:
 		fm.internalSetCurrentLine(command.Line)
 		fm.syncRefreshScreenBuffer()
@@ -289,7 +289,7 @@ func (fm *FilterManager) processCommand(command Command) {
 		fm.asyncRefreshScreenBuffer()
 	case CommandToggleFollowMode:
 		fm.internalToggleFollowMode()
-		config.GetConfiguration().PostEventFunc(NewEventDisplay(*fm.display))
+		config.PostEventFunc(NewEventDisplay(*fm.display))
 	default:
 		log.Panicf("Command %s not implemented!", command.commandString())
 	}
@@ -297,7 +297,7 @@ func (fm *FilterManager) processCommand(command Command) {
 	if err == util.ErrOutOfBounds || err == util.ErrNotFound ||
 		err == filter.ErrNotEnoughPanels || err == filter.ErrRegex {
 
-		config.GetConfiguration().PostEventFunc(NewEventError(true, ""))
+		config.PostEventFunc(NewEventError(true, ""))
 	} else if err != nil {
 		// TODO switch back on, problem was the regex errors ended up here
 		// log.Panicf("Unknwon error %v+", err)
@@ -388,7 +388,7 @@ func (fm *FilterManager) internalTail() {
 
 	fm.display.Percentage = GetFilterManager().percentage()
 
-	config.GetConfiguration().PostEventFunc(NewEventDisplay(*fm.display))
+	config.PostEventFunc(NewEventDisplay(*fm.display))
 }
 
 func (fm *FilterManager) internalScrollEnd() {
@@ -504,19 +504,19 @@ func (fm *FilterManager) internalSetCurrentLine(newCurrentLine int) {
 //   - if currently not following
 //     --> bring display to the end and start following
 func (fm *FilterManager) internalToggleFollowMode() {
-	cfg := config.GetConfiguration()
+	cfg := config.UserCfg()
 
-	if cfg.UserConfig.Main.Follow {
+	if cfg.Follow {
 		if fm.alreadyAtTheEnd() {
 			if !cfg.Stdin {
 				fm.readerCancelFunc()
 			}
-			cfg.UserConfig.Main.Follow = false
+			cfg.Follow = false
 		} else {
 			fm.internalScrollEnd()
 		}
 	} else {
-		cfg.UserConfig.Main.Follow = true
+		cfg.Follow = true
 		fm.internalTail()
 		if !cfg.Stdin {
 			fm.wg.Add(1)

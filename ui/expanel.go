@@ -41,6 +41,8 @@ func (e *ExPanel) Render(updateScreen bool) {
 		return
 	}
 
+	e.PanelImpl.Render(false)
+
 	style := e.PanelImpl.CurrentStyler.Style()
 
 	x, y := e.Position()
@@ -48,10 +50,6 @@ func (e *ExPanel) Render(updateScreen bool) {
 	fullPrompt := fmt.Sprint(e.prompt + ": ")
 
 	components.RenderText(x, y, fullPrompt, style)
-
-	if e.input != nil {
-		e.input.Render((updateScreen))
-	}
 
 	if updateScreen {
 		screen.Show()

@@ -13,8 +13,10 @@
             "program": "${workspaceFolder}",
             "args": ["-d",
                     "-l",
-                    "../realjournal"],
-            "console": "integratedTerminal"
+                    "../realjournal",
+                    "-p=examplepreset"],
+            "console": "integratedTerminal",
+            "buildFlags": ["-tags=debug"]
         }
     ]
 }

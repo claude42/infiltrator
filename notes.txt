@@ -337,3 +337,37 @@ func main() {
 
 	fmt.Println("Configuration successfully written to output.toml")
 }
+
+-----------
+
+type Process struct...
+
+func firstStep() {
+	OpenQestionBar(secondStep())
+}
+
+func secondStep() {
+	OpenYNBar(thirdStep())
+}
+
+func thirdStep() {
+	savePreset()
+}
+
+func addProcess(step func handleEvent(ev)) {
+	processSteps[len(processSteps)-1] = step
+	append
+	Think about it
+}
+
+-------------
+
+The Idiomatic Solution: koanf.Unmarshaler
+The koanf.Unmarshaler interface has a single method: UnmarshalKoanf(koanf *koanf.Koanf) error.
+
+When koanf unmarshals data into a struct, it will check if the struct implements this interface. If it does, koanf will call your UnmarshalKoanf method and give you the koanf instance for that part of the configuration. You can then manually call your setter methods to populate the struct.
+
+The Idiomatic Solution: koanf.Marshaler
+The koanf.Marshaler interface has a single method: MarshalKoanf() (map[string]any, error).
+
+A struct that implements this interface can manually access its private fields and put them into a map. koanf will then use the map that your method returns to marshal the data.

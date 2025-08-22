@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"os"
 	"runtime/debug"
-	"slices"
 	"sync"
 
 	"github.com/claude42/infiltrator/components"
@@ -74,6 +74,10 @@ func Setup() *Window {
 	// window.exPanel.SetActive(true)
 
 	setupScreen()
+
+	// ShowQuestionBar("Hello: ", "Claude", func(value string) {
+	// 	log.Printf("Did it %s", value)
+	// })
 
 	// ShowYesNoBar("todalo", "Hell (yes/no)?", func(name string) {
 	// 	log.Printf("You did it %s", name)
@@ -158,6 +162,9 @@ func (w *Window) EventLoop(quit chan<- string) bool {
 				quit <- "Good bye!"
 				close(quit)
 				return true
+			case 'S':
+				w.savePreset()
+				return false
 			}
 		case tcell.KeyBacktab:
 			err := w.switchPanel(-1)
@@ -308,6 +315,9 @@ func (w *Window) totalPanelHeight() int {
 }
 
 func (w *Window) AddPanel(newPanel components.Panel) error {
+	if newPanel == nil {
+		return nil
+	}
 	// TODO: return error if total height of panels would exceed screen height
 	w.BottomPanels = append(w.BottomPanels, newPanel)
 	components.Add(newPanel, 1)
@@ -412,48 +422,54 @@ func (w *Window) PanelsOopen() bool {
 }
 
 func (w *Window) CreatePresetPanels() {
-	cfg := config.GetConfiguration()
-	for _, panelConfig := range cfg.UserConfig.Panels {
-		switch panelConfig.Type {
-		case "regex":
-			w.createRegexPanel(panelConfig)
-		case "keyword":
-			w.createKeywordPanel(panelConfig)
-		case "date":
-			w.createDatePanel(panelConfig)
-		}
+	// cfg := config.GetConfiguration()
+	for _, panelConfig := range config.Panels() {
+		w.AddPanel(NewPanelWithConfig(&panelConfig))
 	}
 	w.resizeAndRedraw()
 }
 
-func (w *Window) createRegexPanel(panelConfig config.PanelTable) {
-	newPanel, ok := NewPanel(config.FilterTypeRegex).(*StringFilterPanel)
-	if !ok {
-		return
-	}
-	newPanel.SetContent(panelConfig.Key)
-	newPanel.SetMode(filter.FilterMode(slices.Index(filter.FilterModeStrings, panelConfig.Mode)))
-	newPanel.SetCaseSensitive(panelConfig.CaseSensitive)
-	w.AddPanel(newPanel)
+func (w *Window) savePreset() {
+	ShowQuestionBar("Preset name: ", config.UserCfg().Preset, func(presetName string) {
+		presetFileName := config.BuildFullPresetPath(presetName)
+
+		_, err := os.Stat(presetFileName)
+		if err != nil {
+			config.WritePreset(presetFileName)
+		}
+
+		ShowYesNoBar("File exists! Overwrite (y/n)?", func() {
+			w.copyPanelsToConfig()
+			config.WritePreset(presetFileName)
+		}, nil)
+	})
 }
 
-func (w *Window) createKeywordPanel(panelConfig config.PanelTable) {
-	newPanel, ok := NewPanel(config.FilterTypeKeyword).(*StringFilterPanel)
-	if !ok {
-		return
-	}
-	newPanel.SetContent(panelConfig.Key)
-	newPanel.SetMode(filter.FilterMode(slices.Index(filter.FilterModeStrings, panelConfig.Mode)))
-	newPanel.SetCaseSensitive(panelConfig.CaseSensitive)
-	w.AddPanel(newPanel)
-}
+func (w *Window) copyPanelsToConfig() {
+	// cfg := config.GetConfiguration()
+	newPanels := make([]config.PanelTable, 0, len(w.BottomPanels))
 
-func (w *Window) createDatePanel(panelConfig config.PanelTable) {
-	newPanel, ok := NewPanel(config.FilterTypeDate).(*DateFilterPanel)
-	if !ok {
-		return
+	for _, p := range w.BottomPanels {
+		var cp config.PanelTable
+		switch p := p.(type) {
+		case *StringFilterPanel:
+			cp = config.PanelTable{
+				Type:          p.Name(),
+				Key:           p.Content(),
+				Mode:          filter.FilterModeStrings[p.Mode()],
+				CaseSensitive: p.CaseSensitive(),
+			}
+		case *DateFilterPanel:
+			cp = config.PanelTable{
+				Type: p.Name(),
+				From: p.From(),
+				To:   p.To(),
+			}
+		default:
+			log.Fatalf("Unknown panel type %s", p.Name())
+		}
+
+		newPanels = append(newPanels, cp)
 	}
-	newPanel.SetTo(panelConfig.To)
-	newPanel.SetFrom(panelConfig.From)
-	w.AddPanel(newPanel)
+	config.SetPanels(newPanels)
 }

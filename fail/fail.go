@@ -30,14 +30,6 @@ func IfNotNil(x any, message string) {
 	}
 }
 
-// TODO: conditional compile
-
-func Assert(condition bool, message string, v ...any) {
-	if !condition {
-		log.Panicf(message, v...)
-	}
-}
-
 func Must0(err error) {
 	if err != nil {
 		log.Panicf("%+v", err)

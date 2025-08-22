@@ -15,7 +15,7 @@ import (
 const testCases = 100
 
 func Identify(lines []*lines.Line) {
-	formats := config.GetConfiguration().Formats
+	formats := config.Formats()
 	regexs := make(map[string]*regexp.Regexp)
 	results := make(map[string]int, len(formats))
 
@@ -49,8 +49,8 @@ nextLine:
 	}
 
 	if float64(maxResult)/float64(n) > 0.9 {
-		config.GetConfiguration().FileFormat = fileFormat
-		config.GetConfiguration().FileFormatRegex = regexs[fileFormat]
+		config.UserCfg().FileFormat = fileFormat
+		config.UserCfg().FileFormatRegex = regexs[fileFormat]
 	}
 }
 

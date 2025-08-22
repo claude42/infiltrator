@@ -42,3 +42,23 @@ func (c *ContainerImpl) SetVisible(visible bool) {
 		c.SetVisible(visible)
 	}
 }
+
+func (c *ContainerImpl) Show() {
+	c.SetActive(true)
+	c.SetVisible(true)
+}
+
+func (c *ContainerImpl) Hide() {
+	c.SetActive(false)
+	c.SetVisible(false)
+}
+
+func (c *ContainerImpl) Render(updateScreen bool) {
+	for i := range c.contained {
+		i.Render(false)
+	}
+
+	if updateScreen {
+		Screen.Show()
+	}
+}

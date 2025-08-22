@@ -180,7 +180,7 @@ func (d *Display) refreshDisplay(ctx context.Context, wg *sync.WaitGroup,
 
 	d.Percentage = GetFilterManager().percentage()
 
-	config.GetConfiguration().PostEventFunc(NewEventDisplay(*d))
+	config.PostEventFunc(NewEventDisplay(*d))
 }
 
 func (d *Display) firstLine() *lines.Line {

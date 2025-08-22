@@ -1,8 +1,6 @@
 package config
 
-var defaults ConfigFile = ConfigFile{
-	Main: MainTable{
-		Name:     "Default",
-		Colorize: true,
-	},
+var defaults map[string]any = map[string]any{
+	"main.name":     "Default",
+	"main.colorize": true,
 }

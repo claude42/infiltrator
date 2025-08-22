@@ -6,7 +6,6 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
-	"sync"
 
 	"github.com/adrg/xdg"
 	"github.com/claude42/infiltrator/fail"
@@ -14,43 +13,43 @@ import (
 	"github.com/spf13/pflag"
 
 	"github.com/knadh/koanf/parsers/toml"
+	"github.com/knadh/koanf/providers/confmap"
 	"github.com/knadh/koanf/providers/file"
 	"github.com/knadh/koanf/providers/structs"
 	"github.com/knadh/koanf/v2"
 )
 
 var (
-	instance *ConfigManager
-	once     sync.Once
+	PostEventFunc func(ev util.Event) error
+	instance      *ConfigManager
 )
 
 type ConfigManager struct {
-	FileName        string
-	FilePath        string
-	FileFormat      string
-	FileFormatRegex *regexp.Regexp
-	Stdin           bool
+	userConfig *UserConfig  `koanf:"main"`
+	panels     []PanelTable `koanf:"panel"`
 
-	PostEventFunc func(ev util.Event) error
+	kConfig *koanf.Koanf `koanf:"-"`
 
-	kState    *koanf.Koanf
-	histories map[string][]string
+	kFormats *koanf.Koanf      `koanf:"-"`
+	formats  map[string]string `koanf:"-"`
 
-	kFormats *koanf.Koanf
-	Formats  map[string]string
-
-	kConfig    *koanf.Koanf
-	UserConfig ConfigFile
+	kState    *koanf.Koanf        `koanf:"-"`
+	histories map[string][]string `koanf:"-"`
 }
 
-type MainTable struct {
+type UserConfig struct {
 	Name     string `koanf:"name"`
 	FileName string `koanf:"filename"`
+	FilePath string `koanf:"filepath"`
+	Stdin    bool   `koanf:"stdin"`
 	Follow   bool   `koanf:"follow"`
 	Lines    bool   `koanf:"lines"`
 	Colorize bool   `koanf:"colorize"`
 	Preset   string `koanf:"preset"`
 	Debug    bool   `koanf:"debug"`
+
+	FileFormat      string         `koanf:"-"`
+	FileFormatRegex *regexp.Regexp `koanf:"-"`
 }
 
 type PanelTable struct {
@@ -62,56 +61,84 @@ type PanelTable struct {
 	To            string `koanf:"to"`
 }
 
-type ConfigFile struct {
-	Main   MainTable    `koanf:"main"`
-	Panels []PanelTable `koanf:"panel"`
+type mainTable struct {
+	Name     string `koanf:"name"`
+	FileName string `koanf:"filename"`
+	FilePath string `koanf:"filepath"`
+	Stdin    bool   `koanf:"stdin"`
+	Follow   bool   `koanf:"follow"`
+	Lines    bool   `koanf:"lines"`
+	Colorize bool   `koanf:"colorize"`
+	Preset   string `koanf:"preset"`
+	Debug    bool   `koanf:"debug"`
 }
 
-func GetConfiguration() *ConfigManager {
-	once.Do(func() {
-		instance = &ConfigManager{}
-		instance.histories = make(map[string][]string)
-		instance.kState = koanf.New(".")
-		instance.kFormats = koanf.New(".")
-		instance.kConfig = koanf.New(".")
-	})
-	return instance
+func init() {
+	instance = &ConfigManager{
+		kConfig:    koanf.New("."),
+		kFormats:   koanf.New("."),
+		kState:     koanf.New("."),
+		formats:    make(map[string]string),
+		histories:  make(map[string][]string),
+		userConfig: &UserConfig{},
+		panels:     make([]PanelTable, 0),
+	}
 }
 
-func (cm *ConfigManager) Load() error {
-	cm.ReadDefaults(cm.kConfig)
+func UserCfg() *UserConfig {
+	return instance.userConfig
+}
 
-	err := cm.ReadConfigFile(cm.kConfig, mainConfigFileName)
+func Load() error {
+	readDefaults(instance.kConfig)
+
+	err := readConfigFile(instance.kConfig, mainConfigFileName)
 	if err != nil && !errors.Is(err, os.ErrNotExist) {
 		return err
 	}
 
-	err = cm.ReadCommandLine(cm.kConfig)
+	err = readCommandLine(instance.kConfig)
 	if err != nil {
 		return err
 	}
 
-	if cm.UserConfig.Main.Preset != "" {
-		err = cm.ReadConfigFile(cm.kConfig, presetDir+cm.UserConfig.Main.Preset+".toml")
+	if preset := instance.kConfig.String("main.preset"); preset != "" {
+		err = readConfigFile(instance.kConfig, presetDir+preset+".toml")
 		if err != nil {
 			return err
 		}
 	}
-	cm.ReadStateFile()
-	cm.ReadFormatsFile()
+
+	doSomeAdjustments()
+
+	unmarshal()
+
+	readStateFile()
+	readFormatsFile()
 
 	return nil
 }
 
-func (cm *ConfigManager) ReadDefaults(k *koanf.Koanf) {
-	err := k.Load(structs.Provider(defaults, "koanf"), nil)
-	fail.OnError(err, "Can't read defaults")
+func doSomeAdjustments() {
+	instance.kConfig.Set("main.filename", filepath.Base(instance.kConfig.String("main.filepath")))
+}
 
-	err = k.Unmarshal("", &cm.UserConfig)
+func unmarshal() {
+
+	foo := struct {
+		main mainTable `koanf:"main"`
+	}{}
+
+	err := instance.kConfig.Unmarshal("", &foo)
 	fail.OnError(err, "Unmarshalling failed failed")
 }
 
-func (cm *ConfigManager) ReadConfigFile(k *koanf.Koanf, lastPathPart string) error {
+func readDefaults(k *koanf.Koanf) {
+	err := k.Load(confmap.Provider(defaults, "."), nil)
+	fail.OnError(err, "Can't read defaults")
+}
+
+func readConfigFile(k *koanf.Koanf, lastPathPart string) error {
 	path, err := xdg.ConfigFile(appName + lastPathPart)
 	fail.OnError(err, "Can't determine preset filename")
 
@@ -121,13 +148,10 @@ func (cm *ConfigManager) ReadConfigFile(k *koanf.Koanf, lastPathPart string) err
 	}
 	fail.OnError(err, "Loading formats file failed")
 
-	err = k.Unmarshal("", &cm.UserConfig)
-	fail.OnError(err, "Unmarshalling failed failed")
-
 	return nil
 }
 
-func (cm *ConfigManager) ReadCommandLine(k *koanf.Koanf) error {
+func readCommandLine(k *koanf.Koanf) error {
 	flagSet := pflag.NewFlagSet("infilt", pflag.ContinueOnError)
 	lines := flagSet.BoolP("lines", "l", false, "Show line numbers")
 	follow := flagSet.BoolP("follow", "f", false, "Follow changes to file")
@@ -163,18 +187,15 @@ func (cm *ConfigManager) ReadCommandLine(k *koanf.Koanf) error {
 		fail.OnError(err, "Error setting command line option")
 	}
 
-	err = k.Unmarshal("", &cm.UserConfig)
-	fail.OnError(err, "Unmarshalling failed failed")
-
 	switch len(flagSet.Args()) {
 	case 0:
-		cm.FileName = "[stdin]"
-		cm.FilePath = ""
-		cm.Stdin = true
+		instance.kConfig.Set("main.filename", "[stdin]")
+		instance.kConfig.Set("main.filepath", "")
+		instance.kConfig.Set("main.stdin", true)
 	case 1:
-		cm.FilePath = flagSet.Args()[0]
-		cm.FileName = filepath.Base(cm.FilePath)
-		cm.Stdin = false
+		instance.kConfig.Set("main.filename", filepath.Base(flagSet.Args()[0]))
+		instance.kConfig.Set("main.filepath", flagSet.Args()[0])
+		instance.kConfig.Set("main.stdin", false)
 	default:
 		flagSet.Usage()
 		return fmt.Errorf("try again")
@@ -183,33 +204,44 @@ func (cm *ConfigManager) ReadCommandLine(k *koanf.Koanf) error {
 	return nil
 }
 
-// Untested as of now
-func (cm *ConfigManager) WritePreset(k *koanf.Koanf, lastPathPart string) error {
-	var presetK = koanf.New(".")
+func BuildFullPresetPath(presetName string) (fullPath string) {
+	fullPath, err := xdg.ConfigFile(appName + presetDir + presetName + ".toml")
+	fail.OnError(err, "Can't build path name!")
 
-	err := k.Cut("panel").Merge(presetK)
-	fail.OnError(err, "Error creating preset")
+	return
+}
 
-	err = presetK.Set("main.filename", k.Bool("main.filename"))
-	fail.OnError(err, "Error creating preset")
+func WritePreset(fullPath string) error {
+	presetK := koanf.New(".")
+	presetK.Load(structs.Provider(instance, "koanf"), nil)
+	// presetK.Load(confmap.Provider(instance.kConfig.All(), "."), nil)
 
-	err = presetK.Set("main.follow", k.Bool("main.follow"))
-	fail.OnError(err, "Error creating preset")
-
-	err = presetK.Set("main.lines", k.Bool("main.lines"))
-	fail.OnError(err, "Error creating preset")
-
-	err = presetK.Set("main.colorize", k.Bool("main.colorize"))
-	fail.OnError(err, "Error creating preset")
+	presetK.Delete("main.filename")
+	presetK.Delete("main.stdin")
+	presetK.Delete("main.preset")
+	presetK.Delete("main.debug")
 
 	marshalledBytes, err := presetK.Marshal(toml.Parser())
 	fail.OnError(err, "Error creating preset")
 
-	var path string
-	path, err = xdg.ConfigFile(appName + lastPathPart)
-	fail.OnError(err, "Can't determine preset filename")
+	err = os.MkdirAll(xdg.ConfigHome+"/"+appName+presetDir, 0755)
+	fail.OnError(err, "Can't create preset directory")
 
-	err = os.WriteFile(path, marshalledBytes, 0644)
+	err = os.WriteFile(fullPath, marshalledBytes, 0644)
+	fail.OnError(err, "Error creating preset")
 
-	return err
+	// return err
+	return nil
+}
+
+func Formats() map[string]string {
+	return instance.formats
+}
+
+func Panels() []PanelTable {
+	return instance.panels
+}
+
+func SetPanels(panels []PanelTable) {
+	instance.panels = panels
 }

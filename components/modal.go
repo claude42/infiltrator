@@ -84,6 +84,8 @@ func (m *ModalImpl) Render(updateScreen bool) {
 		return
 	}
 
+	m.ContainerImpl.Render(false)
+
 	for x := m.x; x < m.x+m.width; x++ {
 		for y := m.y; y < m.y+m.height; y++ {
 			Screen.SetContent(x, y, ' ', nil, ModalStyle)

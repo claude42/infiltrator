@@ -1,8 +1,6 @@
 package components
 
 import (
-	"fmt"
-
 	"github.com/claude42/infiltrator/model/filter"
 	"github.com/gdamore/tcell/v2"
 )
@@ -56,17 +54,6 @@ func (p *PanelImpl) Height() int {
 
 func (p *PanelImpl) Size() (int, int) {
 	return p.width, p.Height()
-}
-
-func (t *PanelImpl) Render(updateScreen bool) {
-	style := t.CurrentStyler.Style()
-
-	header := fmt.Sprintf(" %s", t.name)
-	RenderText(0, t.y, header, style.Reverse(true))
-
-	if updateScreen {
-		Screen.Show()
-	}
 }
 
 func (p *PanelImpl) Style() tcell.Style {

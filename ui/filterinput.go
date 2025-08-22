@@ -42,7 +42,7 @@ func (fi *FilterInput) storeInHistory() {
 	// Also don't store anything when we're just browsing the history
 	// without making any modifications
 	if fi.currentHistoryIndex != -1 {
-		currentHistoryEntry, err := config.GetConfiguration().FromHistory(fi.name,
+		currentHistoryEntry, err := config.FromHistory(fi.name,
 			fi.currentHistoryIndex)
 		if err != nil {
 			// TODO: error handling
@@ -53,7 +53,7 @@ func (fi *FilterInput) storeInHistory() {
 		}
 	}
 
-	config.GetConfiguration().AddToHistory(fi.name, fi.ColoredInput.Content())
+	config.AddToHistory(fi.name, fi.ColoredInput.Content())
 	fi.currentHistoryIndex = 0
 }
 
@@ -73,7 +73,7 @@ func (fi *FilterInput) HandleEvent(ev tcell.Event) bool {
 			return true
 		case tcell.KeyUp:
 			if ev.Modifiers() == 0 {
-				content, err := config.GetConfiguration().FromHistory(fi.name,
+				content, err := config.FromHistory(fi.name,
 					fi.currentHistoryIndex+1)
 				if err != nil {
 					// TODO error handling / beep
@@ -93,7 +93,7 @@ func (fi *FilterInput) HandleEvent(ev tcell.Event) bool {
 				if fi.currentHistoryIndex == -1 {
 					fi.SetContent("")
 				} else {
-					content, err := config.GetConfiguration().FromHistory(fi.name,
+					content, err := config.FromHistory(fi.name,
 						fi.currentHistoryIndex)
 					if err != nil {
 						// TODO error handling / beep

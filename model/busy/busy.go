@@ -41,18 +41,17 @@ func Spin() {
 }
 
 func StartBusySpinner(ctx context.Context, wg *sync.WaitGroup) {
-	cfg := config.GetConfiguration()
 	ticker := time.NewTicker(200 * time.Millisecond)
 	for {
 		select {
 		case <-ticker.C:
 			switch busyState.Load() {
 			case Busy:
-				cfg.PostEventFunc(NewEventBusySpinnerUpdate(Busy, int(busyPercentage.Load())))
+				config.PostEventFunc(NewEventBusySpinnerUpdate(Busy, int(busyPercentage.Load())))
 				busyState.Store(BusyIdle)
 			case BusyIdle:
 				busyState.Store(Idle)
-				cfg.PostEventFunc(NewEventBusySpinnerUpdate(Idle, -1))
+				config.PostEventFunc(NewEventBusySpinnerUpdate(Idle, -1))
 			case Idle:
 				// nothing
 			}

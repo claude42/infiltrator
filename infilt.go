@@ -26,16 +26,16 @@ func main() {
 }
 
 func run() error {
-	cfg := config.GetConfiguration()
-	err := cfg.Load()
+	cfg := config.UserCfg()
+	err := config.Load()
 	if err != nil {
 		return err
 	}
-	defer cfg.WriteStateFile()
+	defer config.WriteStateFile()
 
 	// debug log
 
-	if !cfg.UserConfig.Main.Debug {
+	if !cfg.Debug {
 		log.SetOutput(io.Discard)
 	} else {
 		debug, err := os.OpenFile("debug.log", os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
@@ -45,7 +45,7 @@ func run() error {
 		log.SetFlags(log.LstdFlags | log.Lshortfile)
 	}
 
-	cfg.PostEventFunc = ui.InfiltPostEvent
+	config.PostEventFunc = ui.InfiltPostEvent
 
 	ctx, cancelFunc := context.WithCancel((context.Background()))
 	var wg sync.WaitGroup
@@ -72,9 +72,7 @@ func run() error {
 	wg.Add(1)
 	go fm.EventLoop()
 
-	if len(cfg.UserConfig.Panels) > 0 {
-		window.CreatePresetPanels()
-	}
+	window.CreatePresetPanels()
 
 	// wait for UI thread to finish
 

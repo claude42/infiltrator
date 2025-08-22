@@ -1,5 +1,7 @@
 package config
 
+import "github.com/claude42/infiltrator/util"
+
 type FilterType int
 
 const (
@@ -20,7 +22,7 @@ const (
 	FilterStringRegex   = "Regex"
 	FilterStringDate    = "Date"
 
-	// These are no filters of there own, just names for the two inputs for
+	// These are no filters of their own, just names for the two inputs for
 	// the date filter
 	FilterStringFrom = "From"
 	FilterStringTo   = "To"
@@ -38,4 +40,13 @@ var Histories []string = []string{
 	FilterStringRegex,
 	FilterStringFrom,
 	FilterStringTo,
+}
+
+func FilterNameToType(filterName string) (FilterType, error) {
+	for key, value := range Filters {
+		if value == filterName {
+			return key, nil
+		}
+	}
+	return -1, util.ErrNotFound
 }

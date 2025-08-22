@@ -70,16 +70,16 @@ func (v *View) renderLine(line *lines.Line, y int) {
 	str := line.Str
 	start := 0
 	matched := line.No == v.CurrentDisplay.CurrentMatch
-	cfg := config.GetConfiguration()
+	cfg := config.UserCfg()
 
-	if cfg.UserConfig.Main.Lines {
+	if cfg.Lines {
 		start = v.renderLineNumber(line, y, matched)
 	}
 
 	lineStyle := v.determineStyle(line, matched)
 
 	var detectedTokens []int
-	if cfg.UserConfig.Main.Colorize {
+	if cfg.Colorize {
 		fileFormatRegex := cfg.FileFormatRegex
 		if fileFormatRegex != nil {
 			detectedTokens = fileFormatRegex.FindStringSubmatchIndex(line.Str)
