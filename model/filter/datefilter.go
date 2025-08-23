@@ -35,19 +35,21 @@ func (d *DateFilter) SetKey(name string, key string) error {
 	keyTime, err := dateparser.Parse(nil, key)
 	if err != nil {
 		// TODO: error handling
-		if name == DateFilterFrom {
+		switch name {
+		case DateFilterFrom:
 			d.fromLineNo = 0
-		} else if name == DateFilterTo {
+		case DateFilterTo:
 			d.toLineNo = math.MaxInt
 		}
 		return err
 	}
 
-	if name == DateFilterFrom {
+	switch name {
+	case DateFilterFrom:
 		d.fromLineNo = d.findFirstAfter(keyTime.Time)
-	} else if name == DateFilterTo {
+	case DateFilterTo:
 		d.toLineNo = d.findLastBefore(keyTime.Time)
-	} else {
+	default:
 		log.Panicf("Neither from nor to but '%s'", name)
 	}
 
