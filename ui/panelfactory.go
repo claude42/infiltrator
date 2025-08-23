@@ -53,7 +53,7 @@ func NewPanel(panelType config.FilterType) components.Panel {
 }
 
 func NewPanelWithConfig(panelConfig *config.PanelTable) components.Panel {
-	panelType, err := config.FilterNameToType(panelConfig.Type)
+	panelType, err := config.Filters.Type(panelConfig.Type)
 	if err != nil {
 		// TODO error handling
 		return nil
@@ -65,13 +65,15 @@ func NewPanelWithConfig(panelConfig *config.PanelTable) components.Panel {
 func NewPanelWithPanelTypeAndConfig(panelType config.FilterType,
 	panelConfig *config.PanelTable) components.Panel {
 
+	filterString, err := config.Filters.String(panelType)
+	fail.OnError(err, "error getting filter string for filter type")
 	switch panelType {
 	case config.FilterTypeKeyword:
 		return setupNewStringFilterPanel(filter.DefaultStringFilterFuncFactory,
-			config.Filters[panelType], panelConfig)
+			filterString, panelConfig)
 	case config.FilterTypeRegex:
 		return setupNewStringFilterPanel(filter.RegexFilterFuncFactory,
-			config.Filters[panelType], panelConfig)
+			filterString, panelConfig)
 	// case Glob:
 	// 	return NewGlobPanel()
 	// case Host:
@@ -80,7 +82,7 @@ func NewPanelWithPanelTypeAndConfig(panelType config.FilterType,
 	// 	return NewFacilityPanel()
 	case config.FilterTypeDate:
 		// TODO: error handling
-		return setupNewDateFilterPanel(config.Filters[panelType], panelConfig)
+		return setupNewDateFilterPanel(filterString, panelConfig)
 	default:
 		// TODO error handling: really panic here?
 		log.Panicf("NewPanel() called with unknown panel type: %d",

@@ -29,11 +29,35 @@ const (
 	FilterStringTo   = "To"
 )
 
-// TODO: some stuff is here, some in stringfiltermodes.go
-var Filters map[FilterType]string = map[FilterType]string{
-	FilterTypeKeyword: FilterStringKeyword,
-	FilterTypeRegex:   FilterStringRegex,
-	FilterTypeDate:    FilterStringDate,
+type FilterTuple struct {
+	FilterType   FilterType
+	FilterString string
+}
+
+type FilterSlice []FilterTuple
+
+var Filters FilterSlice = []FilterTuple{
+	{FilterType: FilterTypeKeyword, FilterString: FilterStringKeyword},
+	{FilterType: FilterTypeRegex, FilterString: FilterStringRegex},
+	{FilterType: FilterTypeDate, FilterString: FilterStringDate},
+}
+
+func (FilterSlice) String(key FilterType) (string, error) {
+	for _, v := range Filters {
+		if v.FilterType == key {
+			return v.FilterString, nil
+		}
+	}
+	return "", util.ErrNotFound
+}
+
+func (FilterSlice) Type(value string) (FilterType, error) {
+	for _, v := range Filters {
+		if v.FilterString == value {
+			return v.FilterType, nil
+		}
+	}
+	return -1, util.ErrNotFound
 }
 
 var Histories []string = []string{
@@ -41,15 +65,6 @@ var Histories []string = []string{
 	FilterStringRegex,
 	FilterStringFrom,
 	FilterStringTo,
-}
-
-func FilterNameToType(filterName string) (FilterType, error) {
-	for key, value := range Filters {
-		if value == filterName {
-			return key, nil
-		}
-	}
-	return -1, util.ErrNotFound
 }
 
 type FilterMode int
