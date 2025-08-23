@@ -14,18 +14,18 @@ Keyboard shortcuts
 Available CTRL combination
 
 
-
+CTRL-
 * a: Home
 * b: page back
 * c: quit
 * d:
 * e: End
 * f: page down
-* g:
-* h: change case sensitivity
+* g: HIER
+* h: HIER change case sensitivity BUT: also Backspace!!!
 * i: TAB
-* j:
-* k:
+* j: HIER
+* k: HIER
 * l: redraw
 * m: 
 * n:
