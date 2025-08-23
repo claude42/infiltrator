@@ -36,26 +36,31 @@ func (p *PanelSelection) HandleEvent(ev tcell.Event) bool {
 					window.CreateAndAddPanel(config.FilterTypeRegex)
 					window.SetPanelsOpen(true)
 					p.Hide()
+					components.RenderAll(true)
 					return true
 				case 'k':
 					window.CreateAndAddPanel(config.FilterTypeKeyword)
 					window.SetPanelsOpen(true)
 					p.Hide()
+					components.RenderAll(true)
 					return true
 				case 'd':
 					window.CreateAndAddPanel(config.FilterTypeDate)
 					window.SetPanelsOpen(true)
 					p.Hide()
+					components.RenderAll(true)
 					return true
 				}
 				return true
 			case tcell.KeyEscape:
 				p.Hide()
+				components.RenderAll(true)
 				return true
 			case tcell.KeyEnter:
 				window.CreateAndAddPanel(config.FilterTypeRegex)
 				window.SetPanelsOpen(true)
 				p.Hide()
+				components.RenderAll(true)
 				return true
 			}
 		}

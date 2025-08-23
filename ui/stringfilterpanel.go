@@ -18,8 +18,8 @@ type StringFilterPanel struct {
 	*ColoredPanel
 
 	input         *FilterInput
-	mode          *ColoredSelect
-	caseSensitive *ColoredSelect
+	mode          *ColoredDropdown
+	caseSensitive *ColoredDropdown
 }
 
 func NewStringFilterPanel(name string) *StringFilterPanel {
@@ -27,11 +27,11 @@ func NewStringFilterPanel(name string) *StringFilterPanel {
 		ColoredPanel: NewColoredPanel(name),
 		input:        NewFilterInput(name),
 	}
-	s.mode = NewColoredSelect(filter.FilterModeStrings, tcell.KeyCtrlS, s.toggleMode)
-	s.caseSensitive = NewColoredSelect(filter.CaseSensitiveStrings, tcell.KeyCtrlH, s.toggleCaseSensitive)
-	s.ColoredPanel.Add(s.input)
+	s.mode = NewColoredDropdown(filter.FilterModeStrings, tcell.KeyCtrlS, s.toggleMode)
+	s.caseSensitive = NewColoredDropdown(filter.CaseSensitiveStrings, tcell.KeyCtrlH, s.toggleCaseSensitive)
 	s.ColoredPanel.Add(s.mode)
 	s.ColoredPanel.Add(s.caseSensitive)
+	s.ColoredPanel.Add(s.input)
 
 	return s
 }

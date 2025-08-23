@@ -92,5 +92,5 @@ func (yn *YesNoBar) closeBar(f func()) {
 	if f != nil {
 		f()
 	}
-	window.Render()
+	components.RenderAll(true)
 }

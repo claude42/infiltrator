@@ -102,9 +102,7 @@ func Cleanup() {
 }
 
 func (w *Window) Render() {
-	components.RenderAll(false)
-
-	screen.Show()
+	components.RenderAll(true)
 }
 
 func (w *Window) MetaEventLoop(ctx context.Context, wg *sync.WaitGroup, quit chan<- string) {
@@ -133,10 +131,10 @@ func (w *Window) MetaEventLoop(ctx context.Context, wg *sync.WaitGroup, quit cha
 func (w *Window) EventLoop(quit chan<- string) bool {
 	ev := screen.PollEvent()
 	// log.Printf("Event: %T, %+v", ev, ev)
-	log.Printf("Main Loop: %T", ev)
+	// log.Printf("Main Loop: %T", ev)
 
-	if _, ok := ev.(*tcell.EventKey); ok {
-		log.Println()
+	if kev, ok := ev.(*tcell.EventKey); ok {
+		log.Printf("Key Name: %s", kev.Name())
 	}
 
 	if components.HandleEventAll(ev) {
@@ -149,7 +147,6 @@ func (w *Window) EventLoop(quit chan<- string) bool {
 		// log.Printf("Modmast: %d", ev.Modifiers())
 		// log.Printf("Rune: %c", ev.Rune())
 		// log.Printf("Key: %s", tcell.KeyNames[ev.Key()])
-		log.Printf("Key Name: %s", ev.Name())
 
 		switch ev.Key() {
 		case tcell.KeyRune:
@@ -199,9 +196,6 @@ func (w *Window) EventLoop(quit chan<- string) bool {
 		case tcell.KeyEscape:
 			if w.panelsOpen {
 				w.SetPanelsOpen(false)
-			} else {
-				close(quit)
-				return true
 			}
 		case tcell.KeyCtrlC:
 			close(quit)

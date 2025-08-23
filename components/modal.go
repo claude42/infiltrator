@@ -102,14 +102,14 @@ func (m *ModalImpl) Render(updateScreen bool) {
 }
 
 func (m *ModalImpl) renderTitle() {
-	centerText(m.x, m.width, m.y, m.title, ModalStyle)
+	centerText(m.x, m.width, m.y, m.title, ' ', ModalStyle)
 }
 
 func (m *ModalImpl) renderTextContent() {
 	for i, line := range m.lines {
 		switch m.orientation {
 		case OrientationCenter:
-			centerText(m.x, m.width+2, m.y+2+i, line, ModalStyle)
+			centerText(m.x, m.width+2, m.y+2+i, line, ' ', ModalStyle)
 		case OrientationRight:
 			log.Panicf("Orientation %d not implemented", m.orientation)
 		case OrientationLeft:

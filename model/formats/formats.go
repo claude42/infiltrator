@@ -3,7 +3,6 @@ package formats
 import (
 	"bytes"
 	"io"
-	"log"
 	"os"
 	"regexp"
 
@@ -32,10 +31,7 @@ nextLine:
 			if regex.MatchString(lines[i].Str) {
 				results[format]++
 				continue nextLine
-			} else {
-				log.Printf("Raw: %q", lines[i].Str)
 			}
-
 		}
 	}
 

@@ -5,15 +5,15 @@ import (
 	"github.com/gdamore/tcell/v2"
 )
 
-type ColoredSelect struct {
-	components.Select
+type ColoredDropdown struct {
+	components.Dropdown
 
 	colorIndex uint8
 }
 
-func NewColoredSelect(options []string, key tcell.Key, do func(int)) *ColoredSelect {
-	s := &ColoredSelect{
-		Select: *components.NewSelect(options, key, do),
+func NewColoredDropdown(options []string, key tcell.Key, do func(int)) *ColoredDropdown {
+	s := &ColoredDropdown{
+		Dropdown: *components.NewDropdown(options, key, do),
 	}
 
 	s.StyleUsing(s)
@@ -21,11 +21,11 @@ func NewColoredSelect(options []string, key tcell.Key, do func(int)) *ColoredSel
 	return s
 }
 
-func (s *ColoredSelect) SetColorIndex(colorIndex uint8) {
+func (s *ColoredDropdown) SetColorIndex(colorIndex uint8) {
 	s.colorIndex = colorIndex
 }
 
-func (s *ColoredSelect) Style() tcell.Style {
+func (s *ColoredDropdown) Style() tcell.Style {
 	var style tcell.Style
 	if s.OldStyler != nil {
 		style = s.OldStyler.Style()

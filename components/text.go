@@ -27,9 +27,13 @@ func RenderText(x int, y int, text string, style tcell.Style) int {
 	return RenderRunes(x, y, width, []rune(text), style)
 }
 
-func centerText(x int, width int, y int, text string, style tcell.Style) int {
-
-	return RenderText(x+(width-len(text))/2, y, text, style)
+func centerText(x int, width int, y int, text string, pad rune, style tcell.Style) int {
+	leftPad := (width - len(text)) / 2
+	rightPad := width - len(text) - leftPad
+	x = DrawChars(x, y, leftPad, pad, style)
+	x = RenderText(x, y, text, style)
+	x = DrawChars(x, y, rightPad, pad, style)
+	return x
 }
 
 func DrawChars(x int, y int, width int, r rune, style tcell.Style) int {

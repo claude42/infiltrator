@@ -1,6 +1,7 @@
 package components
 
 import (
+	"slices"
 	"sync"
 
 	"github.com/claude42/infiltrator/fail"
@@ -18,38 +19,43 @@ type ContainerImpl struct {
 	ComponentImpl
 
 	once      sync.Once
-	contained map[Component]struct{}
+	contained []Component
 }
 
 func (c *ContainerImpl) Add(component Component) {
 	c.once.Do(func() {
-		c.contained = make(map[Component]struct{})
+		c.contained = make([]Component, 0)
 	})
-	c.contained[component] = struct{}{}
+	c.contained = append(c.contained, component)
 	component.Watch(c)
 }
 
 func (c *ContainerImpl) Remove(component Component) {
 	fail.IfNil(c.contained, "ContainerImpl: Remove called on uninitialized container")
-	delete(c.contained, component)
+
+	i := slices.Index(c.contained, component)
+	if i < 0 {
+		return
+	}
+	c.contained = append(c.contained[:i], c.contained[i+1:]...)
 	component.Unwatch(c)
 }
 
-func (c *ContainerImpl) Contained() map[Component]struct{} {
+func (c *ContainerImpl) Contained() []Component {
 	return c.contained
 }
 
 func (c *ContainerImpl) SetActive(active bool) {
 	c.ComponentImpl.SetActive(active)
-	for c := range c.contained {
-		c.SetActive(active)
+	for _, i := range c.contained {
+		i.SetActive(active)
 	}
 }
 
 func (c *ContainerImpl) SetVisible(visible bool) {
 	c.ComponentImpl.SetVisible(visible)
-	for c := range c.contained {
-		c.SetVisible(visible)
+	for _, i := range c.contained {
+		i.SetVisible(visible)
 	}
 }
 
@@ -64,7 +70,7 @@ func (c *ContainerImpl) Hide() {
 }
 
 func (c *ContainerImpl) Render(updateScreen bool) {
-	for i := range c.contained {
+	for _, i := range c.contained {
 		i.Render(false)
 	}
 
@@ -74,11 +80,7 @@ func (c *ContainerImpl) Render(updateScreen bool) {
 }
 
 func (c *ContainerImpl) HandleEvent(ev tcell.Event) bool {
-	if !c.IsActive() {
-		return false
-	}
-
-	for i := range c.contained {
+	for _, i := range c.contained {
 		if i.HandleEvent(ev) {
 			return true
 		}

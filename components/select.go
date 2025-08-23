@@ -63,7 +63,7 @@ func (s *Select) updateWidth() (width int) {
 	for _, option := range s.Options {
 		width = max(len(option), width)
 	}
-	return
+	return width + 2 // for the brackets
 }
 
 func (s *Select) Resize(x, y, width, height int) {
@@ -84,7 +84,7 @@ func (s *Select) Render(updateScreen bool) {
 		return
 	}
 
-	str := fmt.Sprintf("[%-*s]", s.width, s.Options[s.selected])
+	str := fmt.Sprintf("[%-*s]", s.width-2, s.Options[s.selected])
 	RenderText(s.x, s.y, str, s.CurrentStyler.Style())
 }
 
@@ -96,6 +96,14 @@ func (s *Select) Style() tcell.Style {
 	} else {
 		return style
 	}
+}
+
+func (s *Select) PreviousOption() int {
+	s.selected--
+	if s.selected < 0 {
+		s.selected = len(s.Options) - 1
+	}
+	return s.selected
 }
 
 func (s *Select) NextOption() int {
