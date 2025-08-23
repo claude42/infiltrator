@@ -14,8 +14,8 @@ type ExPanel struct {
 	prompt string
 
 	input *components.InputImpl
-	// mode          *ColoredSelect
-	// caseSensitive *ColoredSelect
+	// mode          *ColoredDropdown
+	// caseSensitive *ColoredDropdown
 }
 
 func NewExPanel() *ExPanel {

@@ -1,6 +1,9 @@
 package model
 
-import "github.com/claude42/infiltrator/model/filter"
+import (
+	"github.com/claude42/infiltrator/config"
+	"github.com/claude42/infiltrator/model/filter"
+)
 
 type Command interface {
 	commandString() string
@@ -114,7 +117,7 @@ func (d CommandFilterColorIndexUpdate) commandString() string {
 
 type CommandFilterModeUpdate struct {
 	Filter filter.Filter
-	Mode   filter.FilterMode
+	Mode   config.FilterMode
 }
 
 func (d CommandFilterModeUpdate) commandString() string {

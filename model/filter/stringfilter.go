@@ -7,6 +7,7 @@ import (
 	"log"
 	"strings"
 
+	"github.com/claude42/infiltrator/config"
 	"github.com/claude42/infiltrator/model/lines"
 )
 
@@ -15,7 +16,7 @@ type StringFilter struct {
 	sync.Mutex
 	filterFunc        func(input string) (string, [][]int, bool)
 	filterFuncFactory StringFilterFuncFactory
-	mode              FilterMode
+	mode              config.FilterMode
 	key               string
 	caseSensitive     bool
 }
@@ -67,7 +68,7 @@ func DefaultStringFilterFuncFactory(key string, caseSensitive bool) (func(input 
 	}, nil
 }
 
-func NewStringFilter(fn StringFilterFuncFactory, mode FilterMode) *StringFilter {
+func NewStringFilter(fn StringFilterFuncFactory, mode config.FilterMode) *StringFilter {
 	k := &StringFilter{}
 
 	if fn != nil {
@@ -107,7 +108,7 @@ func (s *StringFilter) SetCaseSensitive(on bool) error {
 	return s.updateFilterFunc(s.key, s.caseSensitive)
 }
 
-func (s *StringFilter) SetMode(mode FilterMode) {
+func (s *StringFilter) SetMode(mode config.FilterMode) {
 	s.Lock()
 	s.mode = mode
 	s.Unlock()
@@ -141,7 +142,7 @@ func (s *StringFilter) GetLine(line int) (*lines.Line, error) {
 		return sourceLine, nil
 	}
 
-	if (s.mode == FilterMatch || s.mode == FilterFocus) &&
+	if (s.mode == config.FilterMatch || s.mode == config.FilterFocus) &&
 		sourceLine.Status != lines.LineHidden {
 		s.colorizeLine(sourceLine, indeces)
 	}
@@ -152,7 +153,7 @@ func (s *StringFilter) updateStatusAndMatched(matched bool, indeces [][]int, sou
 	newStatus := sourceLine.Status
 	newMatched := sourceLine.Matched
 	switch s.mode {
-	case FilterMatch:
+	case config.FilterMatch:
 		// Status
 		if sourceLine.Status == lines.LineWithoutStatus && matched {
 			newStatus = lines.LineMatched
@@ -166,7 +167,7 @@ func (s *StringFilter) updateStatusAndMatched(matched bool, indeces [][]int, sou
 
 			newMatched = true
 		}
-	case FilterFocus:
+	case config.FilterFocus:
 		// Status
 		switch sourceLine.Status {
 		case lines.LineWithoutStatus:
@@ -187,7 +188,7 @@ func (s *StringFilter) updateStatusAndMatched(matched bool, indeces [][]int, sou
 
 			newMatched = true
 		}
-	case FilterHide:
+	case config.FilterHide:
 		// Status
 		if matched && indeces[0][1] != 0 {
 			newStatus = lines.LineHidden

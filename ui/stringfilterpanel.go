@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/claude42/infiltrator/components"
+	"github.com/claude42/infiltrator/config"
 	"github.com/claude42/infiltrator/fail"
 	"github.com/claude42/infiltrator/model"
 	"github.com/claude42/infiltrator/model/filter"
@@ -27,8 +28,8 @@ func NewStringFilterPanel(name string) *StringFilterPanel {
 		ColoredPanel: NewColoredPanel(name),
 		input:        NewFilterInput(name),
 	}
-	s.mode = NewColoredDropdown(filter.FilterModeStrings, tcell.KeyCtrlS, s.toggleMode)
-	s.caseSensitive = NewColoredDropdown(filter.CaseSensitiveStrings, tcell.KeyCtrlH, s.toggleCaseSensitive)
+	s.mode = NewColoredDropdown(config.FilterModeStrings, tcell.KeyCtrlS, s.toggleMode)
+	s.caseSensitive = NewColoredDropdown(config.CaseSensitiveStrings, tcell.KeyCtrlH, s.toggleCaseSensitive)
 	s.ColoredPanel.Add(s.mode)
 	s.ColoredPanel.Add(s.caseSensitive)
 	s.ColoredPanel.Add(s.input)
@@ -91,7 +92,7 @@ func (t *StringFilterPanel) SetFilter(filter filter.Filter) {
 }
 
 func (t *StringFilterPanel) toggleMode(i int) {
-	model.GetFilterManager().UpdateFilterMode(t.Filter(), filter.FilterMode(i))
+	model.GetFilterManager().UpdateFilterMode(t.Filter(), config.FilterMode(i))
 
 	t.Render(true)
 }
@@ -102,11 +103,11 @@ func (t *StringFilterPanel) toggleCaseSensitive(i int) {
 	t.Render(true)
 }
 
-func (t *StringFilterPanel) Mode() filter.FilterMode {
-	return filter.FilterMode(t.mode.SelectedIndex())
+func (t *StringFilterPanel) Mode() config.FilterMode {
+	return config.FilterMode(t.mode.SelectedIndex())
 }
 
-func (t *StringFilterPanel) SetMode(mode filter.FilterMode) {
+func (t *StringFilterPanel) SetMode(mode config.FilterMode) {
 	t.mode.SetSelectedIndex(int(mode))
 	model.GetFilterManager().UpdateFilterMode(t.Filter(), mode)
 }

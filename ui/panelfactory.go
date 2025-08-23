@@ -24,7 +24,7 @@ func setupNewStringFilterPanel(fn filter.StringFilterFuncFactory, name string,
 
 	if panelConfig != nil {
 		p.SetContent(panelConfig.Key)
-		p.SetMode(filter.FilterMode(slices.Index(filter.FilterModeStrings, panelConfig.Mode)))
+		p.SetMode(config.FilterMode(slices.Index(config.FilterModeStrings, panelConfig.Mode)))
 		p.SetCaseSensitive(panelConfig.CaseSensitive)
 	}
 

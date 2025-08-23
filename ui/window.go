@@ -11,7 +11,6 @@ import (
 	"github.com/claude42/infiltrator/components"
 	"github.com/claude42/infiltrator/config"
 	"github.com/claude42/infiltrator/fail"
-	"github.com/claude42/infiltrator/model/filter"
 	"github.com/claude42/infiltrator/util"
 	"github.com/gdamore/tcell/v2"
 )
@@ -450,7 +449,7 @@ func (w *Window) copyPanelsToConfig() {
 			cp = config.PanelTable{
 				Type:          p.Name(),
 				Key:           p.Content(),
-				Mode:          filter.FilterModeStrings[p.Mode()],
+				Mode:          config.FilterModeStrings[p.Mode()],
 				CaseSensitive: p.CaseSensitive(),
 			}
 		case *DateFilterPanel:

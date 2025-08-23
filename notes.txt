@@ -371,3 +371,13 @@ The Idiomatic Solution: koanf.Marshaler
 The koanf.Marshaler interface has a single method: MarshalKoanf() (map[string]any, error).
 
 A struct that implements this interface can manually access its private fields and put them into a map. koanf will then use the map that your method returns to marshal the data.
+
+---
+
+So what's in a panel?
+* type
+* key
+* mode
+* case sensitive
+* from/to
+* Position

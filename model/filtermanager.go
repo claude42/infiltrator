@@ -204,7 +204,7 @@ func (fm *FilterManager) UpdateFilterColorIndex(filter filter.Filter, colorIndex
 	fm.commandChannel <- CommandFilterColorIndexUpdate{filter, colorIndex}
 }
 
-func (fm *FilterManager) UpdateFilterMode(filter filter.Filter, mode filter.FilterMode) {
+func (fm *FilterManager) UpdateFilterMode(filter filter.Filter, mode config.FilterMode) {
 	fm.commandChannel <- CommandFilterModeUpdate{filter, mode}
 }
 
