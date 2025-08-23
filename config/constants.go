@@ -51,6 +51,14 @@ func (FilterSlice) String(key FilterType) (string, error) {
 	return "", util.ErrNotFound
 }
 
+func (FilterSlice) AllStrings() []string {
+	var result []string
+	for _, v := range Filters {
+		result = append(result, v.FilterString)
+	}
+	return result
+}
+
 func (FilterSlice) Type(value string) (FilterType, error) {
 	for _, v := range Filters {
 		if v.FilterString == value {

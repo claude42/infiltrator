@@ -19,6 +19,7 @@ type StringFilterPanel struct {
 	*ColoredPanel
 
 	input         *FilterInput
+	panelType     *ColoredDropdown
 	mode          *ColoredDropdown
 	caseSensitive *ColoredDropdown
 }
@@ -28,8 +29,10 @@ func NewStringFilterPanel(name string) *StringFilterPanel {
 		ColoredPanel: NewColoredPanel(name),
 		input:        NewFilterInput(name),
 	}
-	s.mode = NewColoredDropdown(config.FilterModeStrings, tcell.KeyCtrlS, s.toggleMode)
-	s.caseSensitive = NewColoredDropdown(config.CaseSensitiveStrings, tcell.KeyCtrlH, s.toggleCaseSensitive)
+	s.panelType = NewColoredDropdown(config.Filters.AllStrings(), tcell.KeyCtrlH, s.changePanelType)
+	s.mode = NewColoredDropdown(config.FilterModeStrings, tcell.KeyCtrlJ, s.toggleMode)
+	s.caseSensitive = NewColoredDropdown(config.CaseSensitiveStrings, tcell.KeyCtrlK, s.toggleCaseSensitive)
+	s.Add(s.panelType)
 	s.Add(s.mode)
 	s.Add(s.caseSensitive)
 	s.Add(s.input)
@@ -62,6 +65,10 @@ func (s *StringFilterPanel) Render(updateScreen bool) {
 	if updateScreen {
 		screen.Show()
 	}
+}
+
+func (s *StringFilterPanel) ColorIndex() uint8 {
+	return s.colorIndex
 }
 
 func (s *StringFilterPanel) SetColorIndex(colorIndex uint8) {
@@ -131,4 +138,41 @@ func (s *StringFilterPanel) SetCaseSensitive(caseSensitive bool) {
 func (s *StringFilterPanel) SetName(name string) {
 	s.ColoredPanel.SetName(name)
 	s.input.SetName(name)
+}
+
+func (s *StringFilterPanel) changePanelType(i int) {
+	filterType := config.Filters[i].FilterType
+	filterString := config.Filters[i].FilterString
+
+	newPanel := NewPanel(filterType)
+	switch newPanel := newPanel.(type) {
+	case *StringFilterPanel:
+		newPanel.SetContent(s.Content())
+		newPanel.SetMode(s.Mode())
+		newPanel.SetCaseSensitive(s.CaseSensitive())
+		newPanel.SetColorIndex(s.ColorIndex())
+	case *DateFilterPanel:
+		// can't transfer content
+		// can't transfer mode
+		// can't transfer case sensitivity
+	}
+
+	newPanel.SetColorIndex(s.ColorIndex())
+	newPanel.SetMode(s.Mode())
+	newPanel.SetCaseSensitive(s.CaseSensitive())
+
+	var fn filter.StringFilterFuncFactory
+	switch filterType {
+	case config.FilterTypeKeyword:
+		fn = filter.DefaultStringFilterFuncFactory
+	case config.FilterTypeRegex:
+		fn = filter.NewRegexFilterFuncFactory()
+	default:
+		// TODO error handling
+		return
+	}
+
+	model.GetFilterManager().ChangeStringFilterType(s.Filter(), fn, filterType, s.Mode())
+
+	s.Render(true)
 }

@@ -380,4 +380,5 @@ So what's in a panel?
 * mode
 * case sensitive
 * from/to
+* color
 * Position
