@@ -37,25 +37,25 @@ func NewStringFilterPanel(name string) *StringFilterPanel {
 	return s
 }
 
-func (t *StringFilterPanel) Resize(x, y, width, height int) {
-	t.ColoredPanel.Resize(x, y, width, height)
+func (s *StringFilterPanel) Resize(x, y, width, height int) {
+	s.ColoredPanel.Resize(x, y, width, height)
 
-	t.input.Resize(x+headerWidth+2, y, width-(x+headerWidth+2), 1)
-	t.mode.Resize(x+nameWidth, y, 1, 1)
-	t.caseSensitive.Resize(x+nameWidth+8, y, 1, 1)
+	s.input.Resize(x+headerWidth+2, y, width-(x+headerWidth+2), 1)
+	s.mode.Resize(x+nameWidth, y, 1, 1)
+	s.caseSensitive.Resize(x+nameWidth+8, y, 1, 1)
 }
 
-func (t *StringFilterPanel) Render(updateScreen bool) {
-	if !t.IsVisible() {
+func (s *StringFilterPanel) Render(updateScreen bool) {
+	if !s.IsVisible() {
 		return
 	}
 
-	t.ColoredPanel.Render(false)
+	s.ColoredPanel.Render(false)
 
-	style := t.ColoredPanel.CurrentStyler.Style()
+	style := s.ColoredPanel.CurrentStyler.Style()
 
-	header := fmt.Sprintf(" %s", t.Name())
-	_, y := t.Position()
+	header := fmt.Sprintf(" %s", s.Name())
+	_, y := s.Position()
 	_ = components.RenderText(0, y, header, style.Reverse(true))
 	components.RenderText(headerWidth, y, "▶ ", style)
 
@@ -75,60 +75,60 @@ func (s *StringFilterPanel) SetColorIndex(colorIndex uint8) {
 	}
 }
 
-func (t *StringFilterPanel) SetContent(content string) {
-	fail.IfNil(t.input, "StringFilterPanel.SetContent() called without input field!")
+func (s *StringFilterPanel) SetContent(content string) {
+	fail.IfNil(s.input, "StringFilterPanel.SetContent() called without input field!")
 
-	t.input.SetContent(content)
+	s.input.SetContent(content)
 }
 
-func (t *StringFilterPanel) Content() string {
-	return t.input.Content()
+func (s *StringFilterPanel) Content() string {
+	return s.input.Content()
 }
 
-func (t *StringFilterPanel) SetFilter(filter filter.Filter) {
-	t.ColoredPanel.SetFilter(filter)
+func (s *StringFilterPanel) SetFilter(filter filter.Filter) {
+	s.ColoredPanel.SetFilter(filter)
 
-	t.input.SetFilter(filter)
+	s.input.SetFilter(filter)
 }
 
-func (t *StringFilterPanel) toggleMode(i int) {
-	model.GetFilterManager().UpdateFilterMode(t.Filter(), config.FilterMode(i))
+func (s *StringFilterPanel) toggleMode(i int) {
+	model.GetFilterManager().UpdateFilterMode(s.Filter(), config.FilterMode(i))
 
-	t.Render(true)
+	s.Render(true)
 }
 
-func (t *StringFilterPanel) toggleCaseSensitive(i int) {
-	model.GetFilterManager().UpdateFilterCaseSensitiveUpdate(t.Filter(), i != 0)
+func (s *StringFilterPanel) toggleCaseSensitive(i int) {
+	model.GetFilterManager().UpdateFilterCaseSensitiveUpdate(s.Filter(), i != 0)
 
-	t.Render(true)
+	s.Render(true)
 }
 
-func (t *StringFilterPanel) Mode() config.FilterMode {
-	return config.FilterMode(t.mode.SelectedIndex())
+func (s *StringFilterPanel) Mode() config.FilterMode {
+	return config.FilterMode(s.mode.SelectedIndex())
 }
 
-func (t *StringFilterPanel) SetMode(mode config.FilterMode) {
-	t.mode.SetSelectedIndex(int(mode))
-	model.GetFilterManager().UpdateFilterMode(t.Filter(), mode)
+func (s *StringFilterPanel) SetMode(mode config.FilterMode) {
+	s.mode.SetSelectedIndex(int(mode))
+	model.GetFilterManager().UpdateFilterMode(s.Filter(), mode)
 }
 
-func (t *StringFilterPanel) CaseSensitive() bool {
-	return t.caseSensitive.SelectedIndex() == 1
+func (s *StringFilterPanel) CaseSensitive() bool {
+	return s.caseSensitive.SelectedIndex() == 1
 }
 
-func (t *StringFilterPanel) SetCaseSensitive(caseSensitive bool) {
+func (s *StringFilterPanel) SetCaseSensitive(caseSensitive bool) {
 
 	if caseSensitive {
-		t.caseSensitive.SetSelectedIndex(1)
+		s.caseSensitive.SetSelectedIndex(1)
 	} else {
-		t.caseSensitive.SetSelectedIndex(0)
+		s.caseSensitive.SetSelectedIndex(0)
 	}
 
-	model.GetFilterManager().UpdateFilterCaseSensitiveUpdate(t.Filter(), caseSensitive)
+	model.GetFilterManager().UpdateFilterCaseSensitiveUpdate(s.Filter(), caseSensitive)
 
 }
 
-func (t *StringFilterPanel) SetName(name string) {
-	t.ColoredPanel.SetName(name)
-	t.input.SetName(name)
+func (s *StringFilterPanel) SetName(name string) {
+	s.ColoredPanel.SetName(name)
+	s.input.SetName(name)
 }
