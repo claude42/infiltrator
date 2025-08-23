@@ -23,7 +23,7 @@ func NewExPanel() *ExPanel {
 		PanelImpl: components.NewPanelImpl("none"),
 		input:     components.NewInputImpl(),
 	}
-	e.PanelImpl.Add(e.input)
+	e.Add(e.input)
 	return e
 }
 
@@ -31,9 +31,9 @@ func (e *ExPanel) Resize(x, y, width, height int) {
 	e.PanelImpl.Resize(x, y, width, 1)
 
 	// reload in case Resize() was called with zero values
-	x, y = e.PanelImpl.Position()
+	x, y = e.Position()
 
-	e.input.Resize(x+len(e.prompt)+2, y, e.PanelImpl.Width()-len(e.prompt)-2, 1)
+	e.input.Resize(x+len(e.prompt)+2, y, e.Width()-len(e.prompt)-2, 1)
 }
 
 func (e *ExPanel) Render(updateScreen bool) {
@@ -43,7 +43,7 @@ func (e *ExPanel) Render(updateScreen bool) {
 
 	e.PanelImpl.Render(false)
 
-	style := e.PanelImpl.CurrentStyler.Style()
+	style := e.CurrentStyler.Style()
 
 	x, y := e.Position()
 

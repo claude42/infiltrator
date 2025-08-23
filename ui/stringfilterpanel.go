@@ -30,9 +30,9 @@ func NewStringFilterPanel(name string) *StringFilterPanel {
 	}
 	s.mode = NewColoredDropdown(config.FilterModeStrings, tcell.KeyCtrlS, s.toggleMode)
 	s.caseSensitive = NewColoredDropdown(config.CaseSensitiveStrings, tcell.KeyCtrlH, s.toggleCaseSensitive)
-	s.ColoredPanel.Add(s.mode)
-	s.ColoredPanel.Add(s.caseSensitive)
-	s.ColoredPanel.Add(s.input)
+	s.Add(s.mode)
+	s.Add(s.caseSensitive)
+	s.Add(s.input)
 
 	return s
 }
@@ -52,7 +52,7 @@ func (s *StringFilterPanel) Render(updateScreen bool) {
 
 	s.ColoredPanel.Render(false)
 
-	style := s.ColoredPanel.CurrentStyler.Style()
+	style := s.CurrentStyler.Style()
 
 	header := fmt.Sprintf(" %s", s.Name())
 	_, y := s.Position()

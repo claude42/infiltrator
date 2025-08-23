@@ -23,8 +23,8 @@ func NewDateFilterPanel(name string) *DateFilterPanel {
 		from:         NewFilterInput(filter.DateFilterFrom),
 		to:           NewFilterInput(filter.DateFilterTo),
 	}
-	d.ColoredPanel.Add(d.from)
-	d.ColoredPanel.Add(d.to)
+	d.Add(d.from)
+	d.Add(d.to)
 	d.to.SetActive(false)
 	return d
 }
@@ -44,7 +44,7 @@ func (d *DateFilterPanel) Render(updateScreen bool) {
 
 	d.ColoredPanel.Render(false)
 
-	style := d.ColoredPanel.CurrentStyler.Style()
+	style := d.CurrentStyler.Style()
 
 	header := fmt.Sprintf(" %s", d.Name())
 	_, y := d.Position()

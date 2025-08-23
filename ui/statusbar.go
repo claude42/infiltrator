@@ -61,7 +61,7 @@ func (s *Statusbar) Render(updateScreen bool) {
 		return
 	}
 
-	_, y := s.ComponentImpl.Position()
+	_, y := s.Position()
 
 	s.Mutex.Lock()
 	components.DrawChars(0, y, s.Width(), ' ', StatusBarStyle)
@@ -101,7 +101,7 @@ func (s *Statusbar) renderFollowStausBar() {
 }
 
 func (s *Statusbar) renderStatusDefaultText() {
-	_, y := s.ComponentImpl.Position()
+	_, y := s.Position()
 	components.RenderText(0, y, StatusDefaultText, StatusBarStyle)
 }
 
@@ -110,7 +110,7 @@ func (s *Statusbar) renderPanelOpenStatusBar() {
 
 	s.renderFileName()
 
-	_, y := s.ComponentImpl.Position()
+	_, y := s.Position()
 	components.RenderText(0, y, StatusPanelOpenText, StatusBarStyle)
 }
 
@@ -121,7 +121,7 @@ func (s *Statusbar) renderFileName() {
 	length := len(fileNameStr)
 	start := s.Width() - length - spacer - percentLength
 
-	_, y := s.ComponentImpl.Position()
+	_, y := s.Position()
 	components.RenderText(start, y, fileNameStr, StatusBarStyle)
 }
 
@@ -139,12 +139,12 @@ func (s *Statusbar) renderPercentage() {
 		style = StatusBarBusyStyle
 	}
 
-	_, y := s.ComponentImpl.Position()
+	_, y := s.Position()
 	components.RenderText(s.Width()-5, y, percentStr, style)
 }
 
 func (s *Statusbar) renderFollow() {
-	_, y := s.ComponentImpl.Position()
+	_, y := s.Position()
 	components.RenderText(s.Width()-9, y, "[follow]", StatusBarStyle)
 }
 
@@ -159,7 +159,7 @@ func (s *Statusbar) renderBusyVisualization() {
 		style = StatusBarBusyStyle
 	}
 
-	_, y := s.ComponentImpl.Position()
+	_, y := s.Position()
 	screen.SetContent(s.Width()-1, y, toRender, nil, style)
 }
 

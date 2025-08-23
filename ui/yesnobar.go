@@ -1,8 +1,6 @@
 package ui
 
 import (
-	"log"
-
 	"github.com/claude42/infiltrator/components"
 	"github.com/gdamore/tcell/v2"
 )
@@ -68,7 +66,6 @@ func (yn *YesNoBar) HandleEvent(ev tcell.Event) bool {
 		case tcell.KeyRune:
 			switch ev.Rune() {
 			case 'y':
-				log.Println("Answered y")
 				yn.closeBar(yn.yesFunc)
 				return true
 			case 'n':

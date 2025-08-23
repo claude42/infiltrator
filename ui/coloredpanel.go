@@ -16,7 +16,7 @@ func NewColoredPanel(name string) *ColoredPanel {
 		PanelImpl: *components.NewPanelImpl(name),
 	}
 
-	c.PanelImpl.StyleUsing(c)
+	c.StyleUsing(c)
 
 	return c
 }
@@ -40,8 +40,8 @@ func (c *ColoredPanel) Render(updateScreen bool) {
 
 func (c *ColoredPanel) Style() tcell.Style {
 	var style tcell.Style
-	if c.PanelImpl.OldStyler != nil {
-		style = c.PanelImpl.OldStyler.Style()
+	if c.OldStyler != nil {
+		style = c.OldStyler.Style()
 	} else {
 		style = tcell.StyleDefault
 	}

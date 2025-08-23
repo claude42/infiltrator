@@ -26,7 +26,7 @@ func NewFilterInput(name string) *FilterInput {
 	fi.name = name
 	fi.currentHistoryIndex = -1
 	fi.ColoredInput = NewColoredInput()
-	fi.ColoredInput.SetUpdateWatchersFunc(fi.updateWatchers)
+	fi.SetUpdateWatchersFunc(fi.updateWatchers)
 
 	fi.saveHistoryDelay = util.NewCustomDelay(fi.storeInHistory, 2*time.Second)
 
@@ -35,7 +35,7 @@ func NewFilterInput(name string) *FilterInput {
 
 func (fi *FilterInput) storeInHistory() {
 	// Certainly don't store empty lines in history
-	if fi.ColoredInput.Content() == "" {
+	if fi.Content() == "" {
 		return
 	}
 
@@ -48,12 +48,12 @@ func (fi *FilterInput) storeInHistory() {
 			// TODO: error handling
 			return
 		}
-		if fi.ColoredInput.Content() == currentHistoryEntry {
+		if fi.Content() == currentHistoryEntry {
 			return
 		}
 	}
 
-	config.AddToHistory(fi.name, fi.ColoredInput.Content())
+	config.AddToHistory(fi.name, fi.Content())
 	fi.currentHistoryIndex = 0
 }
 
@@ -118,9 +118,9 @@ func (fi *FilterInput) updateWatchers() {
 	if fi.filter == nil {
 		return
 	}
-	model.GetFilterManager().UpdateFilterKey(fi.filter, fi.name, string(fi.ColoredInput.Content()))
+	model.GetFilterManager().UpdateFilterKey(fi.filter, fi.name, string(fi.Content()))
 	fi.saveHistoryDelay.Now()
-	fi.ColoredInput.OldUpdateWatchersFunc()
+	fi.OldUpdateWatchersFunc()
 }
 
 func (fi *FilterInput) SetName(name string) {

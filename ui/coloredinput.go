@@ -17,7 +17,7 @@ func NewColoredInput() *ColoredInput {
 		InputImpl: *components.NewInputImpl(),
 	}
 
-	c.InputImpl.StyleUsing(c)
+	c.StyleUsing(c)
 
 	return c
 }
@@ -29,8 +29,8 @@ func (c *ColoredInput) SetColorIndex(colorIndex uint8) {
 func (c *ColoredInput) Style() tcell.Style {
 	var style tcell.Style
 
-	if c.InputImpl.OldStyler != nil {
-		style = c.InputImpl.OldStyler.Style()
+	if c.OldStyler != nil {
+		style = c.OldStyler.Style()
 	} else {
 		style = tcell.StyleDefault
 	}
@@ -41,7 +41,7 @@ func (c *ColoredInput) Style() tcell.Style {
 		style = style.Foreground((FilterColors[c.colorIndex][1]))
 	}
 
-	if !c.InputImpl.InputCorrect {
+	if !c.InputCorrect {
 		style = style.Italic(true)
 	}
 
