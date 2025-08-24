@@ -33,20 +33,20 @@ func (p *PanelSelection) HandleEvent(ev tcell.Event) bool {
 			case tcell.KeyRune:
 				switch ev.Rune() {
 				case 'r':
-					window.CreateAndAddPanel(config.FilterTypeRegex)
-					window.SetPanelsOpen(true)
+					GetPanelManager().CreateAndAdd(config.FilterTypeRegex)
+					GetPanelManager().SetPanelsOpen(true)
 					p.Hide()
 					components.RenderAll(true)
 					return true
 				case 'k':
-					window.CreateAndAddPanel(config.FilterTypeKeyword)
-					window.SetPanelsOpen(true)
+					GetPanelManager().CreateAndAdd(config.FilterTypeKeyword)
+					GetPanelManager().SetPanelsOpen(true)
 					p.Hide()
 					components.RenderAll(true)
 					return true
 				case 'd':
-					window.CreateAndAddPanel(config.FilterTypeDate)
-					window.SetPanelsOpen(true)
+					GetPanelManager().CreateAndAdd(config.FilterTypeDate)
+					GetPanelManager().SetPanelsOpen(true)
 					p.Hide()
 					components.RenderAll(true)
 					return true
@@ -57,8 +57,8 @@ func (p *PanelSelection) HandleEvent(ev tcell.Event) bool {
 				components.RenderAll(true)
 				return true
 			case tcell.KeyEnter:
-				window.CreateAndAddPanel(config.FilterTypeRegex)
-				window.SetPanelsOpen(true)
+				GetPanelManager().CreateAndAdd(config.FilterTypeRegex)
+				GetPanelManager().SetPanelsOpen(true)
 				p.Hide()
 				components.RenderAll(true)
 				return true

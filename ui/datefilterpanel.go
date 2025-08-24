@@ -170,6 +170,6 @@ func (d *DateFilterPanel) changePanelType(i int) {
 	// Note-to-self: don't put the next lines into FilterPanelImpl!
 	newPanel := NewPanelWithPanelTypeAndConfig(newType, &d.panelConfig)
 	newPanel.Show()
-	err := window.ReplacePanel(d, newPanel)
+	err := GetPanelManager().Replace(d, newPanel)
 	fail.OnError(err, "failed to replace panel")
 }

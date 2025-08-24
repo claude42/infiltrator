@@ -23,9 +23,6 @@ var (
 
 type Window struct {
 	mainView       *View
-	BottomPanels   []FilterPanel
-	panelsOpen     bool
-	activePanel    components.Panel
 	statusbar      *Statusbar
 	popup          components.Modal
 	panelSelection *PanelSelection
@@ -151,7 +148,7 @@ func (w *Window) EventLoop(quit chan<- string) bool {
 		case tcell.KeyRune:
 			switch ev.Rune() {
 			case '/':
-				w.openPanelsOrPanelSelection()
+				GetPanelManager().openPanelsOrPanelSelection()
 				w.Render()
 				return false
 			case 'q':
@@ -163,24 +160,24 @@ func (w *Window) EventLoop(quit chan<- string) bool {
 				return false
 			}
 		case tcell.KeyBacktab:
-			err := w.switchPanel(-1)
+			err := GetPanelManager().switchPanel(-1)
 			if err != nil {
 				screen.Beep()
 			}
 			return false
 		case tcell.KeyTab:
-			err := w.switchPanel(1)
+			err := GetPanelManager().switchPanel(1)
 			if err != nil {
 				screen.Beep()
 			}
 			return false
 		case tcell.KeyCtrlP:
-			w.openPanelsOrPanelSelection()
+			GetPanelManager().openPanelsOrPanelSelection()
 			w.Render()
 			return false
 		case tcell.KeyCtrlO:
-			toBeDestroyed := w.activePanel
-			err := w.RemovePanel()
+			toBeDestroyed := GetPanelManager().activePanel
+			err := GetPanelManager().Remove()
 			if err != nil {
 				screen.Beep()
 			}
@@ -190,10 +187,10 @@ func (w *Window) EventLoop(quit chan<- string) bool {
 		case tcell.KeyF1, tcell.KeyF2, tcell.KeyF3, tcell.KeyF4, tcell.KeyF5, tcell.KeyF6,
 			tcell.KeyF7, tcell.KeyF8, tcell.KeyF9, tcell.KeyF10, tcell.KeyF11, tcell.KeyF12:
 
-			w.goToPanel(int(ev.Key() - tcell.KeyF1))
+			GetPanelManager().goTo(int(ev.Key() - tcell.KeyF1))
 		case tcell.KeyEscape:
-			if w.panelsOpen {
-				w.SetPanelsOpen(false)
+			if GetPanelManager().panelsOpen {
+				GetPanelManager().SetPanelsOpen(false)
 			}
 		case tcell.KeyCtrlC:
 			close(quit)
@@ -206,10 +203,10 @@ func (w *Window) EventLoop(quit chan<- string) bool {
 		buttons := ev.Buttons()
 		if buttons&tcell.ButtonPrimary != 0 {
 			_, buttonY := ev.Position()
-			for i, panel := range w.BottomPanels {
+			for i, panel := range GetPanelManager().panels {
 				_, panelY := panel.Position()
 				if buttonY == panelY {
-					w.goToPanel(i)
+					GetPanelManager().goTo(i)
 				}
 			}
 			// do not continue here so the now active panel can handle this event as well
@@ -223,37 +220,13 @@ func (w *Window) EventLoop(quit chan<- string) bool {
 		w.Render()
 		return false
 	case *EventPressedEnterInInputField:
-		w.SetPanelsOpen(false)
+		GetPanelManager().SetPanelsOpen(false)
 		// don't continue here so that view can handle this as well
 	default:
 		// log.Printf("Event: %T, %+v", ev, ev)
 	}
 
 	return false
-}
-
-func (w *Window) openPanelsOrPanelSelection() {
-	// if panels are currently closed but at least one panel exists
-	// already, then just open the existing panels, don't open
-	// panel selection
-	if w.activePanel != nil && !w.panelsOpen {
-		w.SetPanelsOpen(true)
-		return
-	} else {
-		// if w.popup != nil { // TODO: weird
-		// 	w.popup.SetActive(false)
-		// }
-		w.popup = w.panelSelection
-		w.popup.Show()
-	}
-}
-
-func (w *Window) CreateAndAddPanel(panelType config.FilterType) {
-	if w.activePanel != nil && !w.panelsOpen {
-		return
-	}
-
-	w.AddPanel(NewPanel(panelType))
 }
 
 func (w *Window) resizeAndRedraw() {
@@ -270,16 +243,16 @@ func (w *Window) resizeAndRedraw() {
 func (w *Window) resize() {
 	width, height := screen.Size()
 
-	panelsPlusStatusbarHeight := w.totalPanelHeight() + w.statusbar.Height()
+	panelsPlusStatusbarHeight := GetPanelManager().totalHeight() + w.statusbar.Height()
 	// TODO: in case the terminal gets to small, the panels will never
 	// open again!
 	if panelsPlusStatusbarHeight >= height {
-		w.SetPanelsOpen(false)
+		GetPanelManager().SetPanelsOpen(false)
 		w.mainView.Resize(0, 0, width, height-w.statusbar.Height())
 	} else {
 		w.mainView.Resize(0, 0, width, height-panelsPlusStatusbarHeight)
 		y := height - panelsPlusStatusbarHeight
-		for _, p := range w.BottomPanels {
+		for _, p := range GetPanelManager().panels {
 			p.Resize(0, y, width, 0) // x and height ignored
 			y += p.Height()
 		}
@@ -292,157 +265,9 @@ func (w *Window) resize() {
 	}
 }
 
-func (w *Window) totalPanelHeight() int {
-	if !w.panelsOpen {
-		return 0
-	}
-
-	var totalPanelHeight = 0
-
-	for _, p := range w.BottomPanels {
-		totalPanelHeight += p.Height()
-	}
-
-	return totalPanelHeight
-}
-
-func (w *Window) AddPanel(newPanel FilterPanel) error {
-	if newPanel == nil {
-		return nil
-	}
-	// TODO: return error if total height of panels would exceed screen height
-	w.BottomPanels = append(w.BottomPanels, newPanel)
-	components.Add(newPanel, 1)
-	w.SetActivePanel(newPanel)
-
-	// resize() doesn't sound right here but will actually recalculate where
-	// the panels should be placed and how big they are.
-	// Is this really necessary?
-	// w.resize()
-	// w.Render()
-	return nil
-}
-
-func (w *Window) RemovePanel() error {
-	if len(w.BottomPanels) == 1 {
-		return fmt.Errorf("cannot remove last panel")
-	}
-
-	var newActivePanel components.Panel
-	activePanelIndex := w.activePanelIndex()
-
-	if activePanelIndex > 0 {
-		newActivePanel = w.BottomPanels[activePanelIndex-1]
-	} else {
-		newActivePanel = w.BottomPanels[1]
-	}
-
-	w.BottomPanels = append(w.BottomPanels[:activePanelIndex],
-		w.BottomPanels[activePanelIndex+1:]...)
-	components.Remove(w.activePanel)
-	DestroyPanel(w.activePanel)
-	w.SetActivePanel(newActivePanel)
-
-	w.resize()
-	w.Render()
-
-	return nil
-}
-
-func (w *Window) ReplacePanel(oldPanel, newPanel FilterPanel) error {
-	fail.If(oldPanel == nil || newPanel == nil, "old or new panel is nil")
-
-	var found bool
-	for i, p := range w.BottomPanels {
-		if p == oldPanel {
-			w.BottomPanels[i] = newPanel
-			found = true
-			break
-		}
-	}
-	fail.If(!found, "old panel not found in window.BottomPanels")
-
-	GetColorManager().Replace(oldPanel, newPanel) // must be called before DestroyPanel()
-	components.Remove(oldPanel)
-	DestroyPanel(oldPanel)
-	components.Add(newPanel, 1)
-	w.SetActivePanel(newPanel)
-	w.resize()
-	w.Render()
-
-	return nil
-}
-
-func (w *Window) SetActivePanel(p components.Panel) {
-	if w.activePanel != nil {
-		w.activePanel.SetActive(false)
-	}
-	w.activePanel = p
-	w.activePanel.SetActive(true)
-
-	// is there any case where the whole window (instead of the affected panel)
-	// would have to be redrawn?
-	// w.Render()
-}
-
-func (w *Window) activePanelIndex() int {
-	for i, panel := range w.BottomPanels {
-		if panel == w.activePanel {
-			return i
-		}
-	}
-	log.Panicln("Panel not found")
-	return -1 // never reached
-}
-
-func (w *Window) goToPanel(no int) error {
-	if no < 0 || no >= len(w.BottomPanels) {
-		return fmt.Errorf("no panel at index %d", no)
-	}
-
-	w.SetActivePanel(w.BottomPanels[no])
-	// It would probably be more natural to call render within the SetActivePanel()
-	// (or even the individual SetActive() methods of the panels and InputFields),
-	// but this way we avoid unnecessary redraws when switching panels.
-	w.Render()
-
-	return nil
-}
-
-func (w *Window) switchPanel(offset int) error {
-	newPanelIndex := w.activePanelIndex() + offset
-
-	if newPanelIndex < 0 || newPanelIndex >= len(w.BottomPanels) {
-		return fmt.Errorf("no panel at index %d", newPanelIndex)
-	}
-
-	return w.goToPanel(newPanelIndex)
-}
-
-func (w *Window) SetPanelsOpen(panelsOpen bool) {
-	w.panelsOpen = panelsOpen
-	if panelsOpen {
-		for _, p := range w.BottomPanels {
-			p.SetVisible(true)
-		}
-		w.activePanel.SetActive(true)
-	} else {
-		for _, p := range w.BottomPanels {
-			p.Hide()
-		}
-	}
-	GetScreen().PostEvent(NewEventPanelStateChanged(panelsOpen))
-	w.resizeAndRedraw()
-}
-
-func (w *Window) PanelsOopen() bool {
-	return w.panelsOpen
-}
-
 func (w *Window) CreatePresetPanels() {
-	// cfg := config.GetConfiguration()
 	for _, panelConfig := range config.Panels() {
-		w.AddPanel(NewPanelWithConfig(&panelConfig))
+		GetPanelManager().Add(NewPanelWithConfig(&panelConfig))
 	}
 	w.resizeAndRedraw()
 }
@@ -457,37 +282,8 @@ func (w *Window) savePreset() {
 		}
 
 		ShowYesNoBar("File exists! Overwrite (y/n)?", func() {
-			w.copyPanelsToConfig()
+			GetPanelManager().copyPanelsToConfig()
 			config.WritePreset(presetFileName)
 		}, nil)
 	})
-}
-
-func (w *Window) copyPanelsToConfig() {
-	// cfg := config.GetConfiguration()
-	newPanels := make([]config.PanelTable, 0, len(w.BottomPanels))
-
-	for _, p := range w.BottomPanels {
-		var cp config.PanelTable
-		switch p := p.(type) {
-		case *StringFilterPanel:
-			cp = config.PanelTable{
-				Type:          p.Name(),
-				Key:           p.Content(),
-				Mode:          config.FilterModeStrings[p.Mode()],
-				CaseSensitive: p.CaseSensitive(),
-			}
-		case *DateFilterPanel:
-			cp = config.PanelTable{
-				Type: p.Name(),
-				From: p.From(),
-				To:   p.To(),
-			}
-		default:
-			log.Fatalf("Unknown panel type %s", p.Name())
-		}
-
-		newPanels = append(newPanels, cp)
-	}
-	config.SetPanels(newPanels)
 }

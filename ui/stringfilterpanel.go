@@ -164,6 +164,6 @@ func (s *StringFilterPanel) changePanelType(i int) {
 	// Note-to-self: don't put the next lines into FilterPanelImpl!
 	newPanel := NewPanelWithPanelTypeAndConfig(newType, &s.panelConfig)
 	newPanel.Show()
-	err := window.ReplacePanel(s, newPanel)
+	err := GetPanelManager().Replace(s, newPanel)
 	fail.OnError(err, "failed to replace panel")
 }
