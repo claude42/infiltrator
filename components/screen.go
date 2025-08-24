@@ -35,11 +35,12 @@ func Remove(component Component) {
 	for i, c := range stackedComponents {
 		if c.component == component {
 			stackedComponents = append(stackedComponents[:i], stackedComponents[i+1:]...)
+			RenderAll(false)
+			Screen.Show()
 			return
 		}
 	}
-	RenderAll(false)
-	Screen.Show()
+
 }
 
 func RenderAll(updateScreen bool) {
