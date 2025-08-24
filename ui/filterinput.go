@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/claude42/infiltrator/config"
+	"github.com/claude42/infiltrator/fail"
 	"github.com/claude42/infiltrator/model"
 	"github.com/claude42/infiltrator/model/filter"
 	"github.com/claude42/infiltrator/util"
@@ -118,7 +119,10 @@ func (fi *FilterInput) updateWatchers() {
 	if fi.filter == nil {
 		return
 	}
+
+	fail.IfNil(fi.filter, "FilterInput.updateWatchers() called without filter!")
 	model.GetFilterManager().UpdateFilterKey(fi.filter, fi.name, string(fi.Content()))
+
 	fi.saveHistoryDelay.Now()
 	fi.OldUpdateWatchersFunc()
 }

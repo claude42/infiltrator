@@ -23,6 +23,16 @@ func NewColoredPanel(name string) *ColoredPanel {
 
 func (c *ColoredPanel) SetColorIndex(colorIndex uint8) {
 	c.colorIndex = colorIndex
+
+	for _, i := range c.Contained() {
+		if ci, ok := i.(ColorSetter); ok {
+			ci.SetColorIndex(colorIndex)
+		}
+	}
+}
+
+func (c *ColoredPanel) ColorIndex() uint8 {
+	return c.colorIndex
 }
 
 func (c *ColoredPanel) Render(updateScreen bool) {

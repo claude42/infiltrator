@@ -40,6 +40,11 @@ Threads
   * Receives from FileReader: screenUpdated 
 
 
+BUGS
+* Tabbing to a DatePanel activates both input fields (regression)
+* New keyword filter; "logactiond"; match; new keyword filter; "Finish"; match
+  --> first two lines are rendered partly green until search finishes?!?
+
 
 
 TODO

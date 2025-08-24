@@ -23,7 +23,7 @@ var (
 
 type Window struct {
 	mainView       *View
-	BottomPanels   []components.Panel
+	BottomPanels   []FilterPanel
 	panelsOpen     bool
 	activePanel    components.Panel
 	statusbar      *Statusbar
@@ -185,7 +185,6 @@ func (w *Window) EventLoop(quit chan<- string) bool {
 				screen.Beep()
 			}
 			components.Remove(toBeDestroyed)
-			DestroyPanel(toBeDestroyed)
 			w.Render()
 			return false
 		case tcell.KeyF1, tcell.KeyF2, tcell.KeyF3, tcell.KeyF4, tcell.KeyF5, tcell.KeyF6,
@@ -307,7 +306,7 @@ func (w *Window) totalPanelHeight() int {
 	return totalPanelHeight
 }
 
-func (w *Window) AddPanel(newPanel components.Panel) error {
+func (w *Window) AddPanel(newPanel FilterPanel) error {
 	if newPanel == nil {
 		return nil
 	}
@@ -340,8 +339,34 @@ func (w *Window) RemovePanel() error {
 
 	w.BottomPanels = append(w.BottomPanels[:activePanelIndex],
 		w.BottomPanels[activePanelIndex+1:]...)
+	components.Remove(w.activePanel)
+	DestroyPanel(w.activePanel)
 	w.SetActivePanel(newActivePanel)
 
+	w.resize()
+	w.Render()
+
+	return nil
+}
+
+func (w *Window) ReplacePanel(oldPanel, newPanel FilterPanel) error {
+	fail.If(oldPanel == nil || newPanel == nil, "old or new panel is nil")
+
+	var found bool
+	for i, p := range w.BottomPanels {
+		if p == oldPanel {
+			w.BottomPanels[i] = newPanel
+			found = true
+			break
+		}
+	}
+	fail.If(!found, "old panel not found in window.BottomPanels")
+
+	GetColorManager().Replace(oldPanel, newPanel) // must be called before DestroyPanel()
+	components.Remove(oldPanel)
+	DestroyPanel(oldPanel)
+	components.Add(newPanel, 1)
+	w.SetActivePanel(newPanel)
 	w.resize()
 	w.Render()
 

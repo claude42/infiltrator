@@ -80,7 +80,21 @@ func (c *colorManager) Remove(panel components.Panel) {
 			return
 		}
 	}
-	log.Panicf("Remove() called with panel %v that is not registered", panel)
+	// Don't fail in this case - will save us some housekeeping when destroying panels
+	// log.Panicf("Remove() called with panel %v that is not registered", panel)
+}
+
+func (c *colorManager) Replace(oldPanel, newPanel components.Panel) {
+	fail.IfNil(oldPanel, "ReplacePanel() called with nil oldPanel)")
+	fail.IfNil(newPanel, "ReplacePanel() called with nil newPanel)")
+
+	for i, cm := range c.colors {
+		if cm.panel == oldPanel {
+			c.colors[i].panel = newPanel
+			return
+		}
+	}
+	log.Panicf("Replace() called with old panel %v that is not registered", oldPanel)
 }
 
 func (c *colorManager) GetColor(panel components.Panel) [2]tcell.Color {

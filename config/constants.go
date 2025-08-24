@@ -14,10 +14,12 @@ const (
 const (
 	FilterTypeKeyword FilterType = iota
 	FilterTypeRegex
+	FilterTypeDate
 	PanelTypeGlob
 	PanelTypeHost
 	PanelTypeFacility
-	FilterTypeDate
+
+	FilterTypeCount
 
 	FilterStringKeyword = "Keyword"
 	FilterStringRegex   = "Regex"
@@ -103,3 +105,9 @@ var CaseSensitiveStrings = []string{
 	"case",
 	"CaSe",
 }
+
+// ----------------------------------------------------------------
+
+const PanelNameWidth = 11
+const PanelHeaderWidth = 26
+const PanelHeaderGap = 2

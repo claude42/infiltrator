@@ -2,7 +2,6 @@ package ui
 
 import (
 	"log"
-	"slices"
 
 	"github.com/claude42/infiltrator/components"
 	"github.com/claude42/infiltrator/config"
@@ -11,48 +10,52 @@ import (
 	"github.com/claude42/infiltrator/model/filter"
 )
 
-func setupNewStringFilterPanel(fn filter.StringFilterFuncFactory, name string,
+func setupNewStringFilterPanel(panelType config.FilterType,
+	fn filter.StringFilterFuncFactory, name string,
 	panelConfig *config.PanelTable) *StringFilterPanel {
-	p := NewStringFilterPanel(name)
+
+	p := NewStringFilterPanel(panelType, name)
 	f := filter.NewStringFilter(fn, p.Mode())
 	model.GetFilterManager().AddFilter(f)
 	p.SetFilter(f)
 
-	// done last so both panel and filter get the same color index
-	colorIndex := GetColorManager().Add(p)
-	p.SetColorIndex(colorIndex)
-
 	if panelConfig != nil {
-		p.SetContent(panelConfig.Key)
-		p.SetMode(config.FilterMode(slices.Index(config.FilterModeStrings, panelConfig.Mode)))
-		p.SetCaseSensitive(panelConfig.CaseSensitive)
+		p.SetPanelConfig(panelConfig)
+	}
+	// done last so both panel and filter get the same color index
+	if panelConfig == nil || panelConfig.ColorIndex == 0 {
+		colorIndex := GetColorManager().Add(p)
+		p.SetColorIndex(colorIndex)
 	}
 
 	return p
 }
 
-func setupNewDateFilterPanel(name string, panelConfig *config.PanelTable) *DateFilterPanel {
-	p := NewDateFilterPanel(name)
+func setupNewDateFilterPanel(panelType config.FilterType,
+	name string, panelConfig *config.PanelTable) *DateFilterPanel {
+
+	p := NewDateFilterPanel(panelType, name)
 	filter := filter.NewDateFilter()
 	model.GetFilterManager().AddFilter(filter)
 	p.SetFilter(filter)
 
-	colorIndex := GetColorManager().Add(p)
-	p.SetColorIndex(colorIndex)
-
 	if panelConfig != nil {
-		p.SetTo(panelConfig.To)
-		p.SetFrom(panelConfig.From)
+		p.SetPanelConfig(panelConfig)
+	}
+	// done last so both panel and filter get the same color index
+	if panelConfig == nil || panelConfig.ColorIndex == 0 {
+		colorIndex := GetColorManager().Add(p)
+		p.SetColorIndex(colorIndex)
 	}
 
 	return p
 }
 
-func NewPanel(panelType config.FilterType) components.Panel {
+func NewPanel(panelType config.FilterType) FilterPanel {
 	return NewPanelWithPanelTypeAndConfig(panelType, nil)
 }
 
-func NewPanelWithConfig(panelConfig *config.PanelTable) components.Panel {
+func NewPanelWithConfig(panelConfig *config.PanelTable) FilterPanel {
 	panelType, err := config.Filters.Type(panelConfig.Type)
 	if err != nil {
 		// TODO error handling
@@ -63,16 +66,16 @@ func NewPanelWithConfig(panelConfig *config.PanelTable) components.Panel {
 }
 
 func NewPanelWithPanelTypeAndConfig(panelType config.FilterType,
-	panelConfig *config.PanelTable) components.Panel {
+	panelConfig *config.PanelTable) FilterPanel {
 
 	filterString, err := config.Filters.String(panelType)
 	fail.OnError(err, "error getting filter string for filter type")
 	switch panelType {
 	case config.FilterTypeKeyword:
-		return setupNewStringFilterPanel(filter.DefaultStringFilterFuncFactory,
+		return setupNewStringFilterPanel(panelType, filter.DefaultStringFilterFuncFactory,
 			filterString, panelConfig)
 	case config.FilterTypeRegex:
-		return setupNewStringFilterPanel(filter.RegexFilterFuncFactory,
+		return setupNewStringFilterPanel(panelType, filter.RegexFilterFuncFactory,
 			filterString, panelConfig)
 	// case Glob:
 	// 	return NewGlobPanel()
@@ -82,7 +85,7 @@ func NewPanelWithPanelTypeAndConfig(panelType config.FilterType,
 	// 	return NewFacilityPanel()
 	case config.FilterTypeDate:
 		// TODO: error handling
-		return setupNewDateFilterPanel(filterString, panelConfig)
+		return setupNewDateFilterPanel(panelType, filterString, panelConfig)
 	default:
 		// TODO error handling: really panic here?
 		log.Panicf("NewPanel() called with unknown panel type: %d",

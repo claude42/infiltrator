@@ -1,39 +1,56 @@
 package ui
 
 import (
-	"fmt"
-
 	"github.com/claude42/infiltrator/components"
+	"github.com/claude42/infiltrator/config"
+	"github.com/claude42/infiltrator/fail"
 	"github.com/claude42/infiltrator/model"
 	"github.com/claude42/infiltrator/model/filter"
 	"github.com/gdamore/tcell/v2"
 )
 
 type DateFilterPanel struct {
-	*ColoredPanel
+	*FilterPanelImpl
 
+	typeSelect *ColoredDropdown
 	from       *FilterInput
 	to         *FilterInput
 	lastActive *FilterInput
 }
 
-func NewDateFilterPanel(name string) *DateFilterPanel {
+func NewDateFilterPanel(panelType config.FilterType, name string) *DateFilterPanel {
+
 	d := &DateFilterPanel{
-		ColoredPanel: NewColoredPanel(name),
-		from:         NewFilterInput(filter.DateFilterFrom),
-		to:           NewFilterInput(filter.DateFilterTo),
+		FilterPanelImpl: NewFilterPanelImpl(panelType, name),
+		from:            NewFilterInput(filter.DateFilterFrom),
+		to:              NewFilterInput(filter.DateFilterTo),
 	}
+	d.typeSelect = NewColoredDropdown(config.Filters.AllStrings(), tcell.KeyCtrlH, d.changePanelType)
+	d.typeSelect.SetSelectedIndex(int(panelType))
+	d.Add(d.typeSelect)
 	d.Add(d.from)
 	d.Add(d.to)
 	d.to.SetActive(false)
 	return d
 }
 
+func (d *DateFilterPanel) SetPanelConfig(panelConfig *config.PanelTable) {
+	if panelConfig == nil {
+		return
+	}
+
+	d.SetFrom(panelConfig.From)
+	d.SetTo(panelConfig.To)
+
+	// don't put this into FilterPanelImpl!
+	d.SetColorIndex(panelConfig.ColorIndex)
+}
+
 func (d *DateFilterPanel) Resize(x, y, width, height int) {
-	d.ColoredPanel.Resize(x, y, width, height)
+	d.FilterPanelImpl.Resize(x, y, width, height)
 
-	d.from.Resize(x+26, y, 20, 1)
-
+	d.typeSelect.Resize(x+1, y, config.PanelNameWidth, 1)
+	d.from.Resize(x+config.PanelHeaderWidth+config.PanelHeaderGap, y, 20, 1)
 	d.to.Resize(x+60, y, 20, 1)
 }
 
@@ -42,14 +59,12 @@ func (d *DateFilterPanel) Render(updateScreen bool) {
 		return
 	}
 
-	d.ColoredPanel.Render(false)
+	d.FilterPanelImpl.Render(false)
 
 	style := d.CurrentStyler.Style()
 
-	header := fmt.Sprintf(" %s", d.Name())
 	_, y := d.Position()
-	components.RenderText(0, y, header, style.Reverse(true))
-	x := components.RenderText(19, y, "From ", style.Reverse(true))
+	x := components.RenderText(config.PanelHeaderWidth-len("From "), y, "From ", style.Reverse(true))
 	components.RenderText(x, y, "▶ ", style)
 	x = components.RenderText(55, y, "To ", style.Reverse(true))
 	components.RenderText(x, y, "▶ ", style)
@@ -61,10 +76,7 @@ func (d *DateFilterPanel) Render(updateScreen bool) {
 }
 
 func (d *DateFilterPanel) SetColorIndex(colorIndex uint8) {
-	d.ColoredPanel.SetColorIndex(colorIndex)
-
-	d.from.SetColorIndex(colorIndex)
-	d.to.SetColorIndex(colorIndex)
+	d.FilterPanelImpl.SetColorIndex(colorIndex)
 
 	if d.Filter() != nil {
 		model.GetFilterManager().UpdateFilterColorIndex(d.Filter(), colorIndex)
@@ -96,11 +108,11 @@ func (d *DateFilterPanel) HandleEvent(ev tcell.Event) bool {
 		}
 	}
 
-	return d.ColoredPanel.HandleEvent(ev)
+	return d.FilterPanelImpl.HandleEvent(ev)
 }
 
 func (d *DateFilterPanel) SetActive(active bool) {
-	d.ColoredPanel.SetActive(active)
+	d.FilterPanelImpl.SetActive(active)
 
 	if active && !d.from.IsActive() && !d.to.IsActive() {
 		if d.lastActive != nil {
@@ -122,7 +134,7 @@ func (d *DateFilterPanel) SetActive(active bool) {
 }
 
 func (d *DateFilterPanel) SetFilter(filter filter.Filter) {
-	d.ColoredPanel.SetFilter(filter)
+	d.FilterPanelImpl.SetFilter(filter)
 
 	d.from.SetFilter(filter)
 	d.to.SetFilter(filter)
@@ -143,4 +155,21 @@ func (d *DateFilterPanel) SetTo(to string) {
 
 func (d *DateFilterPanel) To() string {
 	return d.to.Content()
+}
+
+func (d *DateFilterPanel) changePanelType(i int) {
+	newType := config.FilterType(i)
+	if newType == d.panelType {
+		return
+	}
+
+	d.panelConfig.From = d.From()
+	d.panelConfig.To = d.To()
+	d.panelConfig.ColorIndex = d.ColorIndex()
+
+	// Note-to-self: don't put the next lines into FilterPanelImpl!
+	newPanel := NewPanelWithPanelTypeAndConfig(newType, &d.panelConfig)
+	newPanel.Show()
+	err := window.ReplacePanel(d, newPanel)
+	fail.OnError(err, "failed to replace panel")
 }

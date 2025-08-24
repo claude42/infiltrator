@@ -57,6 +57,8 @@ func (pp *Pipeline) Add(f Filter) {
 	} else {
 		*pp = append(*pp, f)
 	}
+
+	pp.InvalidateCaches()
 }
 
 func (pp *Pipeline) Remove(f Filter) error {
@@ -72,6 +74,7 @@ func (pp *Pipeline) Remove(f Filter) error {
 			if i < len(*pp) {
 				(*pp)[i].SetSource((*pp)[i-1])
 			}
+			pp.InvalidateCaches()
 			return nil
 		}
 	}

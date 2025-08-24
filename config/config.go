@@ -59,6 +59,7 @@ type PanelTable struct {
 	CaseSensitive bool   `koanf:"casesensitive"`
 	From          string `koanf:"from"`
 	To            string `koanf:"to"`
+	ColorIndex    uint8  `koanf:"color"`
 }
 
 func init() {

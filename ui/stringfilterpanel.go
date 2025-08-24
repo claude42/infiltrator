@@ -1,7 +1,7 @@
 package ui
 
 import (
-	"fmt"
+	"slices"
 
 	"github.com/claude42/infiltrator/components"
 	"github.com/claude42/infiltrator/config"
@@ -12,26 +12,26 @@ import (
 	"github.com/gdamore/tcell/v2"
 )
 
-const nameWidth = 9
-const headerWidth = 24
-
 type StringFilterPanel struct {
-	*ColoredPanel
+	*FilterPanelImpl
 
-	input *FilterInput
-	// panelType     *ColoredDropdown
+	input         *FilterInput
+	typeSelect    *ColoredDropdown
 	mode          *ColoredDropdown
 	caseSensitive *ColoredDropdown
 }
 
-func NewStringFilterPanel(name string) *StringFilterPanel {
+func NewStringFilterPanel(panelType config.FilterType, name string) *StringFilterPanel {
+
 	s := &StringFilterPanel{
-		ColoredPanel: NewColoredPanel(name),
-		input:        NewFilterInput(name),
+		FilterPanelImpl: NewFilterPanelImpl(panelType, name),
+		input:           NewFilterInput(name),
 	}
+	s.typeSelect = NewColoredDropdown(config.Filters.AllStrings(), tcell.KeyCtrlH, s.changePanelType)
+	s.typeSelect.SetSelectedIndex(int(panelType))
 	s.mode = NewColoredDropdown(config.FilterModeStrings, tcell.KeyCtrlJ, s.toggleMode)
 	s.caseSensitive = NewColoredDropdown(config.CaseSensitiveStrings, tcell.KeyCtrlK, s.toggleCaseSensitive)
-	// s.Add(s.panelType)
+	s.Add(s.typeSelect)
 	s.Add(s.mode)
 	s.Add(s.caseSensitive)
 	s.Add(s.input)
@@ -39,12 +39,30 @@ func NewStringFilterPanel(name string) *StringFilterPanel {
 	return s
 }
 
-func (s *StringFilterPanel) Resize(x, y, width, height int) {
-	s.ColoredPanel.Resize(x, y, width, height)
+func (s *StringFilterPanel) SetPanelConfig(panelConfig *config.PanelTable) {
+	if panelConfig == nil {
+		return
+	}
 
-	s.input.Resize(x+headerWidth+2, y, width-(x+headerWidth+2), 1)
-	s.mode.Resize(x+nameWidth, y, 1, 1)
-	s.caseSensitive.Resize(x+nameWidth+8, y, 1, 1)
+	s.SetContent(panelConfig.Key)
+	mode := slices.Index(config.FilterModeStrings, panelConfig.Mode)
+	if mode != -1 {
+		s.SetMode(config.FilterMode(mode))
+	}
+	s.SetCaseSensitive(panelConfig.CaseSensitive)
+
+	// don't put this into FilterPanelImpl!
+	s.SetColorIndex(panelConfig.ColorIndex)
+}
+
+func (s *StringFilterPanel) Resize(x, y, width, height int) {
+	s.FilterPanelImpl.Resize(x, y, width, height)
+
+	s.typeSelect.Resize(x+1, y, config.PanelNameWidth, 1)
+	s.input.Resize(x+config.PanelHeaderWidth+config.PanelHeaderGap, y,
+		width-(x+config.PanelHeaderWidth+config.PanelHeaderGap), 1)
+	s.mode.Resize(x+config.PanelNameWidth, y, 1, 1)
+	s.caseSensitive.Resize(x+config.PanelNameWidth+8, y, 1, 1)
 }
 
 func (s *StringFilterPanel) Render(updateScreen bool) {
@@ -52,14 +70,12 @@ func (s *StringFilterPanel) Render(updateScreen bool) {
 		return
 	}
 
-	s.ColoredPanel.Render(false)
+	s.FilterPanelImpl.Render(false)
 
 	style := s.CurrentStyler.Style()
 
-	header := fmt.Sprintf(" %s", s.Name())
 	_, y := s.Position()
-	_ = components.RenderText(0, y, header, style.Reverse(true))
-	components.RenderText(headerWidth, y, "▶ ", style)
+	components.RenderText(config.PanelHeaderWidth, y, "▶ ", style)
 
 	if updateScreen {
 		screen.Show()
@@ -67,11 +83,8 @@ func (s *StringFilterPanel) Render(updateScreen bool) {
 }
 
 func (s *StringFilterPanel) SetColorIndex(colorIndex uint8) {
-	s.ColoredPanel.SetColorIndex(colorIndex)
+	s.FilterPanelImpl.SetColorIndex(colorIndex)
 
-	s.input.SetColorIndex(colorIndex)
-	s.mode.SetColorIndex(colorIndex)
-	s.caseSensitive.SetColorIndex(colorIndex)
 	if s.Filter() != nil {
 		model.GetFilterManager().UpdateFilterColorIndex(s.Filter(), colorIndex)
 	}
@@ -88,7 +101,7 @@ func (s *StringFilterPanel) Content() string {
 }
 
 func (s *StringFilterPanel) SetFilter(filter filter.Filter) {
-	s.ColoredPanel.SetFilter(filter)
+	s.FilterPanelImpl.SetFilter(filter)
 
 	s.input.SetFilter(filter)
 }
@@ -111,6 +124,8 @@ func (s *StringFilterPanel) Mode() config.FilterMode {
 
 func (s *StringFilterPanel) SetMode(mode config.FilterMode) {
 	s.mode.SetSelectedIndex(int(mode))
+
+	fail.IfNil(s.Filter(), "StringFilterPanel.SetMode() called without filter!")
 	model.GetFilterManager().UpdateFilterMode(s.Filter(), mode)
 }
 
@@ -126,11 +141,29 @@ func (s *StringFilterPanel) SetCaseSensitive(caseSensitive bool) {
 		s.caseSensitive.SetSelectedIndex(0)
 	}
 
+	fail.IfNil(s.Filter(), "StringFilterPanel.SetCaseSensitive() called without filter!")
 	model.GetFilterManager().UpdateFilterCaseSensitiveUpdate(s.Filter(), caseSensitive)
-
 }
 
 func (s *StringFilterPanel) SetName(name string) {
-	s.ColoredPanel.SetName(name)
+	s.FilterPanelImpl.SetName(name)
 	s.input.SetName(name)
+}
+
+func (s *StringFilterPanel) changePanelType(i int) {
+	newType := config.FilterType(i)
+	if newType == s.panelType {
+		return
+	}
+
+	s.panelConfig.Key = s.Content()
+	s.panelConfig.Mode = s.Mode().String()
+	s.panelConfig.CaseSensitive = s.CaseSensitive()
+	s.panelConfig.ColorIndex = s.ColorIndex()
+
+	// Note-to-self: don't put the next lines into FilterPanelImpl!
+	newPanel := NewPanelWithPanelTypeAndConfig(newType, &s.panelConfig)
+	newPanel.Show()
+	err := window.ReplacePanel(s, newPanel)
+	fail.OnError(err, "failed to replace panel")
 }
