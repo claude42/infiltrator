@@ -2,11 +2,15 @@ package ui
 
 import (
 	"log"
+	"sync"
 
-	"github.com/claude42/infiltrator/components"
 	"github.com/claude42/infiltrator/fail"
 	"github.com/gdamore/tcell/v2"
 )
+
+type ColorSetter interface {
+	SetColorIndex(uint8)
+}
 
 var FilterColors = [][2]tcell.Color{
 	{tcell.ColorGreen, tcell.ColorGreen}, // just to detect wither something went wrong, should be tcell.ColorDefault
@@ -30,18 +34,22 @@ type colorManager struct {
 }
 
 type colorMap struct {
-	panel      components.Panel
+	panel      ColorSetter
 	colorIndex uint8
 }
 
-var instance *colorManager
+var (
+	cmInstance *colorManager
+	cmOnce     sync.Once
+)
 
 func GetColorManager() *colorManager {
-	// not thread safe
-	if instance == nil {
-		instance = &colorManager{}
-	}
-	return instance
+	cmOnce.Do(func() {
+		if cmInstance == nil {
+			cmInstance = &colorManager{}
+		}
+	})
+	return cmInstance
 }
 
 func (c *colorManager) findNextUnassigendColorIndex() uint8 {
@@ -63,19 +71,19 @@ func (c *colorManager) findNextUnassigendColorIndex() uint8 {
 	return 0
 }
 
-func (c *colorManager) Add(panel components.Panel) uint8 {
-	fail.IfNil(panel, "Add() called with nil panel)")
+func (c *colorManager) Add(component ColorSetter) uint8 {
+	fail.IfNil(component, "Add() called with nil panel)")
 
 	unassigned := c.findNextUnassigendColorIndex()
 
-	c.colors = append(c.colors, colorMap{panel: panel, colorIndex: unassigned})
+	c.colors = append(c.colors, colorMap{panel: component, colorIndex: unassigned})
 
 	return unassigned
 }
 
-func (c *colorManager) Remove(panel components.Panel) {
+func (c *colorManager) Remove(component ColorSetter) {
 	for i, cm := range c.colors {
-		if cm.panel == panel {
+		if cm.panel == component {
 			c.colors = append(c.colors[:i], c.colors[i+1:]...)
 			return
 		}
@@ -84,22 +92,22 @@ func (c *colorManager) Remove(panel components.Panel) {
 	// log.Panicf("Remove() called with panel %v that is not registered", panel)
 }
 
-func (c *colorManager) Replace(oldPanel, newPanel components.Panel) {
-	fail.IfNil(oldPanel, "ReplacePanel() called with nil oldPanel)")
-	fail.IfNil(newPanel, "ReplacePanel() called with nil newPanel)")
+func (c *colorManager) Replace(oldComponent, newComponent ColorSetter) {
+	fail.IfNil(oldComponent, "ReplacePanel() called with nil oldPanel)")
+	fail.IfNil(newComponent, "ReplacePanel() called with nil newPanel)")
 
 	for i, cm := range c.colors {
-		if cm.panel == oldPanel {
-			c.colors[i].panel = newPanel
+		if cm.panel == oldComponent {
+			c.colors[i].panel = newComponent
 			return
 		}
 	}
-	log.Panicf("Replace() called with old panel %v that is not registered", oldPanel)
+	log.Panicf("Replace() called with old panel %v that is not registered", oldComponent)
 }
 
-func (c *colorManager) GetColor(panel components.Panel) [2]tcell.Color {
+func (c *colorManager) GetColor(component ColorSetter) [2]tcell.Color {
 	for i, cm := range c.colors {
-		if cm.panel == panel {
+		if cm.panel == component {
 			if i < len(FilterColors) {
 				return FilterColors[i]
 			}

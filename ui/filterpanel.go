@@ -7,6 +7,7 @@ import (
 
 type FilterPanel interface {
 	components.Panel
+	ColorSetter
 
 	SetPanelConfig(panelConfig *config.PanelTable)
 }

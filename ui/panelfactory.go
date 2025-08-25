@@ -3,7 +3,6 @@ package ui
 import (
 	"log"
 
-	"github.com/claude42/infiltrator/components"
 	"github.com/claude42/infiltrator/config"
 	"github.com/claude42/infiltrator/fail"
 	"github.com/claude42/infiltrator/model"
@@ -95,7 +94,7 @@ func NewPanelWithPanelTypeAndConfig(panelType config.FilterType,
 	}
 }
 
-func DestroyPanel(panel components.Panel) {
+func DestroyPanel(panel FilterPanel) {
 	fail.IfNil(panel, "DestroyPanel() called with nil panel")
 
 	fm := model.GetFilterManager()
